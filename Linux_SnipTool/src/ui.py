@@ -169,12 +169,12 @@ class EditorWindow:
         self.window.add(main_box)
         
         # Top toolbar - tools
-        toolbar = self._create_toolbar()
-        main_box.pack_start(toolbar, False, False, 0)
+        self.toolbar = self._create_toolbar()
+        main_box.pack_start(self.toolbar, False, False, 0)
         
         # Color toolbar
-        color_toolbar = self._create_color_toolbar()
-        main_box.pack_start(color_toolbar, False, False, 0)
+        self.color_toolbar = self._create_color_toolbar()
+        main_box.pack_start(self.color_toolbar, False, False, 0)
         
         # Drawing area with scrolling
         scrolled = Gtk.ScrolledWindow()
@@ -598,80 +598,145 @@ class EditorWindow:
 
 class MainWindow:
     """Main application window with hotkey support."""
-    
+
     def __init__(self):
         if not GTK_AVAILABLE:
             raise RuntimeError("GTK is not available")
-        
+
+        # Load CSS styling
+        self._load_css()
+
         self.window = Gtk.Window(title="Linux SnipTool")
-        self.window.set_default_size(450, 400)
-        self.window.set_border_width(20)
+        self.window.set_default_size(420, 480)
+        self.window.set_border_width(24)
+        self.window.set_resizable(False)
         self.window.connect("destroy", self._on_quit)
-        
+
+        # Center window on screen
+        self.window.set_position(Gtk.WindowPosition.CENTER)
+
         self.hotkey_manager = HotkeyManager()
-        
-        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
+
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         self.window.add(main_box)
-        
+
+        # Header with icon and title
+        header_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        header_box.set_margin_bottom(16)
+        main_box.pack_start(header_box, False, False, 0)
+
         # Title
         title = Gtk.Label()
-        title.set_markup("<span size='xx-large' weight='bold'>📸 Linux SnipTool</span>")
-        main_box.pack_start(title, False, False, 0)
-        
-        # Description
-        desc = Gtk.Label(label="Capture and annotate screenshots with ease")
-        desc.set_line_wrap(True)
-        main_box.pack_start(desc, False, False, 0)
-        
+        title.set_markup("<span size='xx-large' weight='bold'>Linux SnipTool</span>")
+        title.get_style_context().add_class("title-label")
+        header_box.pack_start(title, False, False, 0)
+
+        # Subtitle/Description
+        desc = Gtk.Label(label="Capture • Annotate • Share")
+        desc.get_style_context().add_class("desc-label")
+        header_box.pack_start(desc, False, False, 0)
+
         # Capture buttons
-        button_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        main_box.pack_start(button_box, True, True, 0)
-        
+        button_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        button_box.set_margin_top(8)
+        main_box.pack_start(button_box, True, False, 0)
+
         fullscreen_btn = self._create_big_button(
-            "📷 Capture Fullscreen",
-            "Capture your entire screen (Ctrl+Shift+F)",
-            self._on_fullscreen
+            "📷  Capture Fullscreen",
+            "Capture your entire screen\nCtrl+Shift+F",
+            self._on_fullscreen,
+            "fullscreen"
         )
         button_box.pack_start(fullscreen_btn, False, False, 0)
-        
+
         region_btn = self._create_big_button(
-            "⬚ Capture Region",
-            "Select and capture a screen region (Ctrl+Shift+R)",
-            self._on_region
+            "⬚  Capture Region",
+            "Select and capture a screen region\nCtrl+Shift+R",
+            self._on_region,
+            "region"
         )
         button_box.pack_start(region_btn, False, False, 0)
-        
+
         window_btn = self._create_big_button(
-            "🪟 Capture Window",
-            "Capture the active window (Ctrl+Shift+W)",
-            self._on_window
+            "🪟  Capture Window",
+            "Capture the active window\nCtrl+Shift+W",
+            self._on_window,
+            "window"
         )
         button_box.pack_start(window_btn, False, False, 0)
-        
+
+        # Spacer
+        spacer = Gtk.Box()
+        main_box.pack_start(spacer, True, True, 0)
+
         # Bottom buttons
-        bottom_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        bottom_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        bottom_box.set_margin_top(16)
         main_box.pack_start(bottom_box, False, False, 0)
-        
+
+        history_btn = Gtk.Button(label="📚 History")
+        history_btn.get_style_context().add_class("action-button")
+        history_btn.connect("clicked", self._on_history)
+        bottom_box.pack_start(history_btn, True, True, 0)
+
         settings_btn = Gtk.Button(label="⚙️ Settings")
+        settings_btn.get_style_context().add_class("action-button")
         settings_btn.connect("clicked", self._on_settings)
         bottom_box.pack_start(settings_btn, True, True, 0)
-        
+
         about_btn = Gtk.Button(label="ℹ️ About")
+        about_btn.get_style_context().add_class("action-button")
         about_btn.connect("clicked", self._on_about)
         bottom_box.pack_start(about_btn, True, True, 0)
-        
+
         self.window.show_all()
-        
+
         # Register hotkeys
         self._register_global_hotkeys()
+
+    def _load_css(self) -> None:
+        """Load custom CSS styling."""
+        css_provider = Gtk.CssProvider()
+        css_path = Path(__file__).parent.parent / "resources" / "style.css"
+
+        if css_path.exists():
+            try:
+                css_provider.load_from_path(str(css_path))
+                screen = Gdk.Screen.get_default()
+                Gtk.StyleContext.add_provider_for_screen(
+                    screen,
+                    css_provider,
+                    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+                )
+            except Exception as e:
+                print(f"Warning: Could not load CSS: {e}")
     
-    def _create_big_button(self, text: str, tooltip: str, callback) -> Gtk.Button:
+    def _create_big_button(self, text: str, tooltip: str, callback, style_class: str = "") -> Gtk.Button:
         """Create a large styled button."""
         button = Gtk.Button(label=text)
         button.set_tooltip_text(tooltip)
-        button.set_size_request(-1, 60)
+        button.set_size_request(-1, 64)
+        button.get_style_context().add_class("capture-button")
+        if style_class:
+            button.get_style_context().add_class(style_class)
         button.connect("clicked", callback)
         return button
+
+    def _on_history(self, button: Gtk.Button) -> None:
+        """Show screenshot history browser."""
+        try:
+            from .history import HistoryWindow
+            HistoryWindow()
+        except Exception as e:
+            dialog = Gtk.MessageDialog(
+                transient_for=self.window,
+                message_type=Gtk.MessageType.INFO,
+                buttons=Gtk.ButtonsType.OK,
+                text="History",
+                secondary_text=f"Could not open history: {e}"
+            )
+            dialog.run()
+            dialog.destroy()
     
     def _register_global_hotkeys(self) -> None:
         """Register global keyboard shortcuts."""

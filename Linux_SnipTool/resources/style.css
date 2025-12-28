@@ -1,0 +1,208 @@
+/* Linux SnipTool - Modern GTK3 Theme */
+
+/* Main window styling */
+window {
+    background-color: #1e1e2e;
+}
+
+/* Title styling */
+.title-label {
+    font-size: 24px;
+    font-weight: bold;
+    color: #cdd6f4;
+    margin-bottom: 8px;
+}
+
+/* Description text */
+.desc-label {
+    color: #a6adc8;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+/* Big capture buttons */
+.capture-button {
+    background: linear-gradient(180deg, #45475a 0%, #313244 100%);
+    background-color: #45475a;
+    border: 1px solid #585b70;
+    border-radius: 12px;
+    color: #cdd6f4;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 16px 24px;
+    margin: 4px 0;
+    min-height: 56px;
+    transition: all 200ms ease;
+}
+
+.capture-button:hover {
+    background-color: #585b70;
+    border-color: #89b4fa;
+    box-shadow: 0 4px 12px rgba(137, 180, 250, 0.2);
+}
+
+.capture-button:active {
+    background-color: #313244;
+}
+
+/* Fullscreen button - blue accent */
+.capture-button.fullscreen {
+    border-left: 4px solid #89b4fa;
+}
+
+/* Region button - green accent */
+.capture-button.region {
+    border-left: 4px solid #a6e3a1;
+}
+
+/* Window button - purple accent */
+.capture-button.window {
+    border-left: 4px solid #cba6f7;
+}
+
+/* Bottom action buttons */
+.action-button {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    border-radius: 8px;
+    color: #bac2de;
+    font-size: 13px;
+    padding: 10px 16px;
+    min-height: 36px;
+}
+
+.action-button:hover {
+    background-color: #45475a;
+    color: #cdd6f4;
+}
+
+/* Toolbar styling */
+toolbar {
+    background-color: #181825;
+    border-bottom: 1px solid #313244;
+    padding: 4px 8px;
+}
+
+toolbar button {
+    background-color: transparent;
+    border: none;
+    border-radius: 6px;
+    color: #cdd6f4;
+    padding: 6px 10px;
+    margin: 2px;
+}
+
+toolbar button:hover {
+    background-color: #313244;
+}
+
+toolbar button:active,
+toolbar button:checked {
+    background-color: #45475a;
+}
+
+/* Separator styling */
+toolbar separator {
+    background-color: #45475a;
+    margin: 4px 8px;
+}
+
+/* Statusbar */
+statusbar {
+    background-color: #181825;
+    color: #6c7086;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-top: 1px solid #313244;
+}
+
+/* Scrolled window */
+scrolledwindow {
+    background-color: #11111b;
+}
+
+/* Spinbutton */
+spinbutton {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    color: #cdd6f4;
+    padding: 4px 8px;
+}
+
+spinbutton:focus {
+    border-color: #89b4fa;
+}
+
+/* Dialog styling */
+dialog {
+    background-color: #1e1e2e;
+}
+
+dialog headerbar {
+    background-color: #181825;
+    border-bottom: 1px solid #313244;
+}
+
+/* Message dialog */
+messagedialog {
+    background-color: #1e1e2e;
+}
+
+messagedialog .message-area {
+    color: #cdd6f4;
+}
+
+/* Entry fields */
+entry {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    color: #cdd6f4;
+    padding: 8px 12px;
+}
+
+entry:focus {
+    border-color: #89b4fa;
+    box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.2);
+}
+
+/* Labels */
+label {
+    color: #cdd6f4;
+}
+
+/* Checkbuttons */
+checkbutton {
+    color: #cdd6f4;
+}
+
+checkbutton check {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    border-radius: 4px;
+}
+
+checkbutton check:checked {
+    background-color: #89b4fa;
+    border-color: #89b4fa;
+}
+
+/* About dialog */
+aboutdialog {
+    background-color: #1e1e2e;
+}
+
+/* History button styling */
+.history-button {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    border-radius: 8px;
+    padding: 8px;
+    margin: 4px;
+}
+
+.history-button:hover {
+    background-color: #45475a;
+    border-color: #89b4fa;
+}
