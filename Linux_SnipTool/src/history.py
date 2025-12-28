@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 try:
     import gi

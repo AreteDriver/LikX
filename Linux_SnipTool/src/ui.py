@@ -849,7 +849,7 @@ class MainWindow:
         dialog.set_license_type(Gtk.License.MIT_X11)
         dialog.set_authors(["Linux SnipTool Contributors"])
         
-        from .capture import detect_display_server, DisplayServer
+        from .capture import detect_display_server
         display = detect_display_server()
         dialog.set_system_information(f"Display Server: {display.value}")
         

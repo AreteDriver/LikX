@@ -4,7 +4,6 @@ import json
 import subprocess
 from pathlib import Path
 from typing import Optional, Tuple
-import tempfile
 
 class Uploader:
     """Handles uploading screenshots to cloud services."""

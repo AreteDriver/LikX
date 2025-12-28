@@ -2,7 +2,7 @@
 
 import subprocess
 import os
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict
 
 class HotkeyManager:
     """Manages global keyboard shortcuts."""
