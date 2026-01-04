@@ -2,8 +2,9 @@
 
 try:
     import gi
+    gi.require_version('Gdk', '3.0')
     gi.require_version('GdkPixbuf', '2.0')
-    from gi.repository import GdkPixbuf
+    from gi.repository import Gdk, GdkPixbuf
     GTK_AVAILABLE = True
 except (ImportError, ValueError):
     GTK_AVAILABLE = False
@@ -36,7 +37,6 @@ def add_shadow(pixbuf, shadow_size: int = 10, opacity: float = 0.5):
             ctx.fill()
         
         # Draw original image on top
-        from gi.repository import Gdk
         Gdk.cairo_set_source_pixbuf(ctx, pixbuf, shadow_size, shadow_size)
         ctx.paint()
         
@@ -62,7 +62,6 @@ def add_border(pixbuf, border_width: int = 5, color: tuple = (0, 0, 0, 1)):
     """Add colored border to image."""
     try:
         import cairo
-        from gi.repository import Gdk
         
         old_width = pixbuf.get_width()
         old_height = pixbuf.get_height()
@@ -102,7 +101,6 @@ def add_background(pixbuf, bg_color: tuple = (1, 1, 1, 1), padding: int = 20):
     """Add colored background with padding."""
     try:
         import cairo
-        from gi.repository import Gdk
         
         old_width = pixbuf.get_width()
         old_height = pixbuf.get_height()
@@ -143,8 +141,7 @@ def round_corners(pixbuf, radius: int = 10):
     try:
         import cairo
         import math
-        from gi.repository import Gdk
-        
+
         width = pixbuf.get_width()
         height = pixbuf.get_height()
         

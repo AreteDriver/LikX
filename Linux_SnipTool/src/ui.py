@@ -34,7 +34,8 @@ class RegionSelector:
         self.end_x = 0
         self.end_y = 0
         self.is_selecting = False
-        
+        self.scale_factor = 1  # Will be set after window is realized
+
         self.window = Gtk.Window(type=Gtk.WindowType.POPUP)
         self.window.set_app_paintable(True)
         self.window.set_decorated(False)
@@ -63,12 +64,57 @@ class RegionSelector:
         )
         self.window.add_events(Gdk.EventMask.KEY_PRESS_MASK)
         
-        display = Gdk.Display.get_default()
-        cursor = Gdk.Cursor.new_from_name(display, "crosshair")
-        
         self.window.show_all()
+
+        # Create custom crosshair cursor with centered hotspot
+        display = Gdk.Display.get_default()
+        cursor = self._create_crosshair_cursor(display)
         self.window.get_window().set_cursor(cursor)
+
+        # Get scale factor for HiDPI displays
+        self.scale_factor = self.window.get_scale_factor()
     
+    def _create_crosshair_cursor(self, display: Gdk.Display) -> Gdk.Cursor:
+        """Create a crosshair cursor with hotspot at exact center."""
+        try:
+            import cairo
+        except ImportError:
+            # Fall back to system crosshair if cairo unavailable
+            return Gdk.Cursor.new_from_name(display, "crosshair")
+
+        size = 32
+        center = size // 2
+
+        # Create crosshair using cairo
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, size, size)
+        cr = cairo.Context(surface)
+
+        # Draw black outline for visibility
+        cr.set_source_rgba(0, 0, 0, 1)
+        cr.set_line_width(3)
+        cr.move_to(center, 2)
+        cr.line_to(center, size - 2)
+        cr.stroke()
+        cr.move_to(2, center)
+        cr.line_to(size - 2, center)
+        cr.stroke()
+
+        # Draw white center lines
+        cr.set_source_rgba(1, 1, 1, 1)
+        cr.set_line_width(1)
+        cr.move_to(center, 2)
+        cr.line_to(center, size - 2)
+        cr.stroke()
+        cr.move_to(2, center)
+        cr.line_to(size - 2, center)
+        cr.stroke()
+
+        # Convert cairo surface to pixbuf
+        pixbuf = Gdk.pixbuf_get_from_surface(surface, 0, 0, size, size)
+
+        # Create cursor with hotspot at exact center
+        return Gdk.Cursor.new_from_pixbuf(display, pixbuf, center, center)
+
     def _on_key_press(self, widget: Gtk.Widget, event: Gdk.EventKey) -> bool:
         if event.keyval == Gdk.KEY_Escape:
             self.window.destroy()
@@ -126,16 +172,18 @@ class RegionSelector:
             self.end_x = int(event.x)
             self.end_y = int(event.y)
             self.is_selecting = False
-            
+
             x = min(self.start_x, self.end_x)
             y = min(self.start_y, self.end_y)
             width = abs(self.end_x - self.start_x)
             height = abs(self.end_y - self.start_y)
-            
+
             self.window.destroy()
-            
+
             if width > 10 and height > 10:
-                self.callback(x, y, width, height)
+                # Apply scale factor for HiDPI displays
+                sf = self.scale_factor
+                self.callback(x * sf, y * sf, width * sf, height * sf)
         return True
     
     def _on_motion(self, widget: Gtk.Widget, event: Gdk.EventMotion) -> bool:
@@ -159,7 +207,9 @@ class EditorWindow:
         self.result = result
         self.editor_state = EditorState(result.pixbuf)
         self.uploader = Uploader()
-        
+        self._crosshair_cursor = None
+        self._arrow_cursor = None
+
         self.window = Gtk.Window(title="Linux SnipTool - Editor")
         self.window.set_default_size(900, 700)
         self.window.connect("destroy", self._on_destroy)
@@ -199,15 +249,72 @@ class EditorWindow:
         
         scrolled.add(self.drawing_area)
         main_box.pack_start(scrolled, True, True, 0)
-        
+
         # Status bar
         self.statusbar = Gtk.Statusbar()
         self.statusbar_context = self.statusbar.get_context_id("editor")
         self.statusbar.push(self.statusbar_context, "Ready")
         main_box.pack_start(self.statusbar, False, False, 0)
-        
+
         self.window.show_all()
-    
+
+        # Create cursors for drawing tools
+        self._init_cursors()
+        self._update_cursor()
+
+    def _init_cursors(self) -> None:
+        """Initialize cursors for drawing tools."""
+        display = Gdk.Display.get_default()
+        self._arrow_cursor = Gdk.Cursor.new_from_name(display, "default")
+
+        # Create crosshair cursor with centered hotspot
+        try:
+            import cairo
+            size = 24
+            center = size // 2
+
+            surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, size, size)
+            cr = cairo.Context(surface)
+
+            # Black outline
+            cr.set_source_rgba(0, 0, 0, 1)
+            cr.set_line_width(3)
+            cr.move_to(center, 2)
+            cr.line_to(center, size - 2)
+            cr.stroke()
+            cr.move_to(2, center)
+            cr.line_to(size - 2, center)
+            cr.stroke()
+
+            # White center
+            cr.set_source_rgba(1, 1, 1, 1)
+            cr.set_line_width(1)
+            cr.move_to(center, 2)
+            cr.line_to(center, size - 2)
+            cr.stroke()
+            cr.move_to(2, center)
+            cr.line_to(size - 2, center)
+            cr.stroke()
+
+            pixbuf = Gdk.pixbuf_get_from_surface(surface, 0, 0, size, size)
+            self._crosshair_cursor = Gdk.Cursor.new_from_pixbuf(display, pixbuf, center, center)
+        except ImportError:
+            self._crosshair_cursor = Gdk.Cursor.new_from_name(display, "crosshair")
+
+    def _update_cursor(self) -> None:
+        """Update cursor based on current tool."""
+        if not self.drawing_area.get_window():
+            return
+
+        drawing_tools = {ToolType.PEN, ToolType.HIGHLIGHTER, ToolType.LINE,
+                         ToolType.ARROW, ToolType.RECTANGLE, ToolType.ELLIPSE,
+                         ToolType.BLUR, ToolType.PIXELATE, ToolType.ERASER}
+
+        if self.editor_state.current_tool in drawing_tools:
+            self.drawing_area.get_window().set_cursor(self._crosshair_cursor)
+        else:
+            self.drawing_area.get_window().set_cursor(self._arrow_cursor)
+
     def _create_toolbar(self) -> Gtk.Toolbar:
         """Create the main tool toolbar."""
         toolbar = Gtk.Toolbar()
@@ -312,6 +419,7 @@ class EditorWindow:
     def _set_tool(self, tool: ToolType) -> None:
         """Set the current drawing tool."""
         self.editor_state.set_tool(tool)
+        self._update_cursor()
         self.statusbar.push(self.statusbar_context, f"Tool: {tool.value}")
     
     def _set_color(self, color: Color) -> None:
@@ -1129,31 +1237,26 @@ def _EditorWindow_init_enhanced(self, result):
     pin_btn.connect("clicked", lambda b: self._pin_to_desktop())
     self.color_toolbar.insert(pin_btn, -1)
     
-    # Effects menu
-    effects_menu = Gtk.Menu()
-    
-    shadow_item = Gtk.MenuItem(label="✨ Add Shadow")
-    shadow_item.connect("activate", lambda i: self._apply_shadow())
-    effects_menu.append(shadow_item)
-    
-    border_item = Gtk.MenuItem(label="🖼️ Add Border")
-    border_item.connect("activate", lambda i: self._apply_border())
-    effects_menu.append(border_item)
-    
-    background_item = Gtk.MenuItem(label="🎨 Add Background")
-    background_item.connect("activate", lambda i: self._apply_background())
-    effects_menu.append(background_item)
-    
-    corners_item = Gtk.MenuItem(label="⚪ Round Corners")
-    corners_item.connect("activate", lambda i: self._apply_round_corners())
-    effects_menu.append(corners_item)
-    
-    effects_menu.show_all()
-    
-    effects_btn = Gtk.MenuToolButton(label="✨ Effects")
-    effects_btn.set_tooltip_text("Apply visual effects")
-    effects_btn.set_menu(effects_menu)
-    self.color_toolbar.insert(effects_btn, -1)
+    # Effects toolbar buttons
+    shadow_btn = Gtk.ToolButton(label="✨ Shadow")
+    shadow_btn.set_tooltip_text("Add drop shadow")
+    shadow_btn.connect("clicked", lambda b: self._apply_shadow())
+    self.color_toolbar.insert(shadow_btn, -1)
+
+    border_btn = Gtk.ToolButton(label="🖼️ Border")
+    border_btn.set_tooltip_text("Add border")
+    border_btn.connect("clicked", lambda b: self._apply_border())
+    self.color_toolbar.insert(border_btn, -1)
+
+    bg_btn = Gtk.ToolButton(label="🎨 BG")
+    bg_btn.set_tooltip_text("Add background")
+    bg_btn.connect("clicked", lambda b: self._apply_background())
+    self.color_toolbar.insert(bg_btn, -1)
+
+    corners_btn = Gtk.ToolButton(label="⚪ Round")
+    corners_btn.set_tooltip_text("Round corners")
+    corners_btn.connect("clicked", lambda b: self._apply_round_corners())
+    self.color_toolbar.insert(corners_btn, -1)
     
     self.window.show_all()
 
