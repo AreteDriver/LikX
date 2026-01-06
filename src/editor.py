@@ -2278,7 +2278,7 @@ def _render_pixelate(ctx: Any, element: DrawingElement, base_pixbuf: Any) -> Non
 
 
 def _render_measure(ctx: Any, element: DrawingElement) -> None:
-    """Render a measurement line with pixel distance and dimensions."""
+    """Render a measurement line with pixel distance, dimensions, and angle."""
     if len(element.points) < 2:
         return
 
@@ -2294,11 +2294,41 @@ def _render_measure(ctx: Any, element: DrawingElement) -> None:
 
     # Line angle for perpendicular end markers
     line_angle = math.atan2(dy, dx)
+    angle_degrees = math.degrees(line_angle)
+    # Normalize to 0-360 range
+    if angle_degrees < 0:
+        angle_degrees += 360
     perp_angle = line_angle + math.pi / 2
     marker_size = 6
 
-    # Draw the main measurement line
+    # Check if line is axis-aligned (within 1 degree)
+    is_horizontal = abs(dy) < 2 and width > 10
+    is_vertical = abs(dx) < 2 and height > 10
+
     r, g, b, a = element.color.to_tuple()
+
+    # Draw dashed extension lines for axis-aligned measurements
+    if is_horizontal or is_vertical:
+        ctx.set_source_rgba(r, g, b, 0.3)
+        ctx.set_line_width(1)
+        ctx.set_dash([4, 4])
+        extend_len = 20
+        if is_horizontal:
+            # Extend horizontally beyond endpoints
+            ctx.move_to(start.x - extend_len, start.y)
+            ctx.line_to(start.x, start.y)
+            ctx.move_to(end.x, end.y)
+            ctx.line_to(end.x + extend_len, end.y)
+        else:
+            # Extend vertically beyond endpoints
+            ctx.move_to(start.x, start.y - extend_len)
+            ctx.line_to(start.x, start.y)
+            ctx.move_to(end.x, end.y)
+            ctx.line_to(end.x, end.y + extend_len)
+        ctx.stroke()
+        ctx.set_dash([])  # Reset dash
+
+    # Draw the main measurement line
     ctx.set_source_rgba(r, g, b, a)
     ctx.set_line_width(element.stroke_width)
     ctx.move_to(start.x, start.y)
@@ -2320,10 +2350,13 @@ def _render_measure(ctx: Any, element: DrawingElement) -> None:
     font_size = max(12, min(16, element.stroke_width * 4))
     ctx.set_font_size(font_size)
 
-    # Build label text
+    # Build label text with angle
     label = f"{distance:.0f}px"
     if width > 10 and height > 10:
         label += f" ({width:.0f}×{height:.0f})"
+    # Add angle for non-axis-aligned lines
+    if not is_horizontal and not is_vertical and distance > 20:
+        label += f" ∠{angle_degrees:.1f}°"
 
     # Get text extents for background
     extents = ctx.text_extents(label)
