@@ -1124,6 +1124,9 @@ class EditorWindow:
         Gdk.cairo_set_source_pixbuf(cr, self.result.pixbuf, 0, 0)
         cr.paint()
 
+        # Draw grid overlay if enabled (drawn before elements)
+        self._draw_grid(cr)
+
         # Draw annotations (also scaled)
         elements = self.editor_state.get_elements()
         if elements:
@@ -1294,13 +1297,20 @@ class EditorWindow:
 
                 x1, y1, x2, y2 = bbox
 
-                # Draw selection rectangle (dashed blue)
-                cr.set_source_rgba(0.2, 0.5, 1.0, 0.8)
+                # Draw selection rectangle (dashed blue, or red if locked)
+                if elem.locked:
+                    cr.set_source_rgba(0.8, 0.2, 0.2, 0.8)  # Red for locked
+                else:
+                    cr.set_source_rgba(0.2, 0.5, 1.0, 0.8)  # Blue for unlocked
                 cr.set_line_width(1.5)
                 cr.set_dash([4, 4])
                 cr.rectangle(x1, y1, x2 - x1, y2 - y1)
                 cr.stroke()
                 cr.set_dash([])  # Reset dash
+
+                # Draw lock indicator for locked elements
+                if elem.locked:
+                    self._draw_lock_indicator(cr, x2 - 8, y1 + 8)
 
         # Draw resize handles only for single selection
         if len(self.editor_state.selected_indices) == 1:
@@ -1358,6 +1368,57 @@ class EditorWindow:
                 cr.stroke()
 
         cr.set_dash([])  # Reset dash
+
+    def _draw_grid(self, cr) -> None:
+        """Draw grid overlay when grid snap is enabled."""
+        if not self.editor_state.grid_snap_enabled:
+            return
+
+        grid_size = self.editor_state.grid_size
+        width = self.result.pixbuf.get_width()
+        height = self.result.pixbuf.get_height()
+
+        # Light gray grid lines
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.3)
+        cr.set_line_width(0.5)
+
+        # Vertical lines
+        x = grid_size
+        while x < width:
+            cr.move_to(x, 0)
+            cr.line_to(x, height)
+            x += grid_size
+        cr.stroke()
+
+        # Horizontal lines
+        y = grid_size
+        while y < height:
+            cr.move_to(0, y)
+            cr.line_to(width, y)
+            y += grid_size
+        cr.stroke()
+
+    def _draw_lock_indicator(self, cr, x: float, y: float) -> None:
+        """Draw a small lock icon at the given position."""
+        # Lock icon: small padlock shape
+        size = 12
+        lx = x - size / 2
+        ly = y - size / 2
+
+        # Shackle (arc at top)
+        cr.set_source_rgba(0.8, 0.2, 0.2, 0.9)
+        cr.set_line_width(2)
+        cr.arc(lx + size / 2, ly + 4, 4, 3.14159, 0)
+        cr.stroke()
+
+        # Body (rectangle)
+        cr.rectangle(lx + 2, ly + 4, size - 4, size - 4)
+        cr.fill()
+
+        # Keyhole (small circle)
+        cr.set_source_rgba(1, 1, 1, 1)
+        cr.arc(lx + size / 2, ly + 8, 1.5, 0, 2 * 3.14159)
+        cr.fill()
 
     def _apply_crop(self) -> None:
         """Apply the crop operation to the image."""
@@ -1528,7 +1589,9 @@ class EditorWindow:
         # Handle SELECT tool dragging (move/resize)
         if self.editor_state.current_tool == ToolType.SELECT:
             if self.editor_state._drag_start is not None:
-                if self.editor_state.move_selected(img_x, img_y):
+                # Shift locks aspect ratio during resize
+                shift = bool(event.state & Gdk.ModifierType.SHIFT_MASK)
+                if self.editor_state.move_selected(img_x, img_y, aspect_locked=shift):
                     self.drawing_area.queue_draw()
             else:
                 # Update cursor based on hover position
@@ -1713,6 +1776,126 @@ class EditorWindow:
             self._show_command_palette()
             return True
 
+        # Ctrl+Shift+H - Distribute horizontally
+        if ctrl and shift and event.keyval in (Gdk.KEY_h, Gdk.KEY_H):
+            if self.editor_state.distribute_horizontal():
+                self._show_toast("Distributed horizontally")
+                self.drawing_area.queue_draw()
+            else:
+                self._show_toast("Select 3+ elements to distribute")
+            return True
+
+        # Ctrl+Shift+J - Distribute vertically
+        if ctrl and shift and event.keyval in (Gdk.KEY_j, Gdk.KEY_J):
+            if self.editor_state.distribute_vertical():
+                self._show_toast("Distributed vertically")
+                self.drawing_area.queue_draw()
+            else:
+                self._show_toast("Select 3+ elements to distribute")
+            return True
+
+        # Ctrl+Shift+G - Ungroup
+        if ctrl and shift and event.keyval in (Gdk.KEY_g, Gdk.KEY_G):
+            if self.editor_state.ungroup_selected():
+                self._show_toast("Ungrouped")
+                self.drawing_area.queue_draw()
+            else:
+                self._show_toast("No groups to ungroup")
+            return True
+
+        # Ctrl+G - Group (must check after Ctrl+Shift+G)
+        if ctrl and not shift and event.keyval in (Gdk.KEY_g, Gdk.KEY_G):
+            if self.editor_state.group_selected():
+                count = len(self.editor_state.selected_indices)
+                self._show_toast(f"Grouped {count} elements")
+                self.drawing_area.queue_draw()
+            else:
+                self._show_toast("Select 2+ elements to group")
+            return True
+
+        # Alignment shortcuts (Ctrl+Alt)
+        alt = event.state & Gdk.ModifierType.MOD1_MASK
+        if ctrl and alt:
+            if event.keyval in (Gdk.KEY_l, Gdk.KEY_L):
+                if self.editor_state.align_left():
+                    self._show_toast("Aligned left")
+                    self.drawing_area.queue_draw()
+                else:
+                    self._show_toast("Select 2+ elements to align")
+                return True
+            elif event.keyval in (Gdk.KEY_r, Gdk.KEY_R):
+                if self.editor_state.align_right():
+                    self._show_toast("Aligned right")
+                    self.drawing_area.queue_draw()
+                else:
+                    self._show_toast("Select 2+ elements to align")
+                return True
+            elif event.keyval in (Gdk.KEY_t, Gdk.KEY_T):
+                if self.editor_state.align_top():
+                    self._show_toast("Aligned top")
+                    self.drawing_area.queue_draw()
+                else:
+                    self._show_toast("Select 2+ elements to align")
+                return True
+            elif event.keyval in (Gdk.KEY_b, Gdk.KEY_B):
+                if self.editor_state.align_bottom():
+                    self._show_toast("Aligned bottom")
+                    self.drawing_area.queue_draw()
+                else:
+                    self._show_toast("Select 2+ elements to align")
+                return True
+            elif event.keyval in (Gdk.KEY_c, Gdk.KEY_C):
+                if self.editor_state.align_center_horizontal():
+                    self._show_toast("Aligned center (horizontal)")
+                    self.drawing_area.queue_draw()
+                else:
+                    self._show_toast("Select 2+ elements to align")
+                return True
+            elif event.keyval in (Gdk.KEY_m, Gdk.KEY_M):
+                if self.editor_state.align_center_vertical():
+                    self._show_toast("Aligned center (vertical)")
+                    self.drawing_area.queue_draw()
+                else:
+                    self._show_toast("Select 2+ elements to align")
+                return True
+            elif event.keyval in (Gdk.KEY_w, Gdk.KEY_W):
+                if self.editor_state.match_width():
+                    self._show_toast("Matched width")
+                    self.drawing_area.queue_draw()
+                else:
+                    self._show_toast("Select 2+ elements to match")
+                return True
+            elif event.keyval in (Gdk.KEY_e, Gdk.KEY_E):
+                if self.editor_state.match_height():
+                    self._show_toast("Matched height")
+                    self.drawing_area.queue_draw()
+                else:
+                    self._show_toast("Select 2+ elements to match")
+                return True
+            elif event.keyval in (Gdk.KEY_s, Gdk.KEY_S):
+                if self.editor_state.match_size():
+                    self._show_toast("Matched size")
+                    self.drawing_area.queue_draw()
+                else:
+                    self._show_toast("Select 2+ elements to match")
+                return True
+            elif event.keyval in (Gdk.KEY_f, Gdk.KEY_F):
+                if self.editor_state.flip_vertical():
+                    self._show_toast("Flipped vertically")
+                    self.drawing_area.queue_draw()
+                else:
+                    self._show_toast("Select element(s) to flip")
+                return True
+
+        # Ctrl+Shift+F - Flip horizontal
+        if ctrl and shift and event.keyval in (Gdk.KEY_f, Gdk.KEY_F):
+            if self.editor_state.flip_horizontal():
+                self._show_toast("Flipped horizontally")
+                self.drawing_area.queue_draw()
+            else:
+                self._show_toast("Select element(s) to flip")
+            return True
+
         # Ctrl shortcuts
         if ctrl:
             if event.keyval == Gdk.KEY_s:
@@ -1758,6 +1941,24 @@ class EditorWindow:
                     count = len(self.editor_state.selected_indices)
                     self._show_toast(f"Duplicated {count} annotation(s)")
                     self.drawing_area.queue_draw()
+                return True
+            elif event.keyval == Gdk.KEY_l:
+                # Ctrl+L - Lock/unlock selected
+                if self.editor_state.toggle_lock_selected():
+                    locked = self.editor_state.is_selection_locked()
+                    state = "Locked" if locked else "Unlocked"
+                    self._show_toast(state)
+                    self.drawing_area.queue_draw()
+                else:
+                    self._show_toast("Select element(s) to lock")
+                return True
+            elif event.keyval == Gdk.KEY_apostrophe:
+                # Ctrl+' - Toggle grid snap
+                new_state = not self.editor_state.grid_snap_enabled
+                self.editor_state.set_grid_snap(new_state)
+                state = "Grid snap ON" if new_state else "Grid snap OFF"
+                self._show_toast(state)
+                self.drawing_area.queue_draw()
                 return True
 
         # Tool shortcuts (no modifier)

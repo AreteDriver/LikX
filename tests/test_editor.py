@@ -1761,3 +1761,1067 @@ class TestDuplicate:
 
         # Duplicate should be unchanged (except for offset)
         assert state.elements[1].points[0].x == 30  # 10 + 20 offset
+
+
+class TestDistribute:
+    """Test distribute horizontal/vertical methods."""
+
+    def test_distribute_horizontal_requires_3_elements(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # Only 2 elements
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 10)
+        state.finish_drawing(140, 50)
+
+        state.select_at(30, 30)
+        state.select_at(120, 30, add_to_selection=True)
+
+        result = state.distribute_horizontal()
+        assert result is False  # Need at least 3
+
+    def test_distribute_horizontal_with_3_elements(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # Create 3 rectangles at x=10, x=50, x=200 (uneven spacing)
+        state.start_drawing(10, 10)
+        state.finish_drawing(30, 50)  # center at x=20
+        state.start_drawing(50, 10)
+        state.finish_drawing(70, 50)  # center at x=60
+        state.start_drawing(200, 10)
+        state.finish_drawing(220, 50)  # center at x=210
+
+        # Select all 3
+        state.select_at(20, 30)
+        state.select_at(60, 30, add_to_selection=True)
+        state.select_at(210, 30, add_to_selection=True)
+
+        result = state.distribute_horizontal()
+        assert result is True
+
+        # First and last should stay in place, middle should be centered
+        # Total span: 210 - 20 = 190, spacing = 95
+        # Middle should be at x = 20 + 95 = 115 (center)
+        # Middle rect points should be at x = 105, 125 (was 50, 70)
+        middle = state.elements[1]
+        middle_center = (middle.points[0].x + middle.points[1].x) / 2
+        assert abs(middle_center - 115) < 1
+
+    def test_distribute_horizontal_preserves_first_last(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # First at x=0, last at x=300
+        state.start_drawing(0, 0)
+        state.finish_drawing(20, 20)
+        state.start_drawing(100, 0)
+        state.finish_drawing(120, 20)
+        state.start_drawing(300, 0)
+        state.finish_drawing(320, 20)
+
+        state.select_at(10, 10)
+        state.select_at(110, 10, add_to_selection=True)
+        state.select_at(310, 10, add_to_selection=True)
+
+        first_center_before = 10
+        last_center_before = 310
+
+        state.distribute_horizontal()
+
+        # First and last should be unchanged
+        first_center_after = (state.elements[0].points[0].x + state.elements[0].points[1].x) / 2
+        last_center_after = (state.elements[2].points[0].x + state.elements[2].points[1].x) / 2
+        assert abs(first_center_after - first_center_before) < 0.1
+        assert abs(last_center_after - last_center_before) < 0.1
+
+    def test_distribute_vertical_requires_3_elements(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(10, 100)
+        state.finish_drawing(50, 140)
+
+        state.select_at(30, 30)
+        state.select_at(30, 120, add_to_selection=True)
+
+        result = state.distribute_vertical()
+        assert result is False
+
+    def test_distribute_vertical_with_3_elements(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # Create 3 rectangles at y=10, y=50, y=200 (uneven spacing)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 30)  # center at y=20
+        state.start_drawing(10, 50)
+        state.finish_drawing(50, 70)  # center at y=60
+        state.start_drawing(10, 200)
+        state.finish_drawing(50, 220)  # center at y=210
+
+        state.select_at(30, 20)
+        state.select_at(30, 60, add_to_selection=True)
+        state.select_at(30, 210, add_to_selection=True)
+
+        result = state.distribute_vertical()
+        assert result is True
+
+        # Middle should be at y = 20 + 95 = 115 (center)
+        middle = state.elements[1]
+        middle_center = (middle.points[0].y + middle.points[1].y) / 2
+        assert abs(middle_center - 115) < 1
+
+    def test_distribute_horizontal_saves_undo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        for x in [0, 100, 300]:
+            state.start_drawing(x, 0)
+            state.finish_drawing(x + 20, 20)
+
+        state.select_at(10, 10)
+        state.select_at(110, 10, add_to_selection=True)
+        state.select_at(310, 10, add_to_selection=True)
+
+        undo_count = len(state.undo_stack)
+        state.distribute_horizontal()
+        assert len(state.undo_stack) == undo_count + 1
+
+    def test_distribute_vertical_saves_undo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        for y in [0, 100, 300]:
+            state.start_drawing(0, y)
+            state.finish_drawing(20, y + 20)
+
+        state.select_at(10, 10)
+        state.select_at(10, 110, add_to_selection=True)
+        state.select_at(10, 310, add_to_selection=True)
+
+        undo_count = len(state.undo_stack)
+        state.distribute_vertical()
+        assert len(state.undo_stack) == undo_count + 1
+
+    def test_distribute_horizontal_clears_redo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        for x in [0, 100, 300]:
+            state.start_drawing(x, 0)
+            state.finish_drawing(x + 20, 20)
+
+        state.select_at(10, 10)
+        state.select_at(110, 10, add_to_selection=True)
+        state.select_at(310, 10, add_to_selection=True)
+
+        state.distribute_horizontal()
+        state.undo()
+        assert len(state.redo_stack) > 0
+
+        state.distribute_horizontal()
+        assert len(state.redo_stack) == 0
+
+    def test_distribute_no_selection_returns_false(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        for x in [0, 100, 300]:
+            state.start_drawing(x, 0)
+            state.finish_drawing(x + 20, 20)
+
+        # No selection
+        assert state.distribute_horizontal() is False
+        assert state.distribute_vertical() is False
+
+
+class TestAlignment:
+    """Test alignment methods."""
+
+    def test_align_left_requires_2_elements(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        assert state.align_left() is False  # Need at least 2
+
+    def test_align_left_moves_to_leftmost(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # First at x=10, second at x=100
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 10)
+        state.finish_drawing(140, 50)
+
+        state.select_at(30, 30)
+        state.select_at(120, 30, add_to_selection=True)
+
+        result = state.align_left()
+        assert result is True
+
+        # Both should now have left edge at x=10
+        bbox0 = state._get_element_bbox(state.elements[0])
+        bbox1 = state._get_element_bbox(state.elements[1])
+        assert abs(bbox0[0] - 10) < 0.1
+        assert abs(bbox1[0] - 10) < 0.1
+
+    def test_align_right_moves_to_rightmost(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 10)
+        state.finish_drawing(200, 50)
+
+        state.select_at(30, 30)
+        state.select_at(150, 30, add_to_selection=True)
+
+        result = state.align_right()
+        assert result is True
+
+        # Both should now have right edge at x=200
+        bbox0 = state._get_element_bbox(state.elements[0])
+        bbox1 = state._get_element_bbox(state.elements[1])
+        assert abs(bbox0[2] - 200) < 0.1
+        assert abs(bbox1[2] - 200) < 0.1
+
+    def test_align_top_moves_to_topmost(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(10, 100)
+        state.finish_drawing(50, 150)
+
+        state.select_at(30, 30)
+        state.select_at(30, 125, add_to_selection=True)
+
+        result = state.align_top()
+        assert result is True
+
+        # Both should now have top edge at y=10
+        bbox0 = state._get_element_bbox(state.elements[0])
+        bbox1 = state._get_element_bbox(state.elements[1])
+        assert abs(bbox0[1] - 10) < 0.1
+        assert abs(bbox1[1] - 10) < 0.1
+
+    def test_align_bottom_moves_to_bottommost(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(10, 100)
+        state.finish_drawing(50, 200)
+
+        state.select_at(30, 30)
+        state.select_at(30, 150, add_to_selection=True)
+
+        result = state.align_bottom()
+        assert result is True
+
+        # Both should now have bottom edge at y=200
+        bbox0 = state._get_element_bbox(state.elements[0])
+        bbox1 = state._get_element_bbox(state.elements[1])
+        assert abs(bbox0[3] - 200) < 0.1
+        assert abs(bbox1[3] - 200) < 0.1
+
+    def test_align_center_horizontal(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # First centered at x=30, second at x=170
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)  # center x = 30
+        state.start_drawing(150, 10)
+        state.finish_drawing(190, 50)  # center x = 170
+
+        state.select_at(30, 30)
+        state.select_at(170, 30, add_to_selection=True)
+
+        result = state.align_center_horizontal()
+        assert result is True
+
+        # Both should now have same center X (average = 100)
+        bbox0 = state._get_element_bbox(state.elements[0])
+        bbox1 = state._get_element_bbox(state.elements[1])
+        center0 = (bbox0[0] + bbox0[2]) / 2
+        center1 = (bbox1[0] + bbox1[2]) / 2
+        assert abs(center0 - center1) < 0.1
+
+    def test_align_center_vertical(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # First centered at y=30, second at y=170
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)  # center y = 30
+        state.start_drawing(10, 150)
+        state.finish_drawing(50, 190)  # center y = 170
+
+        state.select_at(30, 30)
+        state.select_at(30, 170, add_to_selection=True)
+
+        result = state.align_center_vertical()
+        assert result is True
+
+        # Both should now have same center Y (average = 100)
+        bbox0 = state._get_element_bbox(state.elements[0])
+        bbox1 = state._get_element_bbox(state.elements[1])
+        center0 = (bbox0[1] + bbox0[3]) / 2
+        center1 = (bbox1[1] + bbox1[3]) / 2
+        assert abs(center0 - center1) < 0.1
+
+    def test_align_saves_undo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 10)
+        state.finish_drawing(140, 50)
+
+        state.select_at(30, 30)
+        state.select_at(120, 30, add_to_selection=True)
+
+        undo_count = len(state.undo_stack)
+        state.align_left()
+        assert len(state.undo_stack) == undo_count + 1
+
+    def test_align_clears_redo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 10)
+        state.finish_drawing(140, 50)
+
+        state.select_at(30, 30)
+        state.select_at(120, 30, add_to_selection=True)
+
+        state.align_left()
+        state.undo()
+        assert len(state.redo_stack) > 0
+
+        state.align_right()
+        assert len(state.redo_stack) == 0
+
+    def test_align_no_selection_returns_false(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 10)
+        state.finish_drawing(140, 50)
+
+        # No selection
+        assert state.align_left() is False
+        assert state.align_right() is False
+        assert state.align_top() is False
+        assert state.align_bottom() is False
+        assert state.align_center_horizontal() is False
+        assert state.align_center_vertical() is False
+
+
+class TestAspectLockResize:
+    """Test aspect-locked resize functionality."""
+
+    def test_resize_without_aspect_lock(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)  # 2:1 aspect ratio
+
+        state.select_at(50, 25)
+        # Simulate resize handle grab (SE corner)
+        state._resize_handle = 'se'
+        state._drag_start = Point(50, 25)
+
+        # Resize without aspect lock - can change proportions
+        result = state._resize_selected(150, 150, aspect_locked=False)
+        assert result is True
+
+        bbox = state._get_element_bbox(state.elements[0])
+        width = bbox[2] - bbox[0]
+        height = bbox[3] - bbox[1]
+        # Without lock, aspect ratio can change
+        assert abs(width - 150) < 1
+        assert abs(height - 150) < 1
+
+    def test_resize_with_aspect_lock_corner(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)  # 2:1 aspect ratio
+
+        state.select_at(50, 25)
+        state._resize_handle = 'se'
+        state._drag_start = Point(50, 25)
+
+        # Get original aspect ratio
+        orig_bbox = state._get_element_bbox(state.elements[0])
+        orig_ratio = (orig_bbox[2] - orig_bbox[0]) / (orig_bbox[3] - orig_bbox[1])
+
+        # Resize with aspect lock
+        result = state._resize_selected(200, 200, aspect_locked=True)
+        assert result is True
+
+        bbox = state._get_element_bbox(state.elements[0])
+        width = bbox[2] - bbox[0]
+        height = bbox[3] - bbox[1]
+        new_ratio = width / height
+
+        # With lock, aspect ratio should be preserved
+        assert abs(new_ratio - orig_ratio) < 0.1
+
+    def test_resize_with_aspect_lock_horizontal_edge(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)  # 2:1 aspect ratio
+
+        state.select_at(50, 25)
+        state._resize_handle = 'e'  # East (right edge)
+        state._drag_start = Point(50, 25)
+
+        orig_bbox = state._get_element_bbox(state.elements[0])
+        orig_ratio = (orig_bbox[2] - orig_bbox[0]) / (orig_bbox[3] - orig_bbox[1])
+
+        # Resize east edge with aspect lock - should also change height
+        result = state._resize_selected(200, 25, aspect_locked=True)
+        assert result is True
+
+        bbox = state._get_element_bbox(state.elements[0])
+        width = bbox[2] - bbox[0]
+        height = bbox[3] - bbox[1]
+        new_ratio = width / height
+
+        # With lock, aspect ratio should be preserved
+        assert abs(new_ratio - orig_ratio) < 0.1
+
+    def test_resize_with_aspect_lock_vertical_edge(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)  # 2:1 aspect ratio
+
+        state.select_at(50, 25)
+        state._resize_handle = 's'  # South (bottom edge)
+        state._drag_start = Point(50, 25)
+
+        orig_bbox = state._get_element_bbox(state.elements[0])
+        orig_ratio = (orig_bbox[2] - orig_bbox[0]) / (orig_bbox[3] - orig_bbox[1])
+
+        # Resize south edge with aspect lock - should also change width
+        result = state._resize_selected(50, 100, aspect_locked=True)
+        assert result is True
+
+        bbox = state._get_element_bbox(state.elements[0])
+        width = bbox[2] - bbox[0]
+        height = bbox[3] - bbox[1]
+        new_ratio = width / height
+
+        # With lock, aspect ratio should be preserved
+        assert abs(new_ratio - orig_ratio) < 0.1
+
+    def test_move_selected_passes_aspect_lock(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.select_at(50, 25)
+        state._resize_handle = 'se'
+        state._drag_start = Point(50, 25)
+
+        # Call move_selected with aspect_locked=True
+        result = state.move_selected(200, 200, aspect_locked=True)
+        assert result is True
+
+        # Should maintain 2:1 ratio
+        bbox = state._get_element_bbox(state.elements[0])
+        width = bbox[2] - bbox[0]
+        height = bbox[3] - bbox[1]
+        ratio = width / height
+        assert abs(ratio - 2.0) < 0.1
+
+    def test_resize_minimum_size_still_enforced(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 100)
+
+        state.select_at(50, 50)
+        state._resize_handle = 'se'
+        state._drag_start = Point(50, 50)
+
+        # Try to resize to very small size
+        result = state._resize_selected(5, 5, aspect_locked=True)
+        assert result is False  # Should fail due to minimum size
+
+    def test_resize_nw_corner_with_aspect_lock(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(100, 50)
+        state.finish_drawing(200, 100)  # 2:1 ratio
+
+        state.select_at(150, 75)
+        state._resize_handle = 'nw'
+        state._drag_start = Point(150, 75)
+
+        orig_bbox = state._get_element_bbox(state.elements[0])
+        orig_ratio = (orig_bbox[2] - orig_bbox[0]) / (orig_bbox[3] - orig_bbox[1])
+
+        # Resize NW corner with aspect lock
+        result = state._resize_selected(0, 0, aspect_locked=True)
+        assert result is True
+
+        bbox = state._get_element_bbox(state.elements[0])
+        width = bbox[2] - bbox[0]
+        height = bbox[3] - bbox[1]
+        new_ratio = width / height
+
+        # SE corner should stay anchored, ratio preserved
+        assert abs(bbox[2] - 200) < 1  # Right edge unchanged
+        assert abs(bbox[3] - 100) < 1  # Bottom edge unchanged
+        assert abs(new_ratio - orig_ratio) < 0.1
+
+
+class TestGroupUngroup:
+    """Test group/ungroup functionality."""
+
+    def test_group_requires_2_elements(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        assert state.group_selected() is False  # Need at least 2
+
+    def test_group_assigns_same_id(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 10)
+        state.finish_drawing(150, 50)
+
+        state.select_at(30, 30)
+        state.select_at(125, 30, add_to_selection=True)
+
+        result = state.group_selected()
+        assert result is True
+
+        # Both elements should have same group_id
+        gid0 = state.elements[0].group_id
+        gid1 = state.elements[1].group_id
+        assert gid0 is not None
+        assert gid0 == gid1
+
+    def test_group_saves_undo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 10)
+        state.finish_drawing(150, 50)
+
+        state.select_at(30, 30)
+        state.select_at(125, 30, add_to_selection=True)
+
+        undo_count = len(state.undo_stack)
+        state.group_selected()
+        assert len(state.undo_stack) == undo_count + 1
+
+    def test_ungroup_removes_group_id(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 10)
+        state.finish_drawing(150, 50)
+
+        state.select_at(30, 30)
+        state.select_at(125, 30, add_to_selection=True)
+        state.group_selected()
+
+        # Both should have group_id
+        assert state.elements[0].group_id is not None
+
+        result = state.ungroup_selected()
+        assert result is True
+
+        # Both should now have no group_id
+        assert state.elements[0].group_id is None
+        assert state.elements[1].group_id is None
+
+    def test_ungroup_no_groups_returns_false(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        assert state.ungroup_selected() is False
+
+    def test_ungroup_saves_undo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 10)
+        state.finish_drawing(150, 50)
+
+        state.select_at(30, 30)
+        state.select_at(125, 30, add_to_selection=True)
+        state.group_selected()
+
+        undo_count = len(state.undo_stack)
+        state.ungroup_selected()
+        assert len(state.undo_stack) == undo_count + 1
+
+    def test_select_grouped_element_selects_all(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 10)
+        state.finish_drawing(150, 50)
+
+        # Group them
+        state.select_at(30, 30)
+        state.select_at(125, 30, add_to_selection=True)
+        state.group_selected()
+
+        # Deselect
+        state.deselect()
+        assert len(state.selected_indices) == 0
+
+        # Select just one element - should select both
+        state.select_at(30, 30)
+        assert len(state.selected_indices) == 2
+        assert 0 in state.selected_indices
+        assert 1 in state.selected_indices
+
+    def test_select_ungrouped_selects_single(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 10)
+        state.finish_drawing(150, 50)
+
+        # Select just one (not grouped)
+        state.select_at(30, 30)
+        assert len(state.selected_indices) == 1
+        assert 0 in state.selected_indices
+
+    def test_group_move_moves_all(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 0)
+        state.finish_drawing(150, 50)
+
+        # Group them
+        state.select_at(25, 25)
+        state.select_at(125, 25, add_to_selection=True)
+        state.group_selected()
+
+        # Deselect and re-select just one
+        state.deselect()
+        state.select_at(25, 25)
+
+        # Both should be selected due to grouping
+        assert len(state.selected_indices) == 2
+
+        # Move
+        state.move_selected(50, 50)
+
+        # Both should have moved
+        bbox0 = state._get_element_bbox(state.elements[0])
+        bbox1 = state._get_element_bbox(state.elements[1])
+        # Element 0 should have moved by 25,25 (from center 25,25 to 50,50)
+        assert bbox0[0] > 0  # Left edge should have moved right
+        assert bbox1[0] > 100  # Element 1 should also have moved
+
+    def test_multiple_groups_independent(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # Create 4 elements
+        state.start_drawing(0, 0)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 0)
+        state.finish_drawing(150, 50)
+        state.start_drawing(200, 0)
+        state.finish_drawing(250, 50)
+        state.start_drawing(300, 0)
+        state.finish_drawing(350, 50)
+
+        # Group 0 and 1
+        state.select_at(25, 25)
+        state.select_at(125, 25, add_to_selection=True)
+        state.group_selected()
+        gid_a = state.elements[0].group_id
+
+        # Group 2 and 3
+        state.deselect()
+        state.select_at(225, 25)
+        state.select_at(325, 25, add_to_selection=True)
+        state.group_selected()
+        gid_b = state.elements[2].group_id
+
+        # Group IDs should be different
+        assert gid_a != gid_b
+
+        # Selecting element 0 should select 0 and 1, but not 2 and 3
+        state.deselect()
+        state.select_at(25, 25)
+        assert state.selected_indices == {0, 1}
+
+
+class TestMatchSize:
+    """Test match width/height/size methods."""
+
+    def test_match_width_requires_2_elements(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+        state.select_at(50, 25)
+        assert not state.match_width()
+
+    def test_match_width_resizes_to_first(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # First element: 100px wide
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+        # Second element: 50px wide
+        state.start_drawing(200, 0)
+        state.finish_drawing(250, 50)
+
+        state.select_at(50, 25)
+        state.select_at(225, 25, add_to_selection=True)
+        assert state.match_width()
+
+        bbox1 = state._get_element_bbox(state.elements[1])
+        width1 = bbox1[2] - bbox1[0]
+        assert abs(width1 - 100) < 1  # Should be 100px wide now
+
+    def test_match_height_requires_2_elements(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+        state.select_at(50, 25)
+        assert not state.match_height()
+
+    def test_match_height_resizes_to_first(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # First element: 100px tall
+        state.start_drawing(0, 0)
+        state.finish_drawing(50, 100)
+        # Second element: 50px tall
+        state.start_drawing(100, 0)
+        state.finish_drawing(150, 50)
+
+        state.select_at(25, 50)
+        state.select_at(125, 25, add_to_selection=True)
+        assert state.match_height()
+
+        bbox1 = state._get_element_bbox(state.elements[1])
+        height1 = bbox1[3] - bbox1[1]
+        assert abs(height1 - 100) < 1  # Should be 100px tall now
+
+    def test_match_size_requires_2_elements(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+        state.select_at(50, 25)
+        assert not state.match_size()
+
+    def test_match_size_resizes_both_dimensions(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # First element: 100x80
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 80)
+        # Second element: 50x50
+        state.start_drawing(200, 0)
+        state.finish_drawing(250, 50)
+
+        state.select_at(50, 40)
+        state.select_at(225, 25, add_to_selection=True)
+        assert state.match_size()
+
+        bbox1 = state._get_element_bbox(state.elements[1])
+        width1 = bbox1[2] - bbox1[0]
+        height1 = bbox1[3] - bbox1[1]
+        assert abs(width1 - 100) < 1
+        assert abs(height1 - 80) < 1
+
+    def test_match_width_saves_undo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+        state.start_drawing(200, 0)
+        state.finish_drawing(250, 50)
+
+        initial_undo_count = len(state.undo_stack)
+        state.select_at(50, 25)
+        state.select_at(225, 25, add_to_selection=True)
+        state.match_width()
+        assert len(state.undo_stack) == initial_undo_count + 1
+
+    def test_match_width_skips_locked(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)  # 100px wide
+        state.start_drawing(200, 0)
+        state.finish_drawing(250, 50)  # 50px wide
+
+        # Lock the second element
+        state.elements[1].locked = True
+
+        state.select_at(50, 25)
+        state.select_at(225, 25, add_to_selection=True)
+        state.match_width()
+
+        # Second element should still be 50px wide (locked)
+        bbox1 = state._get_element_bbox(state.elements[1])
+        width1 = bbox1[2] - bbox1[0]
+        assert abs(width1 - 50) < 1
+
+
+class TestFlip:
+    """Test flip horizontal/vertical methods."""
+
+    def test_flip_horizontal_no_selection(self):
+        state = EditorState()
+        assert not state.flip_horizontal()
+
+    def test_flip_horizontal_mirrors_points(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.select_at(50, 25)
+        original_x0 = state.elements[0].points[0].x
+        original_x1 = state.elements[0].points[1].x
+
+        assert state.flip_horizontal()
+
+        # Points should be mirrored around center
+        new_x0 = state.elements[0].points[0].x
+        new_x1 = state.elements[0].points[1].x
+        center = (original_x0 + original_x1) / 2
+        assert abs(new_x0 - (2 * center - original_x0)) < 0.1
+        assert abs(new_x1 - (2 * center - original_x1)) < 0.1
+
+    def test_flip_vertical_no_selection(self):
+        state = EditorState()
+        assert not state.flip_vertical()
+
+    def test_flip_vertical_mirrors_points(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(50, 100)
+
+        state.select_at(25, 50)
+        original_y0 = state.elements[0].points[0].y
+        original_y1 = state.elements[0].points[1].y
+
+        assert state.flip_vertical()
+
+        # Points should be mirrored around center
+        new_y0 = state.elements[0].points[0].y
+        new_y1 = state.elements[0].points[1].y
+        center = (original_y0 + original_y1) / 2
+        assert abs(new_y0 - (2 * center - original_y0)) < 0.1
+        assert abs(new_y1 - (2 * center - original_y1)) < 0.1
+
+    def test_flip_saves_undo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        initial_undo_count = len(state.undo_stack)
+        state.select_at(50, 25)
+        state.flip_horizontal()
+        assert len(state.undo_stack) == initial_undo_count + 1
+
+    def test_flip_skips_locked(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.elements[0].locked = True
+        state.select_at(50, 25)
+
+        # Should return False because all selected are locked
+        assert not state.flip_horizontal()
+
+
+class TestLock:
+    """Test lock/unlock functionality."""
+
+    def test_toggle_lock_no_selection(self):
+        state = EditorState()
+        assert not state.toggle_lock_selected()
+
+    def test_toggle_lock_locks_unlocked(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.select_at(50, 25)
+        assert not state.elements[0].locked
+
+        assert state.toggle_lock_selected()
+        assert state.elements[0].locked
+
+    def test_toggle_lock_unlocks_locked(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.elements[0].locked = True
+        state.select_at(50, 25)
+
+        assert state.toggle_lock_selected()
+        assert not state.elements[0].locked
+
+    def test_is_selection_locked_true(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.elements[0].locked = True
+        state.select_at(50, 25)
+
+        assert state.is_selection_locked()
+
+    def test_is_selection_locked_false(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.select_at(50, 25)
+        assert not state.is_selection_locked()
+
+    def test_locked_element_cannot_be_moved(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.elements[0].locked = True
+        state.select_at(50, 25)
+        state._drag_start = Point(50, 25)
+
+        original_x = state.elements[0].points[0].x
+        result = state.move_selected(100, 100)
+
+        assert not result
+        assert state.elements[0].points[0].x == original_x
+
+    def test_locked_element_cannot_be_deleted(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.elements[0].locked = True
+        state.select_at(50, 25)
+
+        result = state.delete_selected()
+        assert not result
+        assert len(state.elements) == 1
+
+    def test_locked_element_cannot_be_nudged(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.elements[0].locked = True
+        state.select_at(50, 25)
+
+        original_x = state.elements[0].points[0].x
+        result = state.nudge_selected(10, 10)
+
+        assert not result
+        assert state.elements[0].points[0].x == original_x
+
+    def test_toggle_lock_saves_undo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        initial_undo_count = len(state.undo_stack)
+        state.select_at(50, 25)
+        state.toggle_lock_selected()
+        assert len(state.undo_stack) == initial_undo_count + 1
+
+
+class TestGridSnap:
+    """Test grid snapping functionality."""
+
+    def test_grid_snap_default_disabled(self):
+        state = EditorState()
+        assert not state.grid_snap_enabled
+        assert state.grid_size == 20
+
+    def test_set_grid_snap_enables(self):
+        state = EditorState()
+        state.set_grid_snap(True, 25)
+        assert state.grid_snap_enabled
+        assert state.grid_size == 25
+
+    def test_set_grid_snap_clamps_size(self):
+        state = EditorState()
+        state.set_grid_snap(True, 1)
+        assert state.grid_size == 5  # Minimum
+
+        state.set_grid_snap(True, 200)
+        assert state.grid_size == 100  # Maximum
+
+    def test_snap_to_grid_when_disabled(self):
+        state = EditorState()
+        state.grid_snap_enabled = False
+        x, y = state._snap_to_grid(17, 23)
+        assert x == 17
+        assert y == 23
+
+    def test_snap_to_grid_when_enabled(self):
+        state = EditorState()
+        state.grid_snap_enabled = True
+        state.grid_size = 20
+
+        x, y = state._snap_to_grid(17, 23)
+        assert x == 20  # Rounds to nearest 20
+        assert y == 20
+
+        x, y = state._snap_to_grid(31, 38)
+        assert x == 40
+        assert y == 40
+
+    def test_snap_to_grid_exact_values(self):
+        state = EditorState()
+        state.grid_snap_enabled = True
+        state.grid_size = 20
+
+        x, y = state._snap_to_grid(40, 60)
+        assert x == 40
+        assert y == 60

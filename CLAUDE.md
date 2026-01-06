@@ -54,12 +54,29 @@ cd snap && snapcraft
 | `Ctrl+]` | Bring selected to front |
 | `Ctrl+[` | Send selected to back |
 | `Ctrl+D` | Duplicate selected annotations |
+| `Ctrl+Shift+H` | Distribute selected horizontally (3+ elements) |
+| `Ctrl+Shift+J` | Distribute selected vertically (3+ elements) |
+| `Ctrl+Alt+L` | Align selected left (2+ elements) |
+| `Ctrl+Alt+R` | Align selected right (2+ elements) |
+| `Ctrl+Alt+T` | Align selected top (2+ elements) |
+| `Ctrl+Alt+B` | Align selected bottom (2+ elements) |
+| `Ctrl+Alt+C` | Align selected center horizontal (2+ elements) |
+| `Ctrl+Alt+M` | Align selected center vertical (2+ elements) |
+| `Ctrl+G` | Group selected elements (2+ elements) |
+| `Ctrl+Shift+G` | Ungroup selected elements |
+| `Ctrl+Alt+W` | Match width to first selected (2+ elements) |
+| `Ctrl+Alt+E` | Match height to first selected (2+ elements) |
+| `Ctrl+Alt+S` | Match size to first selected (2+ elements) |
+| `Ctrl+Shift+F` | Flip selected horizontally |
+| `Ctrl+Alt+F` | Flip selected vertically |
+| `Ctrl+L` | Lock/unlock selected elements |
+| `Ctrl+'` | Toggle grid snap |
 | `+` / `-` / `0` | Zoom in / out / reset |
 | `Delete` / `Backspace` | Delete selected annotation |
 | `Arrow keys` | Nudge selected annotation 1px |
 | `Shift+Arrow keys` | Nudge selected annotation 10px |
 | `Escape` | Deselect / Cancel |
-| `V` | Select tool (move/resize with snap guides) |
+| `V` | Select tool (move/resize with snap guides, Shift=lock aspect) |
 | `Shift+Click` | Add to / toggle selection (multi-select) |
 | `P` | Pen tool |
 | `H` | Highlighter |

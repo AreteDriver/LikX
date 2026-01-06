@@ -121,6 +121,8 @@ class DrawingElement:
     stamp: str = ""  # For STAMP tool
     fill_color: Optional[Color] = None  # For CALLOUT background
     arrow_style: ArrowStyle = ArrowStyle.OPEN  # For ARROW tool
+    group_id: Optional[str] = None  # For grouping elements
+    locked: bool = False  # For locking elements from modification
 
 
 class EditorState:
@@ -165,6 +167,9 @@ class EditorState:
         self.snap_enabled = True
         self.snap_threshold = 10.0  # Pixels to trigger snap
         self.active_snap_guides: List[Tuple[str, float]] = []  # ('h', y) or ('v', x)
+        # Grid snapping
+        self.grid_snap_enabled = False
+        self.grid_size = 20  # Grid cell size in pixels
 
     def set_pixbuf(self, pixbuf: Any) -> None:
         """Set the pixbuf to edit."""
@@ -479,6 +484,8 @@ class EditorState:
                     # Replace selection
                     self.selected_indices.clear()
                     self.selected_indices.add(i)
+                # Expand selection to include all group members
+                self._expand_selection_to_groups()
                 self._drag_start = Point(x, y)
                 self._resize_handle = None
                 return True
@@ -544,17 +551,30 @@ class EditorState:
                 return name
         return None
 
-    def move_selected(self, x: float, y: float) -> bool:
+    def move_selected(self, x: float, y: float, aspect_locked: bool = False) -> bool:
         """Move selected elements to follow mouse at (x, y).
+
+        Args:
+            x: Target X position
+            y: Target Y position
+            aspect_locked: If True, maintain aspect ratio when resizing
 
         Returns True if elements were moved.
         """
         if not self.selected_indices or self._drag_start is None:
             return False
 
+        # Check if selection contains locked elements
+        if self.is_selection_locked():
+            return False
+
         # Resize only works for single selection
         if self._resize_handle and len(self.selected_indices) == 1:
-            return self._resize_selected(x, y)
+            return self._resize_selected(x, y, aspect_locked)
+
+        # Apply grid snapping if enabled
+        if self.grid_snap_enabled:
+            x, y = self._snap_to_grid(x, y)
 
         # Moving all selected elements
         dx = x - self._drag_start.x
@@ -585,8 +605,14 @@ class EditorState:
         self._drag_start = Point(x, y)
         return True
 
-    def _resize_selected(self, x: float, y: float) -> bool:
-        """Resize the selected element based on drag position."""
+    def _resize_selected(self, x: float, y: float, aspect_locked: bool = False) -> bool:
+        """Resize the selected element based on drag position.
+
+        Args:
+            x: Target X position
+            y: Target Y position
+            aspect_locked: If True, maintain original aspect ratio
+        """
         if self.selected_index is None or not self._resize_handle:
             return False
 
@@ -602,6 +628,10 @@ class EditorState:
         ys = [p.y for p in elem.points]
         x1, y1, x2, y2 = min(xs), min(ys), max(xs), max(ys)
 
+        # Store original dimensions for aspect ratio
+        orig_width = x2 - x1
+        orig_height = y2 - y1
+
         # Update corner based on handle
         if 'n' in handle:
             y1 = y
@@ -611,6 +641,48 @@ class EditorState:
             x1 = x
         if 'e' in handle:
             x2 = x
+
+        # Apply aspect ratio lock if enabled
+        if aspect_locked and orig_width > 0 and orig_height > 0:
+            aspect_ratio = orig_width / orig_height
+            new_width = abs(x2 - x1)
+            new_height = abs(y2 - y1)
+
+            # Determine which dimension to constrain based on handle
+            if handle in ('n', 's'):
+                # Vertical drag - adjust width to match
+                new_width = new_height * aspect_ratio
+                center_x = (x1 + x2) / 2
+                x1 = center_x - new_width / 2
+                x2 = center_x + new_width / 2
+            elif handle in ('e', 'w'):
+                # Horizontal drag - adjust height to match
+                new_height = new_width / aspect_ratio
+                center_y = (y1 + y2) / 2
+                y1 = center_y - new_height / 2
+                y2 = center_y + new_height / 2
+            else:
+                # Corner drag - use the larger change
+                width_ratio = new_width / orig_width if orig_width > 0 else 1
+                height_ratio = new_height / orig_height if orig_height > 0 else 1
+                scale = max(width_ratio, height_ratio)
+
+                new_width = orig_width * scale
+                new_height = orig_height * scale
+
+                # Anchor to the opposite corner
+                if 'n' in handle and 'w' in handle:
+                    x1 = x2 - new_width
+                    y1 = y2 - new_height
+                elif 'n' in handle and 'e' in handle:
+                    x2 = x1 + new_width
+                    y1 = y2 - new_height
+                elif 's' in handle and 'w' in handle:
+                    x1 = x2 - new_width
+                    y2 = y1 + new_height
+                elif 's' in handle and 'e' in handle:
+                    x2 = x1 + new_width
+                    y2 = y1 + new_height
 
         # Ensure minimum size
         if abs(x2 - x1) < 10 or abs(y2 - y1) < 10:
@@ -633,11 +705,20 @@ class EditorState:
         self.active_snap_guides.clear()  # Clear snap guides
 
     def delete_selected(self) -> bool:
-        """Delete all selected elements.
+        """Delete all selected elements (skips locked elements).
 
         Returns True if any elements were deleted.
         """
         if not self.selected_indices:
+            return False
+
+        # Filter out locked elements
+        deletable = [
+            idx for idx in self.selected_indices
+            if 0 <= idx < len(self.elements) and not self.elements[idx].locked
+        ]
+
+        if not deletable:
             return False
 
         # Save for undo
@@ -645,9 +726,8 @@ class EditorState:
         self.redo_stack.clear()
 
         # Remove elements in reverse index order to maintain correct indices
-        for idx in sorted(self.selected_indices, reverse=True):
-            if 0 <= idx < len(self.elements):
-                del self.elements[idx]
+        for idx in sorted(deletable, reverse=True):
+            del self.elements[idx]
 
         self.selected_indices.clear()
         return True
@@ -684,14 +764,20 @@ class EditorState:
         if not self.selected_indices:
             return False
 
+        # Check if all selected elements are locked
+        if self.is_selection_locked():
+            return False
+
         # Save for undo
         self.undo_stack.append([e for e in self.elements])
         self.redo_stack.clear()
 
-        # Move all selected elements
+        # Move all selected elements (skip locked)
         for idx in self.selected_indices:
             if 0 <= idx < len(self.elements):
                 elem = self.elements[idx]
+                if elem.locked:
+                    continue
                 for p in elem.points:
                     p.x += dx
                     p.y += dy
@@ -845,6 +931,669 @@ class EditorState:
         self.selected_indices = set(range(len(selected)))
 
         return True
+
+    def distribute_horizontal(self) -> bool:
+        """Distribute selected elements evenly horizontally.
+
+        Requires at least 3 selected elements. Keeps leftmost and rightmost
+        in place, spaces others evenly between them.
+
+        Returns:
+            True if elements were distributed.
+        """
+        if len(self.selected_indices) < 3:
+            return False
+
+        # Get selected elements with their bboxes and centers
+        items = []
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    x1, y1, x2, y2 = bbox
+                    center_x = (x1 + x2) / 2
+                    items.append((idx, center_x, bbox))
+
+        if len(items) < 3:
+            return False
+
+        # Sort by center X position
+        items.sort(key=lambda x: x[1])
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Calculate spacing
+        first_center = items[0][1]
+        last_center = items[-1][1]
+        total_span = last_center - first_center
+        spacing = total_span / (len(items) - 1)
+
+        # Move middle elements
+        for i, (idx, old_center, bbox) in enumerate(items[1:-1], start=1):
+            new_center = first_center + spacing * i
+            dx = new_center - old_center
+            for p in self.elements[idx].points:
+                p.x += dx
+
+        return True
+
+    def distribute_vertical(self) -> bool:
+        """Distribute selected elements evenly vertically.
+
+        Requires at least 3 selected elements. Keeps topmost and bottommost
+        in place, spaces others evenly between them.
+
+        Returns:
+            True if elements were distributed.
+        """
+        if len(self.selected_indices) < 3:
+            return False
+
+        # Get selected elements with their bboxes and centers
+        items = []
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    x1, y1, x2, y2 = bbox
+                    center_y = (y1 + y2) / 2
+                    items.append((idx, center_y, bbox))
+
+        if len(items) < 3:
+            return False
+
+        # Sort by center Y position
+        items.sort(key=lambda x: x[1])
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Calculate spacing
+        first_center = items[0][1]
+        last_center = items[-1][1]
+        total_span = last_center - first_center
+        spacing = total_span / (len(items) - 1)
+
+        # Move middle elements
+        for i, (idx, old_center, bbox) in enumerate(items[1:-1], start=1):
+            new_center = first_center + spacing * i
+            dy = new_center - old_center
+            for p in self.elements[idx].points:
+                p.y += dy
+
+        return True
+
+    def align_left(self) -> bool:
+        """Align selected elements to the leftmost edge.
+
+        Returns:
+            True if elements were aligned.
+        """
+        if len(self.selected_indices) < 2:
+            return False
+
+        # Find leftmost edge
+        min_x = float('inf')
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    min_x = min(min_x, bbox[0])
+
+        if min_x == float('inf'):
+            return False
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Move elements to align left edges
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    dx = min_x - bbox[0]
+                    if abs(dx) > 0.1:
+                        for p in self.elements[idx].points:
+                            p.x += dx
+
+        return True
+
+    def align_right(self) -> bool:
+        """Align selected elements to the rightmost edge.
+
+        Returns:
+            True if elements were aligned.
+        """
+        if len(self.selected_indices) < 2:
+            return False
+
+        # Find rightmost edge
+        max_x = float('-inf')
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    max_x = max(max_x, bbox[2])
+
+        if max_x == float('-inf'):
+            return False
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Move elements to align right edges
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    dx = max_x - bbox[2]
+                    if abs(dx) > 0.1:
+                        for p in self.elements[idx].points:
+                            p.x += dx
+
+        return True
+
+    def align_top(self) -> bool:
+        """Align selected elements to the topmost edge.
+
+        Returns:
+            True if elements were aligned.
+        """
+        if len(self.selected_indices) < 2:
+            return False
+
+        # Find topmost edge
+        min_y = float('inf')
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    min_y = min(min_y, bbox[1])
+
+        if min_y == float('inf'):
+            return False
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Move elements to align top edges
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    dy = min_y - bbox[1]
+                    if abs(dy) > 0.1:
+                        for p in self.elements[idx].points:
+                            p.y += dy
+
+        return True
+
+    def align_bottom(self) -> bool:
+        """Align selected elements to the bottommost edge.
+
+        Returns:
+            True if elements were aligned.
+        """
+        if len(self.selected_indices) < 2:
+            return False
+
+        # Find bottommost edge
+        max_y = float('-inf')
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    max_y = max(max_y, bbox[3])
+
+        if max_y == float('-inf'):
+            return False
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Move elements to align bottom edges
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    dy = max_y - bbox[3]
+                    if abs(dy) > 0.1:
+                        for p in self.elements[idx].points:
+                            p.y += dy
+
+        return True
+
+    def align_center_horizontal(self) -> bool:
+        """Align selected elements to the horizontal center.
+
+        Returns:
+            True if elements were aligned.
+        """
+        if len(self.selected_indices) < 2:
+            return False
+
+        # Find average center X
+        centers = []
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    centers.append((bbox[0] + bbox[2]) / 2)
+
+        if not centers:
+            return False
+
+        target_x = sum(centers) / len(centers)
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Move elements to align centers
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    current_center = (bbox[0] + bbox[2]) / 2
+                    dx = target_x - current_center
+                    if abs(dx) > 0.1:
+                        for p in self.elements[idx].points:
+                            p.x += dx
+
+        return True
+
+    def align_center_vertical(self) -> bool:
+        """Align selected elements to the vertical center.
+
+        Returns:
+            True if elements were aligned.
+        """
+        if len(self.selected_indices) < 2:
+            return False
+
+        # Find average center Y
+        centers = []
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    centers.append((bbox[1] + bbox[3]) / 2)
+
+        if not centers:
+            return False
+
+        target_y = sum(centers) / len(centers)
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Move elements to align centers
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                bbox = self._get_element_bbox(self.elements[idx])
+                if bbox:
+                    current_center = (bbox[1] + bbox[3]) / 2
+                    dy = target_y - current_center
+                    if abs(dy) > 0.1:
+                        for p in self.elements[idx].points:
+                            p.y += dy
+
+        return True
+
+    def group_selected(self) -> bool:
+        """Group all selected elements together.
+
+        Creates a new group from selected elements. Elements in a group
+        are always selected together.
+
+        Returns:
+            True if elements were grouped.
+        """
+        if len(self.selected_indices) < 2:
+            return False
+
+        # Generate unique group ID
+        import uuid
+        group_id = str(uuid.uuid4())[:8]
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Assign group_id to all selected elements
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                self.elements[idx].group_id = group_id
+
+        return True
+
+    def ungroup_selected(self) -> bool:
+        """Ungroup all selected elements.
+
+        Removes group association from selected elements.
+
+        Returns:
+            True if any elements were ungrouped.
+        """
+        if not self.selected_indices:
+            return False
+
+        # Check if any selected elements have a group_id
+        has_groups = any(
+            0 <= idx < len(self.elements) and self.elements[idx].group_id is not None
+            for idx in self.selected_indices
+        )
+
+        if not has_groups:
+            return False
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Remove group_id from all selected elements
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                self.elements[idx].group_id = None
+
+        return True
+
+    def _expand_selection_to_groups(self) -> None:
+        """Expand selection to include all elements in the same groups."""
+        if not self.selected_indices:
+            return
+
+        # Collect all group_ids from selected elements
+        group_ids = set()
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                gid = self.elements[idx].group_id
+                if gid is not None:
+                    group_ids.add(gid)
+
+        if not group_ids:
+            return
+
+        # Add all elements with matching group_ids
+        for i, elem in enumerate(self.elements):
+            if elem.group_id in group_ids:
+                self.selected_indices.add(i)
+
+    def match_width(self) -> bool:
+        """Match width of selected elements to the first selected element.
+
+        Returns:
+            True if any elements were resized.
+        """
+        if len(self.selected_indices) < 2:
+            return False
+
+        # Get first selected element's width
+        sorted_indices = sorted(self.selected_indices)
+        first_idx = sorted_indices[0]
+        first_bbox = self._get_element_bbox(self.elements[first_idx])
+        if not first_bbox:
+            return False
+
+        target_width = first_bbox[2] - first_bbox[0]
+        if target_width <= 0:
+            return False
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Resize other elements
+        for idx in sorted_indices[1:]:
+            if 0 <= idx < len(self.elements):
+                elem = self.elements[idx]
+                if elem.locked:
+                    continue
+                bbox = self._get_element_bbox(elem)
+                if bbox and len(elem.points) >= 2:
+                    current_width = bbox[2] - bbox[0]
+                    if current_width > 0:
+                        scale = target_width / current_width
+                        center_x = (bbox[0] + bbox[2]) / 2
+                        # Scale points relative to center
+                        for p in elem.points:
+                            p.x = center_x + (p.x - center_x) * scale
+
+        return True
+
+    def match_height(self) -> bool:
+        """Match height of selected elements to the first selected element.
+
+        Returns:
+            True if any elements were resized.
+        """
+        if len(self.selected_indices) < 2:
+            return False
+
+        # Get first selected element's height
+        sorted_indices = sorted(self.selected_indices)
+        first_idx = sorted_indices[0]
+        first_bbox = self._get_element_bbox(self.elements[first_idx])
+        if not first_bbox:
+            return False
+
+        target_height = first_bbox[3] - first_bbox[1]
+        if target_height <= 0:
+            return False
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Resize other elements
+        for idx in sorted_indices[1:]:
+            if 0 <= idx < len(self.elements):
+                elem = self.elements[idx]
+                if elem.locked:
+                    continue
+                bbox = self._get_element_bbox(elem)
+                if bbox and len(elem.points) >= 2:
+                    current_height = bbox[3] - bbox[1]
+                    if current_height > 0:
+                        scale = target_height / current_height
+                        center_y = (bbox[1] + bbox[3]) / 2
+                        # Scale points relative to center
+                        for p in elem.points:
+                            p.y = center_y + (p.y - center_y) * scale
+
+        return True
+
+    def match_size(self) -> bool:
+        """Match both width and height of selected elements to the first selected.
+
+        Returns:
+            True if any elements were resized.
+        """
+        if len(self.selected_indices) < 2:
+            return False
+
+        # Get first selected element's dimensions
+        sorted_indices = sorted(self.selected_indices)
+        first_idx = sorted_indices[0]
+        first_bbox = self._get_element_bbox(self.elements[first_idx])
+        if not first_bbox:
+            return False
+
+        target_width = first_bbox[2] - first_bbox[0]
+        target_height = first_bbox[3] - first_bbox[1]
+        if target_width <= 0 or target_height <= 0:
+            return False
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Resize other elements
+        for idx in sorted_indices[1:]:
+            if 0 <= idx < len(self.elements):
+                elem = self.elements[idx]
+                if elem.locked:
+                    continue
+                bbox = self._get_element_bbox(elem)
+                if bbox and len(elem.points) >= 2:
+                    current_width = bbox[2] - bbox[0]
+                    current_height = bbox[3] - bbox[1]
+                    if current_width > 0 and current_height > 0:
+                        scale_x = target_width / current_width
+                        scale_y = target_height / current_height
+                        center_x = (bbox[0] + bbox[2]) / 2
+                        center_y = (bbox[1] + bbox[3]) / 2
+                        # Scale points relative to center
+                        for p in elem.points:
+                            p.x = center_x + (p.x - center_x) * scale_x
+                            p.y = center_y + (p.y - center_y) * scale_y
+
+        return True
+
+    def flip_horizontal(self) -> bool:
+        """Flip selected elements horizontally (mirror on vertical axis).
+
+        Returns:
+            True if any elements were flipped.
+        """
+        if not self.selected_indices:
+            return False
+
+        # Get bounding box of all selected elements
+        all_x = []
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                elem = self.elements[idx]
+                if elem.locked:
+                    continue
+                for p in elem.points:
+                    all_x.append(p.x)
+
+        if not all_x:
+            return False
+
+        center_x = (min(all_x) + max(all_x)) / 2
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Flip points around center
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                elem = self.elements[idx]
+                if elem.locked:
+                    continue
+                for p in elem.points:
+                    p.x = center_x + (center_x - p.x)
+
+        return True
+
+    def flip_vertical(self) -> bool:
+        """Flip selected elements vertically (mirror on horizontal axis).
+
+        Returns:
+            True if any elements were flipped.
+        """
+        if not self.selected_indices:
+            return False
+
+        # Get bounding box of all selected elements
+        all_y = []
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                elem = self.elements[idx]
+                if elem.locked:
+                    continue
+                for p in elem.points:
+                    all_y.append(p.y)
+
+        if not all_y:
+            return False
+
+        center_y = (min(all_y) + max(all_y)) / 2
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Flip points around center
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                elem = self.elements[idx]
+                if elem.locked:
+                    continue
+                for p in elem.points:
+                    p.y = center_y + (center_y - p.y)
+
+        return True
+
+    def toggle_lock_selected(self) -> bool:
+        """Toggle lock state of selected elements.
+
+        Returns:
+            True if any elements were toggled.
+        """
+        if not self.selected_indices:
+            return False
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Determine new lock state (if any unlocked, lock all; otherwise unlock all)
+        any_unlocked = any(
+            0 <= idx < len(self.elements) and not self.elements[idx].locked
+            for idx in self.selected_indices
+        )
+        new_state = any_unlocked
+
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                self.elements[idx].locked = new_state
+
+        return True
+
+    def is_selection_locked(self) -> bool:
+        """Check if any selected element is locked."""
+        return any(
+            0 <= idx < len(self.elements) and self.elements[idx].locked
+            for idx in self.selected_indices
+        )
+
+    def set_grid_snap(self, enabled: bool, grid_size: int = 20) -> None:
+        """Enable or disable grid snapping.
+
+        Args:
+            enabled: Whether grid snap is enabled
+            grid_size: Size of grid cells in pixels
+        """
+        self.grid_snap_enabled = enabled
+        self.grid_size = max(5, min(100, grid_size))
+
+    def _snap_to_grid(self, x: float, y: float) -> Tuple[float, float]:
+        """Snap coordinates to grid if enabled.
+
+        Args:
+            x, y: Coordinates to snap
+
+        Returns:
+            Snapped coordinates
+        """
+        if not self.grid_snap_enabled:
+            return x, y
+
+        snapped_x = round(x / self.grid_size) * self.grid_size
+        snapped_y = round(y / self.grid_size) * self.grid_size
+        return snapped_x, snapped_y
 
     def set_snap_enabled(self, enabled: bool) -> None:
         """Enable or disable snapping."""
