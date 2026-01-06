@@ -17,7 +17,7 @@ except (ImportError, ValueError):
 
 from . import config
 from .capture import CaptureMode, CaptureResult, capture, save_capture
-from .editor import EditorState, ToolType, Color, render_elements
+from .editor import EditorState, ToolType, Color, ArrowStyle, render_elements
 from .notification import (
     show_notification,
     show_screenshot_saved,
@@ -30,7 +30,15 @@ from .hotkeys import HotkeyManager
 from .ocr import OCREngine
 from .pinned import PinnedWindow
 from .history import HistoryManager
-from .effects import add_shadow, add_border, add_background, round_corners
+from .effects import (
+    add_shadow,
+    add_border,
+    add_background,
+    round_corners,
+    adjust_brightness_contrast,
+    invert_colors,
+    grayscale,
+)
 
 
 class RegionSelector:
@@ -339,6 +347,8 @@ class EditorWindow:
             ToolType.BLUR,
             ToolType.PIXELATE,
             ToolType.ERASER,
+            ToolType.CALLOUT,
+            ToolType.CROP,
         }
 
         if self.editor_state.current_tool in drawing_tools:
@@ -469,18 +479,21 @@ class EditorWindow:
         self.tool_buttons = {}
         # Clear icons with text tooltips
         tool_icons = [
-            ("✎", ToolType.PEN, "Pen (P)", 0, 0),
-            ("—", ToolType.LINE, "Line (L)", 1, 0),
-            ("▭", ToolType.RECTANGLE, "Rectangle (R)", 2, 0),
-            ("A", ToolType.TEXT, "Text (T)", 3, 0),
+            ("⊹", ToolType.SELECT, "Select (V) - Move/resize", 0, 0),
+            ("✎", ToolType.PEN, "Pen (P)", 1, 0),
+            ("—", ToolType.LINE, "Line (L)", 2, 0),
+            ("▭", ToolType.RECTANGLE, "Rectangle (R)", 3, 0),
+            ("A", ToolType.TEXT, "Text (T)", 4, 0),
             ("▓", ToolType.HIGHLIGHTER, "Highlighter (H)", 0, 1),
             ("→", ToolType.ARROW, "Arrow (A)", 1, 1),
             ("○", ToolType.ELLIPSE, "Ellipse (E)", 2, 1),
             ("✕", ToolType.ERASER, "Eraser", 3, 1),
+            ("💬", ToolType.CALLOUT, "Callout (K)", 4, 1),
             ("📏", ToolType.MEASURE, "Measure (M)", 0, 2),
             ("①", ToolType.NUMBER, "Number Marker (N)", 1, 2),
             ("💧", ToolType.COLORPICKER, "Color Picker (I)", 2, 2),
             ("✓", ToolType.STAMP, "Stamp (S)", 3, 2),
+            ("✂", ToolType.CROP, "Crop (C) - Shift for 1:1", 4, 2),
             ("🔍", ToolType.ZOOM, "Zoom (Z) - Scroll to zoom", 0, 3),
         ]
         for icon, tool, tip, col, row in tool_icons:
@@ -527,6 +540,59 @@ class EditorWindow:
         self.stamp_buttons["✓"].set_active(True)
         stamps_group.pack_start(stamps_box, False, False, 0)
         ribbon.pack_start(stamps_group, False, False, 0)
+        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
+
+        # === ARROW STYLES GROUP ===
+        arrow_group = self._create_tool_panel("Arrow Style")
+        arrow_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        self.arrow_style_buttons = {}
+        arrow_styles = [
+            ("→", ArrowStyle.OPEN, "Open arrowhead"),
+            ("▶", ArrowStyle.FILLED, "Filled arrowhead"),
+            ("⟷", ArrowStyle.DOUBLE, "Double arrowhead"),
+        ]
+        for label, style, tooltip in arrow_styles:
+            btn = Gtk.ToggleButton(label=label)
+            btn.set_tooltip_text(tooltip)
+            btn.get_style_context().add_class("arrow-style-btn")
+            btn.connect("toggled", self._on_arrow_style_toggled, style)
+            self.arrow_style_buttons[style] = btn
+            arrow_box.pack_start(btn, False, False, 0)
+        self.arrow_style_buttons[ArrowStyle.OPEN].set_active(True)
+        arrow_group.pack_start(arrow_box, False, False, 0)
+        ribbon.pack_start(arrow_group, False, False, 0)
+        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
+
+        # === FONT FORMAT GROUP ===
+        font_group = self._create_tool_panel("Text Style")
+        font_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+
+        # Bold button
+        self.bold_btn = Gtk.ToggleButton(label="B")
+        self.bold_btn.set_tooltip_text("Bold (for text tool)")
+        self.bold_btn.get_style_context().add_class("font-style-btn")
+        self.bold_btn.connect("toggled", self._on_bold_toggled)
+        font_box.pack_start(self.bold_btn, False, False, 0)
+
+        # Italic button
+        self.italic_btn = Gtk.ToggleButton(label="I")
+        self.italic_btn.set_tooltip_text("Italic (for text tool)")
+        self.italic_btn.get_style_context().add_class("font-style-btn")
+        self.italic_btn.connect("toggled", self._on_italic_toggled)
+        font_box.pack_start(self.italic_btn, False, False, 0)
+
+        # Font family dropdown
+        self.font_combo = Gtk.ComboBoxText()
+        fonts = ["Sans", "Serif", "Monospace", "Ubuntu", "DejaVu Sans"]
+        for font in fonts:
+            self.font_combo.append_text(font)
+        self.font_combo.set_active(0)
+        self.font_combo.set_tooltip_text("Font family")
+        self.font_combo.connect("changed", self._on_font_family_changed)
+        font_box.pack_start(self.font_combo, False, False, 0)
+
+        font_group.pack_start(font_box, False, False, 0)
+        ribbon.pack_start(font_group, False, False, 0)
         ribbon.pack_start(self._create_panel_sep(), False, False, 0)
 
         # === SIZE GROUP ===
@@ -729,6 +795,34 @@ class EditorWindow:
         elif not any(btn.get_active() for btn in self.stamp_buttons.values()):
             # Ensure at least one stamp is always selected
             button.set_active(True)
+
+    def _on_arrow_style_toggled(
+        self, button: Gtk.ToggleButton, style: ArrowStyle
+    ) -> None:
+        """Handle arrow style selection toggle."""
+        if button.get_active():
+            # Deactivate other arrow style buttons
+            for s, btn in self.arrow_style_buttons.items():
+                if s != style and btn.get_active():
+                    btn.set_active(False)
+            self.editor_state.set_arrow_style(style)
+        elif not any(btn.get_active() for btn in self.arrow_style_buttons.values()):
+            # Ensure at least one style is always selected
+            button.set_active(True)
+
+    def _on_bold_toggled(self, button: Gtk.ToggleButton) -> None:
+        """Handle bold toggle."""
+        self.editor_state.set_font_bold(button.get_active())
+
+    def _on_italic_toggled(self, button: Gtk.ToggleButton) -> None:
+        """Handle italic toggle."""
+        self.editor_state.set_font_italic(button.get_active())
+
+    def _on_font_family_changed(self, combo: Gtk.ComboBoxText) -> None:
+        """Handle font family change."""
+        font = combo.get_active_text()
+        if font:
+            self.editor_state.set_font_family(font)
 
     def _on_color_chosen(self, button: Gtk.ColorButton) -> None:
         """Handle color picker selection."""
@@ -995,7 +1089,286 @@ class EditorWindow:
         if elements:
             render_elements(cr, elements, self.result.pixbuf)
 
+        # Draw callout preview during drag
+        if (
+            self.editor_state.is_drawing
+            and self.editor_state.current_tool == ToolType.CALLOUT
+            and hasattr(self, "_callout_tail")
+            and hasattr(self, "_callout_box")
+        ):
+            self._draw_callout_preview(cr)
+
+        # Draw crop selection preview
+        if (
+            self.editor_state.is_drawing
+            and self.editor_state.current_tool == ToolType.CROP
+            and hasattr(self, "_crop_start")
+            and hasattr(self, "_crop_end")
+        ):
+            self._draw_crop_preview(cr)
+
+        # Draw selection handles if an element is selected
+        if self.editor_state.selected_index is not None:
+            self._draw_selection_handles(cr)
+            self._draw_snap_guides(cr)
+
         return True
+
+    def _draw_callout_preview(self, cr) -> None:
+        """Draw a preview of the callout being created."""
+        tail_x, tail_y = self._callout_tail
+        box_x, box_y = self._callout_box
+
+        # Draw a simple preview box and line
+        preview_text = "Click & drag to position"
+        cr.select_font_face("Sans", 0, 0)
+        cr.set_font_size(14)
+        extents = cr.text_extents(preview_text)
+
+        padding = 10
+        box_width = extents.width + padding * 2
+        box_height = extents.height + padding * 2
+        corner_radius = 8
+
+        # Box position (centered on box position)
+        bx = box_x - box_width / 2
+        by = box_y - box_height / 2
+
+        # Draw rounded rectangle
+        cr.new_path()
+        cr.move_to(bx + corner_radius, by)
+        cr.line_to(bx + box_width - corner_radius, by)
+        cr.arc(bx + box_width - corner_radius, by + corner_radius, corner_radius, -3.14159 / 2, 0)
+        cr.line_to(bx + box_width, by + box_height - corner_radius)
+        cr.arc(bx + box_width - corner_radius, by + box_height - corner_radius, corner_radius, 0, 3.14159 / 2)
+        cr.line_to(bx + corner_radius, by + box_height)
+        cr.arc(bx + corner_radius, by + box_height - corner_radius, corner_radius, 3.14159 / 2, 3.14159)
+        cr.line_to(bx, by + corner_radius)
+        cr.arc(bx + corner_radius, by + corner_radius, corner_radius, 3.14159, 3 * 3.14159 / 2)
+        cr.close_path()
+
+        # Fill with light yellow (preview)
+        cr.set_source_rgba(1.0, 1.0, 0.9, 0.8)
+        cr.fill_preserve()
+
+        # Border
+        r, g, b, a = self.editor_state.current_color.to_tuple()
+        cr.set_source_rgba(r, g, b, 0.8)
+        cr.set_line_width(2)
+        cr.stroke()
+
+        # Draw tail line from box to point
+        cr.move_to(box_x, box_y)
+        cr.line_to(tail_x, tail_y)
+        cr.stroke()
+
+        # Draw a small circle at tail tip
+        cr.arc(tail_x, tail_y, 4, 0, 2 * 3.14159)
+        cr.fill()
+
+        # Draw preview text
+        cr.set_source_rgba(0.3, 0.3, 0.3, 0.8)
+        cr.move_to(bx + padding, by + padding + extents.height)
+        cr.show_text(preview_text)
+
+    def _draw_crop_preview(self, cr) -> None:
+        """Draw the crop selection rectangle with darkened outside area."""
+        x1, y1 = self._crop_start
+        x2, y2 = self._crop_end
+
+        # Normalize coordinates
+        left = min(x1, x2)
+        top = min(y1, y2)
+        right = max(x1, x2)
+        bottom = max(y1, y2)
+        width = right - left
+        height = bottom - top
+
+        if width < 2 or height < 2:
+            return
+
+        # Get image dimensions
+        img_w = self.result.pixbuf.get_width()
+        img_h = self.result.pixbuf.get_height()
+
+        # Darken areas outside selection
+        cr.set_source_rgba(0, 0, 0, 0.5)
+        # Top
+        cr.rectangle(0, 0, img_w, top)
+        cr.fill()
+        # Bottom
+        cr.rectangle(0, bottom, img_w, img_h - bottom)
+        cr.fill()
+        # Left
+        cr.rectangle(0, top, left, height)
+        cr.fill()
+        # Right
+        cr.rectangle(right, top, img_w - right, height)
+        cr.fill()
+
+        # Draw selection border
+        cr.set_source_rgba(1, 1, 1, 0.9)
+        cr.set_line_width(2)
+        cr.rectangle(left, top, width, height)
+        cr.stroke()
+
+        # Draw corner handles
+        handle_size = 8
+        cr.set_source_rgba(1, 1, 1, 1)
+        for hx, hy in [(left, top), (right, top), (left, bottom), (right, bottom)]:
+            cr.rectangle(hx - handle_size / 2, hy - handle_size / 2, handle_size, handle_size)
+            cr.fill()
+
+        # Draw dimension text
+        cr.select_font_face("Sans", 0, 0)
+        cr.set_font_size(12)
+        dim_text = f"{int(width)} × {int(height)}"
+        extents = cr.text_extents(dim_text)
+
+        # Position below selection
+        tx = left + (width - extents.width) / 2
+        ty = bottom + 20
+
+        # Background for text
+        cr.set_source_rgba(0, 0, 0, 0.7)
+        cr.rectangle(tx - 4, ty - extents.height - 2, extents.width + 8, extents.height + 6)
+        cr.fill()
+
+        # Text
+        cr.set_source_rgba(1, 1, 1, 1)
+        cr.move_to(tx, ty)
+        cr.show_text(dim_text)
+
+    def _draw_selection_handles(self, cr) -> None:
+        """Draw selection bounding box and resize handles for selected element."""
+        selected = self.editor_state.get_selected()
+        if not selected:
+            return
+
+        bbox = self.editor_state._get_element_bbox(selected)
+        if not bbox:
+            return
+
+        x1, y1, x2, y2 = bbox
+
+        # Draw selection rectangle (dashed blue)
+        cr.set_source_rgba(0.2, 0.5, 1.0, 0.8)
+        cr.set_line_width(1.5)
+        cr.set_dash([4, 4])
+        cr.rectangle(x1, y1, x2 - x1, y2 - y1)
+        cr.stroke()
+        cr.set_dash([])  # Reset dash
+
+        # Draw resize handles at corners
+        handle_size = 8
+        handles = [
+            (x1, y1),  # nw
+            (x2, y1),  # ne
+            (x1, y2),  # sw
+            (x2, y2),  # se
+        ]
+
+        for hx, hy in handles:
+            # White fill with blue border
+            cr.set_source_rgba(1, 1, 1, 1)
+            cr.rectangle(
+                hx - handle_size / 2,
+                hy - handle_size / 2,
+                handle_size,
+                handle_size,
+            )
+            cr.fill_preserve()
+            cr.set_source_rgba(0.2, 0.5, 1.0, 1)
+            cr.set_line_width(1)
+            cr.stroke()
+
+    def _draw_snap_guides(self, cr) -> None:
+        """Draw visual snap guides when dragging an element."""
+        if not self.editor_state.active_snap_guides:
+            return
+
+        # Get drawing area size for guide lines
+        width = self.drawing_area.get_allocated_width()
+        height = self.drawing_area.get_allocated_height()
+
+        # Draw snap guides in cyan dashed lines
+        cr.set_source_rgba(0.0, 0.8, 0.8, 0.9)
+        cr.set_line_width(1)
+        cr.set_dash([6, 4])
+
+        for guide_type, value in self.editor_state.active_snap_guides:
+            if guide_type == 'h':
+                # Horizontal line at y=value
+                cr.move_to(0, value)
+                cr.line_to(width, value)
+                cr.stroke()
+            elif guide_type == 'v':
+                # Vertical line at x=value
+                cr.move_to(value, 0)
+                cr.line_to(value, height)
+                cr.stroke()
+
+        cr.set_dash([])  # Reset dash
+
+    def _apply_crop(self) -> None:
+        """Apply the crop operation to the image."""
+        if not hasattr(self, "_crop_start") or not hasattr(self, "_crop_end"):
+            return
+
+        x1, y1 = self._crop_start
+        x2, y2 = self._crop_end
+
+        # Normalize coordinates
+        left = int(min(x1, x2))
+        top = int(min(y1, y2))
+        right = int(max(x1, x2))
+        bottom = int(max(y1, y2))
+        width = right - left
+        height = bottom - top
+
+        # Minimum crop size
+        if width < 10 or height < 10:
+            self.statusbar.push(
+                self.statusbar_context, "Crop area too small (min 10×10)"
+            )
+            # Clean up
+            if hasattr(self, "_crop_start"):
+                del self._crop_start
+            if hasattr(self, "_crop_end"):
+                del self._crop_end
+            self.drawing_area.queue_draw()
+            return
+
+        # Clamp to image bounds
+        img_w = self.result.pixbuf.get_width()
+        img_h = self.result.pixbuf.get_height()
+        left = max(0, left)
+        top = max(0, top)
+        width = min(width, img_w - left)
+        height = min(height, img_h - top)
+
+        # Create cropped pixbuf
+        cropped = GdkPixbuf.Pixbuf.new(
+            GdkPixbuf.Colorspace.RGB,
+            self.result.pixbuf.get_has_alpha(),
+            8,
+            width,
+            height,
+        )
+        self.result.pixbuf.copy_area(left, top, width, height, cropped, 0, 0)
+        self.result.pixbuf = cropped
+
+        # Clear annotations (they're now outside the image)
+        self.editor_state.clear()
+
+        # Clean up
+        del self._crop_start
+        del self._crop_end
+
+        self.statusbar.push(
+            self.statusbar_context, f"Cropped to {width}×{height}"
+        )
+        self.drawing_area.queue_draw()
 
     def _screen_to_image(self, x: float, y: float) -> tuple:
         """Convert screen coordinates to image coordinates (accounting for zoom)."""
@@ -1008,7 +1381,11 @@ class EditorWindow:
         img_x, img_y = self._screen_to_image(event.x, event.y)
 
         if event.button == 1:
-            if self.editor_state.current_tool == ToolType.TEXT:
+            if self.editor_state.current_tool == ToolType.SELECT:
+                # Try to select an element at this position
+                self.editor_state.select_at(img_x, img_y)
+                self.drawing_area.queue_draw()
+            elif self.editor_state.current_tool == ToolType.TEXT:
                 # Show text input dialog
                 self._show_text_dialog(img_x, img_y)
             elif self.editor_state.current_tool == ToolType.NUMBER:
@@ -1022,6 +1399,17 @@ class EditorWindow:
                 # Place stamp on click
                 self.editor_state.add_stamp(img_x, img_y)
                 self.drawing_area.queue_draw()
+            elif self.editor_state.current_tool == ToolType.CALLOUT:
+                # Start callout: first point is tail tip
+                self._callout_tail = (img_x, img_y)
+                self._callout_box = (img_x + 50, img_y - 50)  # Initial offset
+                self.editor_state.is_drawing = True
+            elif self.editor_state.current_tool == ToolType.CROP:
+                # Start crop selection
+                self._crop_start = (img_x, img_y)
+                self._crop_end = (img_x, img_y)
+                self._crop_shift = event.state & Gdk.ModifierType.SHIFT_MASK
+                self.editor_state.is_drawing = True
             else:
                 self.editor_state.start_drawing(img_x, img_y)
         elif event.button == 3:
@@ -1033,7 +1421,22 @@ class EditorWindow:
         """Handle mouse button release."""
         img_x, img_y = self._screen_to_image(event.x, event.y)
         if event.button == 1:
-            if self.editor_state.current_tool != ToolType.TEXT:
+            if self.editor_state.current_tool == ToolType.SELECT:
+                # Finish moving/resizing
+                self.editor_state.finish_move()
+                self.drawing_area.queue_draw()
+            elif self.editor_state.current_tool == ToolType.CALLOUT:
+                # Finish callout: show text dialog
+                if hasattr(self, "_callout_tail"):
+                    self._callout_box = (img_x, img_y)
+                    self.editor_state.is_drawing = False
+                    self._show_callout_dialog()
+            elif self.editor_state.current_tool == ToolType.CROP:
+                # Apply crop
+                if hasattr(self, "_crop_start") and hasattr(self, "_crop_end"):
+                    self.editor_state.is_drawing = False
+                    self._apply_crop()
+            elif self.editor_state.current_tool != ToolType.TEXT:
                 self.editor_state.finish_drawing(img_x, img_y)
                 self.drawing_area.queue_draw()
         return True
@@ -1041,12 +1444,40 @@ class EditorWindow:
     def _on_motion(self, widget: Gtk.Widget, event: Gdk.EventMotion) -> bool:
         """Handle mouse motion."""
         img_x, img_y = self._screen_to_image(event.x, event.y)
-        if (
-            self.editor_state.is_drawing
-            and self.editor_state.current_tool != ToolType.TEXT
-        ):
-            self.editor_state.continue_drawing(img_x, img_y)
-            self.drawing_area.queue_draw()
+
+        # Handle SELECT tool dragging (move/resize)
+        if self.editor_state.current_tool == ToolType.SELECT:
+            if self.editor_state._drag_start is not None:
+                if self.editor_state.move_selected(img_x, img_y):
+                    self.drawing_area.queue_draw()
+            return True
+
+        if self.editor_state.is_drawing:
+            if self.editor_state.current_tool == ToolType.CALLOUT:
+                # Update callout box position during drag
+                if hasattr(self, "_callout_tail"):
+                    self._callout_box = (img_x, img_y)
+                    self.drawing_area.queue_draw()
+            elif self.editor_state.current_tool == ToolType.CROP:
+                # Update crop selection with aspect ratio lock
+                if hasattr(self, "_crop_start"):
+                    # Check if shift is held for 1:1 aspect ratio
+                    shift = event.state & Gdk.ModifierType.SHIFT_MASK
+                    if shift:
+                        # Lock to 1:1 (square)
+                        dx = img_x - self._crop_start[0]
+                        dy = img_y - self._crop_start[1]
+                        size = max(abs(dx), abs(dy))
+                        self._crop_end = (
+                            self._crop_start[0] + (size if dx >= 0 else -size),
+                            self._crop_start[1] + (size if dy >= 0 else -size),
+                        )
+                    else:
+                        self._crop_end = (img_x, img_y)
+                    self.drawing_area.queue_draw()
+            elif self.editor_state.current_tool != ToolType.TEXT:
+                self.editor_state.continue_drawing(img_x, img_y)
+                self.drawing_area.queue_draw()
         return True
 
     def _on_scroll(self, widget: Gtk.Widget, event: Gdk.EventScroll) -> bool:
@@ -1111,6 +1542,58 @@ class EditorWindow:
         if response == Gtk.ResponseType.OK and text:
             self.editor_state.add_text(x, y, text)
             self.drawing_area.queue_draw()
+
+    def _show_callout_dialog(self) -> None:
+        """Show dialog to input callout text."""
+        if not hasattr(self, "_callout_tail") or not hasattr(self, "_callout_box"):
+            return
+
+        dialog = Gtk.Dialog(
+            title="Add Callout",
+            parent=self.window,
+            flags=0,
+        )
+        dialog.add_buttons(
+            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK
+        )
+
+        content = dialog.get_content_area()
+        content.set_spacing(10)
+        content.set_border_width(10)
+
+        label = Gtk.Label(label="Enter callout text:")
+        content.pack_start(label, False, False, 0)
+
+        # Text view for multiline input
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_size_request(300, 100)
+        scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+
+        text_view = Gtk.TextView()
+        text_view.set_wrap_mode(Gtk.WrapMode.WORD)
+        scrolled.add(text_view)
+        content.pack_start(scrolled, True, True, 0)
+
+        dialog.set_default_response(Gtk.ResponseType.OK)
+        dialog.show_all()
+
+        response = dialog.run()
+        buffer = text_view.get_buffer()
+        start, end = buffer.get_bounds()
+        text = buffer.get_text(start, end, True)
+        dialog.destroy()
+
+        if response == Gtk.ResponseType.OK and text.strip():
+            tail_x, tail_y = self._callout_tail
+            box_x, box_y = self._callout_box
+            self.editor_state.add_callout(tail_x, tail_y, box_x, box_y, text.strip())
+            self.drawing_area.queue_draw()
+
+        # Clean up
+        if hasattr(self, "_callout_tail"):
+            del self._callout_tail
+        if hasattr(self, "_callout_box"):
+            del self._callout_box
 
     def _pick_color(self, x: float, y: float) -> None:
         """Pick color from image and set as current color."""
@@ -1178,6 +1661,9 @@ class EditorWindow:
             Gdk.KEY_i: ToolType.COLORPICKER,
             Gdk.KEY_s: ToolType.STAMP,
             Gdk.KEY_z: ToolType.ZOOM,
+            Gdk.KEY_k: ToolType.CALLOUT,
+            Gdk.KEY_c: ToolType.CROP,
+            Gdk.KEY_v: ToolType.SELECT,
         }
         if event.keyval in tool_shortcuts:
             tool = tool_shortcuts[event.keyval]
@@ -1204,8 +1690,19 @@ class EditorWindow:
             self.drawing_area.queue_draw()
             return True
 
+        # Delete/Backspace to delete selected element
+        if event.keyval in (Gdk.KEY_Delete, Gdk.KEY_BackSpace):
+            if self.editor_state.delete_selected():
+                self.statusbar.push(self.statusbar_context, "Element deleted")
+                self.drawing_area.queue_draw()
+                return True
+
         # Escape to deselect/cancel
         if event.keyval == Gdk.KEY_Escape:
+            if self.editor_state.selected_index is not None:
+                self.editor_state.deselect()
+                self.drawing_area.queue_draw()
+                return True
             self.editor_state.cancel_drawing()
             self.drawing_area.queue_draw()
             return True
@@ -1785,6 +2282,9 @@ def _EditorWindow_init_enhanced(self, result):
         ("🖼 Add Border", self._apply_border),
         ("🎨 Background", self._apply_background),
         ("◐ Round Corners", self._apply_round_corners),
+        ("☀ Adjust Brightness/Contrast", self._show_adjust_dialog),
+        ("🔲 Grayscale", self._apply_grayscale),
+        ("🔄 Invert Colors", self._apply_invert),
     ]
     for label, callback in effects_items:
         row = Gtk.Button(label=label)
@@ -2037,6 +2537,94 @@ def _on_quick_actions(self, button):
     )
     dialog.run()
     dialog.destroy()
+
+
+def _show_adjust_dialog(self):
+    """Show brightness/contrast adjustment dialog."""
+    dialog = Gtk.Dialog(
+        title="Adjust Image",
+        transient_for=self.window,
+        flags=Gtk.DialogFlags.MODAL,
+    )
+    dialog.add_buttons(
+        Gtk.STOCK_CANCEL,
+        Gtk.ResponseType.CANCEL,
+        Gtk.STOCK_APPLY,
+        Gtk.ResponseType.OK,
+    )
+    dialog.set_default_size(350, 200)
+
+    content = dialog.get_content_area()
+    content.set_border_width(15)
+    content.set_spacing(15)
+
+    # Brightness slider
+    brightness_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+    brightness_label = Gtk.Label(label="Brightness:")
+    brightness_label.set_size_request(100, -1)
+    brightness_label.set_xalign(0)
+    brightness_scale = Gtk.Scale.new_with_range(
+        Gtk.Orientation.HORIZONTAL, -100, 100, 5
+    )
+    brightness_scale.set_value(0)
+    brightness_scale.set_hexpand(True)
+    brightness_box.pack_start(brightness_label, False, False, 0)
+    brightness_box.pack_start(brightness_scale, True, True, 0)
+    content.pack_start(brightness_box, False, False, 0)
+
+    # Contrast slider
+    contrast_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+    contrast_label = Gtk.Label(label="Contrast:")
+    contrast_label.set_size_request(100, -1)
+    contrast_label.set_xalign(0)
+    contrast_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, -100, 100, 5)
+    contrast_scale.set_value(0)
+    contrast_scale.set_hexpand(True)
+    contrast_box.pack_start(contrast_label, False, False, 0)
+    contrast_box.pack_start(contrast_scale, True, True, 0)
+    content.pack_start(contrast_box, False, False, 0)
+
+    dialog.show_all()
+    response = dialog.run()
+
+    if response == Gtk.ResponseType.OK:
+        brightness = brightness_scale.get_value() / 100.0
+        contrast = contrast_scale.get_value() / 100.0
+
+        if brightness != 0 or contrast != 0:
+            self.result.pixbuf = adjust_brightness_contrast(
+                self.result.pixbuf, brightness, contrast
+            )
+            self.editor_state.set_pixbuf(self.result.pixbuf)
+            self.drawing_area.queue_draw()
+            self.statusbar.push(
+                self.statusbar_context,
+                f"Adjusted: brightness={int(brightness * 100)}%, contrast={int(contrast * 100)}%",
+            )
+
+    dialog.destroy()
+
+
+def _apply_grayscale(self):
+    """Convert image to grayscale."""
+    self.result.pixbuf = grayscale(self.result.pixbuf)
+    self.editor_state.set_pixbuf(self.result.pixbuf)
+    self.drawing_area.queue_draw()
+    self.statusbar.push(self.statusbar_context, "Converted to grayscale")
+
+
+def _apply_invert(self):
+    """Invert image colors."""
+    self.result.pixbuf = invert_colors(self.result.pixbuf)
+    self.editor_state.set_pixbuf(self.result.pixbuf)
+    self.drawing_area.queue_draw()
+    self.statusbar.push(self.statusbar_context, "Colors inverted")
+
+
+# Inject adjustment methods
+EditorWindow._show_adjust_dialog = _show_adjust_dialog
+EditorWindow._apply_grayscale = _apply_grayscale
+EditorWindow._apply_invert = _apply_invert
 
 
 # Inject enhanced methods

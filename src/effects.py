@@ -180,3 +180,148 @@ def round_corners(pixbuf, radius: int = 10):
     except Exception as e:
         print(f"Round corners failed: {e}")
         return pixbuf
+
+
+def adjust_brightness_contrast(
+    pixbuf, brightness: float = 0.0, contrast: float = 0.0
+):
+    """Adjust brightness and contrast of an image.
+
+    Args:
+        pixbuf: Source GdkPixbuf.
+        brightness: Brightness adjustment (-1.0 to 1.0, 0 = no change).
+        contrast: Contrast adjustment (-1.0 to 1.0, 0 = no change).
+
+    Returns:
+        Adjusted pixbuf.
+    """
+    try:
+        import array
+
+        width = pixbuf.get_width()
+        height = pixbuf.get_height()
+        has_alpha = pixbuf.get_has_alpha()
+        n_channels = pixbuf.get_n_channels()
+        rowstride = pixbuf.get_rowstride()
+        pixels = pixbuf.get_pixels()
+
+        new_pixels = array.array("B", pixels)
+
+        # Convert brightness/contrast to usable factors
+        # Brightness: shift values (add/subtract)
+        # Contrast: multiply around midpoint
+        brightness_offset = int(brightness * 255)
+        contrast_factor = 1.0 + contrast  # 0 -> 1.0, 1.0 -> 2.0, -1.0 -> 0.0
+
+        for y in range(height):
+            for x in range(width):
+                offset = y * rowstride + x * n_channels
+
+                for c in range(3):  # RGB only, not alpha
+                    val = pixels[offset + c]
+
+                    # Apply contrast (around 128)
+                    val = int((val - 128) * contrast_factor + 128)
+
+                    # Apply brightness
+                    val = val + brightness_offset
+
+                    # Clamp to 0-255
+                    new_pixels[offset + c] = max(0, min(255, val))
+
+        # Create new pixbuf
+        new_pixbuf = GdkPixbuf.Pixbuf.new_from_data(
+            new_pixels.tobytes(),
+            pixbuf.get_colorspace(),
+            has_alpha,
+            pixbuf.get_bits_per_sample(),
+            width,
+            height,
+            rowstride,
+        )
+
+        return new_pixbuf
+    except Exception as e:
+        print(f"Brightness/contrast adjustment failed: {e}")
+        return pixbuf
+
+
+def invert_colors(pixbuf):
+    """Invert the colors of an image (negative effect)."""
+    try:
+        import array
+
+        width = pixbuf.get_width()
+        height = pixbuf.get_height()
+        has_alpha = pixbuf.get_has_alpha()
+        n_channels = pixbuf.get_n_channels()
+        rowstride = pixbuf.get_rowstride()
+        pixels = pixbuf.get_pixels()
+
+        new_pixels = array.array("B", pixels)
+
+        for y in range(height):
+            for x in range(width):
+                offset = y * rowstride + x * n_channels
+
+                for c in range(3):  # RGB only, not alpha
+                    new_pixels[offset + c] = 255 - pixels[offset + c]
+
+        new_pixbuf = GdkPixbuf.Pixbuf.new_from_data(
+            new_pixels.tobytes(),
+            pixbuf.get_colorspace(),
+            has_alpha,
+            pixbuf.get_bits_per_sample(),
+            width,
+            height,
+            rowstride,
+        )
+
+        return new_pixbuf
+    except Exception as e:
+        print(f"Invert colors failed: {e}")
+        return pixbuf
+
+
+def grayscale(pixbuf):
+    """Convert image to grayscale."""
+    try:
+        import array
+
+        width = pixbuf.get_width()
+        height = pixbuf.get_height()
+        has_alpha = pixbuf.get_has_alpha()
+        n_channels = pixbuf.get_n_channels()
+        rowstride = pixbuf.get_rowstride()
+        pixels = pixbuf.get_pixels()
+
+        new_pixels = array.array("B", pixels)
+
+        for y in range(height):
+            for x in range(width):
+                offset = y * rowstride + x * n_channels
+
+                # Weighted grayscale (human perception)
+                r = pixels[offset]
+                g = pixels[offset + 1]
+                b = pixels[offset + 2]
+                gray = int(0.299 * r + 0.587 * g + 0.114 * b)
+
+                new_pixels[offset] = gray
+                new_pixels[offset + 1] = gray
+                new_pixels[offset + 2] = gray
+
+        new_pixbuf = GdkPixbuf.Pixbuf.new_from_data(
+            new_pixels.tobytes(),
+            pixbuf.get_colorspace(),
+            has_alpha,
+            pixbuf.get_bits_per_sample(),
+            width,
+            height,
+            rowstride,
+        )
+
+        return new_pixbuf
+    except Exception as e:
+        print(f"Grayscale conversion failed: {e}")
+        return pixbuf

@@ -37,6 +37,15 @@ class ToolType(Enum):
     COLORPICKER = "colorpicker"
     STAMP = "stamp"
     ZOOM = "zoom"
+    CALLOUT = "callout"
+
+
+class ArrowStyle(Enum):
+    """Arrow head styles."""
+
+    OPEN = "open"  # Simple open arrowhead (default, current)
+    FILLED = "filled"  # Filled/solid arrowhead
+    DOUBLE = "double"  # Arrowheads on both ends
 
 
 @dataclass
@@ -104,8 +113,13 @@ class DrawingElement:
     text: str = ""
     filled: bool = False
     font_size: int = 16
+    font_bold: bool = False  # For TEXT tool
+    font_italic: bool = False  # For TEXT tool
+    font_family: str = "Sans"  # For TEXT tool
     number: int = 0  # For NUMBER tool
     stamp: str = ""  # For STAMP tool
+    fill_color: Optional[Color] = None  # For CALLOUT background
+    arrow_style: ArrowStyle = ArrowStyle.OPEN  # For ARROW tool
 
 
 class EditorState:
@@ -128,12 +142,24 @@ class EditorState:
         self.is_drawing = False
         self.current_element: Optional[DrawingElement] = None
         self.font_size = 16
+        self.font_bold = False  # For TEXT tool
+        self.font_italic = False  # For TEXT tool
+        self.font_family = "Sans"  # For TEXT tool
         self.number_counter = 1  # For NUMBER tool
         self.current_stamp = "✓"  # Default stamp
+        self.arrow_style = ArrowStyle.OPEN  # Default arrow style
         # Zoom state
         self.zoom_level = 1.0  # 1.0 = 100%
         self.pan_offset_x = 0.0  # Pan offset in image coordinates
         self.pan_offset_y = 0.0
+        # Selection state
+        self.selected_index: Optional[int] = None
+        self._drag_start: Optional[Point] = None
+        self._resize_handle: Optional[str] = None  # 'nw', 'ne', 'sw', 'se', None
+        # Snapping state
+        self.snap_enabled = True
+        self.snap_threshold = 10.0  # Pixels to trigger snap
+        self.active_snap_guides: List[Tuple[str, float]] = []  # ('h', y) or ('v', x)
 
     def set_pixbuf(self, pixbuf: Any) -> None:
         """Set the pixbuf to edit."""
@@ -159,6 +185,18 @@ class EditorState:
         """Set the font size for text tool."""
         self.font_size = max(8, min(72, size))
 
+    def set_font_bold(self, bold: bool) -> None:
+        """Set bold font style for text tool."""
+        self.font_bold = bold
+
+    def set_font_italic(self, italic: bool) -> None:
+        """Set italic font style for text tool."""
+        self.font_italic = italic
+
+    def set_font_family(self, family: str) -> None:
+        """Set font family for text tool."""
+        self.font_family = family
+
     def start_drawing(self, x: float, y: float) -> None:
         """Start a new drawing element at the given position."""
         self.is_drawing = True
@@ -168,6 +206,10 @@ class EditorState:
             stroke_width=self.stroke_width,
             points=[Point(x, y)],
             font_size=self.font_size,
+            font_bold=self.font_bold,
+            font_italic=self.font_italic,
+            font_family=self.font_family,
+            arrow_style=self.arrow_style,
         )
 
     def continue_drawing(self, x: float, y: float) -> None:
@@ -219,6 +261,9 @@ class EditorState:
             points=[Point(x, y)],
             text=text,
             font_size=self.font_size,
+            font_bold=self.font_bold,
+            font_italic=self.font_italic,
+            font_family=self.font_family,
         )
 
         self.undo_stack.append(self.elements.copy())
@@ -249,6 +294,10 @@ class EditorState:
         """Set the current stamp emoji."""
         self.current_stamp = stamp
 
+    def set_arrow_style(self, style: ArrowStyle) -> None:
+        """Set the current arrow style."""
+        self.arrow_style = style
+
     def add_stamp(self, x: float, y: float) -> None:
         """Add a stamp/emoji at the given position."""
         element = DrawingElement(
@@ -258,6 +307,33 @@ class EditorState:
             points=[Point(x, y)],
             stamp=self.current_stamp,
             font_size=self.font_size,
+        )
+
+        self.undo_stack.append(self.elements.copy())
+        self.redo_stack.clear()
+        self.elements.append(element)
+
+    def add_callout(
+        self, tail_x: float, tail_y: float, box_x: float, box_y: float, text: str
+    ) -> None:
+        """Add a callout/speech bubble annotation.
+
+        Args:
+            tail_x, tail_y: Position where the tail points to.
+            box_x, box_y: Position of the callout box center.
+            text: Text content of the callout.
+        """
+        if not text:
+            return
+
+        element = DrawingElement(
+            tool=ToolType.CALLOUT,
+            color=self.current_color,
+            stroke_width=self.stroke_width,
+            points=[Point(tail_x, tail_y), Point(box_x, box_y)],
+            text=text,
+            font_size=self.font_size,
+            fill_color=Color(1.0, 1.0, 0.9, 0.95),  # Light yellow
         )
 
         self.undo_stack.append(self.elements.copy())
@@ -326,6 +402,272 @@ class EditorState:
             zoom_ratio = new_zoom / old_zoom
             self.pan_offset_x = x - (x - self.pan_offset_x) * zoom_ratio
             self.pan_offset_y = y - (y - self.pan_offset_y) * zoom_ratio
+
+    # === Selection Methods ===
+
+    def select_at(self, x: float, y: float, handle_margin: float = 8.0) -> bool:
+        """Try to select an element at the given position.
+
+        Returns True if an element was selected.
+        """
+        # Check if clicking on a resize handle of already selected element
+        if self.selected_index is not None:
+            handle = self._hit_test_handles(x, y, handle_margin)
+            if handle:
+                self._resize_handle = handle
+                self._drag_start = Point(x, y)
+                return True
+
+        # Search elements in reverse order (top-most first)
+        for i in range(len(self.elements) - 1, -1, -1):
+            if self._hit_test_element(self.elements[i], x, y):
+                self.selected_index = i
+                self._drag_start = Point(x, y)
+                self._resize_handle = None
+                return True
+
+        # Clicked on empty space - deselect
+        self.deselect()
+        return False
+
+    def _hit_test_element(self, elem: DrawingElement, x: float, y: float) -> bool:
+        """Check if point (x, y) hits the element."""
+        if not elem.points:
+            return False
+
+        bbox = self._get_element_bbox(elem)
+        if not bbox:
+            return False
+
+        x1, y1, x2, y2 = bbox
+        margin = max(5, elem.stroke_width / 2)
+        return (x1 - margin <= x <= x2 + margin and
+                y1 - margin <= y <= y2 + margin)
+
+    def _get_element_bbox(self, elem: DrawingElement) -> Optional[tuple]:
+        """Get bounding box (x1, y1, x2, y2) for an element."""
+        if not elem.points:
+            return None
+
+        xs = [p.x for p in elem.points]
+        ys = [p.y for p in elem.points]
+
+        # For text/stamps, estimate size
+        if elem.tool in (ToolType.TEXT, ToolType.STAMP, ToolType.NUMBER):
+            # Approximate text size based on font size
+            width = elem.font_size * max(len(elem.text), 1) * 0.6
+            height = elem.font_size * 1.2
+            return (xs[0], ys[0] - height, xs[0] + width, ys[0])
+
+        return (min(xs), min(ys), max(xs), max(ys))
+
+    def _hit_test_handles(self, x: float, y: float, margin: float = 8.0) -> Optional[str]:
+        """Check if point hits a resize handle. Returns handle name or None."""
+        if self.selected_index is None:
+            return None
+
+        elem = self.elements[self.selected_index]
+        bbox = self._get_element_bbox(elem)
+        if not bbox:
+            return None
+
+        x1, y1, x2, y2 = bbox
+        handles = {
+            'nw': (x1, y1),
+            'ne': (x2, y1),
+            'sw': (x1, y2),
+            'se': (x2, y2),
+        }
+
+        for name, (hx, hy) in handles.items():
+            if abs(x - hx) <= margin and abs(y - hy) <= margin:
+                return name
+        return None
+
+    def move_selected(self, x: float, y: float) -> bool:
+        """Move selected element to follow mouse at (x, y).
+
+        Returns True if element was moved.
+        """
+        if self.selected_index is None or self._drag_start is None:
+            return False
+
+        elem = self.elements[self.selected_index]
+
+        if self._resize_handle:
+            # Resizing
+            return self._resize_selected(x, y)
+
+        # Moving
+        dx = x - self._drag_start.x
+        dy = y - self._drag_start.y
+
+        # Update all points
+        for p in elem.points:
+            p.x += dx
+            p.y += dy
+
+        # Apply snapping
+        bbox = self._get_element_bbox(elem)
+        if bbox:
+            snap_dx, snap_dy = self._apply_snap(bbox)
+            for p in elem.points:
+                p.x += snap_dx
+                p.y += snap_dy
+
+        self._drag_start = Point(x, y)
+        return True
+
+    def _resize_selected(self, x: float, y: float) -> bool:
+        """Resize the selected element based on drag position."""
+        if self.selected_index is None or not self._resize_handle:
+            return False
+
+        elem = self.elements[self.selected_index]
+        if len(elem.points) < 2:
+            return False
+
+        # For shapes with 2 points (start/end), resize by moving the appropriate corner
+        handle = self._resize_handle
+
+        # Get current bbox
+        xs = [p.x for p in elem.points]
+        ys = [p.y for p in elem.points]
+        x1, y1, x2, y2 = min(xs), min(ys), max(xs), max(ys)
+
+        # Update corner based on handle
+        if 'n' in handle:
+            y1 = y
+        if 's' in handle:
+            y2 = y
+        if 'w' in handle:
+            x1 = x
+        if 'e' in handle:
+            x2 = x
+
+        # Ensure minimum size
+        if abs(x2 - x1) < 10 or abs(y2 - y1) < 10:
+            return False
+
+        # Update element points
+        if len(elem.points) == 2:
+            elem.points[0] = Point(x1, y1)
+            elem.points[1] = Point(x2, y2)
+
+        return True
+
+    def finish_move(self) -> None:
+        """Finish moving/resizing and save undo state."""
+        if self.selected_index is not None and self._drag_start is not None:
+            # Save state for undo (we modified in place, so save current state)
+            pass  # Already tracking via elements list
+        self._drag_start = None
+        self._resize_handle = None
+        self.active_snap_guides.clear()  # Clear snap guides
+
+    def delete_selected(self) -> bool:
+        """Delete the selected element.
+
+        Returns True if an element was deleted.
+        """
+        if self.selected_index is None:
+            return False
+
+        # Save for undo
+        self.undo_stack.append(self.elements.copy())
+        self.redo_stack.clear()
+
+        # Remove element
+        del self.elements[self.selected_index]
+        self.selected_index = None
+        return True
+
+    def deselect(self) -> None:
+        """Clear the current selection."""
+        self.selected_index = None
+        self._drag_start = None
+        self._resize_handle = None
+
+    def get_selected(self) -> Optional[DrawingElement]:
+        """Get the currently selected element."""
+        if self.selected_index is not None and 0 <= self.selected_index < len(self.elements):
+            return self.elements[self.selected_index]
+        return None
+
+    def set_snap_enabled(self, enabled: bool) -> None:
+        """Enable or disable snapping."""
+        self.snap_enabled = enabled
+
+    def _get_snap_lines(self) -> Tuple[List[float], List[float]]:
+        """Get all horizontal and vertical snap lines from other elements.
+
+        Returns:
+            Tuple of (horizontal_lines, vertical_lines) where each is a list of y/x coordinates.
+        """
+        h_lines: List[float] = []
+        v_lines: List[float] = []
+
+        for i, elem in enumerate(self.elements):
+            if i == self.selected_index:
+                continue  # Skip the selected element
+            bbox = self._get_element_bbox(elem)
+            if bbox:
+                x1, y1, x2, y2 = bbox
+                # Add edges
+                h_lines.extend([y1, y2])  # Top and bottom
+                v_lines.extend([x1, x2])  # Left and right
+                # Add center
+                h_lines.append((y1 + y2) / 2)
+                v_lines.append((x1 + x2) / 2)
+
+        return h_lines, v_lines
+
+    def _apply_snap(self, elem_bbox: Tuple[float, float, float, float]) -> Tuple[float, float]:
+        """Calculate snap offset for the element.
+
+        Args:
+            elem_bbox: Bounding box of element being moved (x1, y1, x2, y2).
+
+        Returns:
+            Tuple of (dx, dy) offset to apply for snapping.
+        """
+        self.active_snap_guides.clear()
+
+        if not self.snap_enabled:
+            return 0.0, 0.0
+
+        x1, y1, x2, y2 = elem_bbox
+        cx = (x1 + x2) / 2
+        cy = (y1 + y2) / 2
+
+        h_lines, v_lines = self._get_snap_lines()
+
+        snap_dx = 0.0
+        snap_dy = 0.0
+
+        # Check horizontal snapping (y values)
+        elem_y_points = [y1, cy, y2]  # Top, center, bottom
+        for elem_y in elem_y_points:
+            for snap_y in h_lines:
+                if abs(elem_y - snap_y) < self.snap_threshold:
+                    snap_dy = snap_y - elem_y
+                    self.active_snap_guides.append(('h', snap_y))
+                    break
+            if snap_dy != 0:
+                break
+
+        # Check vertical snapping (x values)
+        elem_x_points = [x1, cx, x2]  # Left, center, right
+        for elem_x in elem_x_points:
+            for snap_x in v_lines:
+                if abs(elem_x - snap_x) < self.snap_threshold:
+                    snap_dx = snap_x - elem_x
+                    self.active_snap_guides.append(('v', snap_x))
+                    break
+            if snap_dx != 0:
+                break
+
+        return snap_dx, snap_dy
 
     def undo(self) -> bool:
         """Undo the last drawing action.
@@ -576,6 +918,8 @@ def render_elements(
             _render_number(ctx, element)
         elif element.tool == ToolType.STAMP:
             _render_stamp(ctx, element)
+        elif element.tool == ToolType.CALLOUT:
+            _render_callout(ctx, element)
 
 
 def _render_freehand(ctx: Any, element: DrawingElement) -> None:
@@ -604,34 +948,66 @@ def _render_line(ctx: Any, element: DrawingElement) -> None:
     ctx.stroke()
 
 
+def _draw_arrowhead(
+    ctx: Any, tip_x: float, tip_y: float, angle: float, length: float, style: ArrowStyle
+) -> None:
+    """Draw a single arrowhead at the specified position and angle.
+
+    Args:
+        ctx: Cairo context
+        tip_x, tip_y: Position of the arrow tip
+        angle: Direction the arrow points (radians)
+        length: Length of the arrowhead
+        style: ArrowStyle (OPEN or FILLED)
+    """
+    arrow_angle = math.pi / 6  # 30 degrees
+
+    x1 = tip_x - length * math.cos(angle - arrow_angle)
+    y1 = tip_y - length * math.sin(angle - arrow_angle)
+    x2 = tip_x - length * math.cos(angle + arrow_angle)
+    y2 = tip_y - length * math.sin(angle + arrow_angle)
+
+    if style == ArrowStyle.FILLED:
+        # Filled triangle arrowhead
+        ctx.move_to(tip_x, tip_y)
+        ctx.line_to(x1, y1)
+        ctx.line_to(x2, y2)
+        ctx.close_path()
+        ctx.fill()
+    else:
+        # Open arrowhead (two lines forming V)
+        ctx.move_to(tip_x, tip_y)
+        ctx.line_to(x1, y1)
+        ctx.move_to(tip_x, tip_y)
+        ctx.line_to(x2, y2)
+        ctx.stroke()
+
+
 def _render_arrow(ctx: Any, element: DrawingElement) -> None:
-    """Render an arrow."""
+    """Render an arrow with configurable head style."""
     if len(element.points) < 2:
         return
 
     start = element.points[0]
     end = element.points[-1]
+    style = element.arrow_style
 
     # Draw the line
     ctx.move_to(start.x, start.y)
     ctx.line_to(end.x, end.y)
     ctx.stroke()
 
-    # Draw the arrowhead
+    # Calculate arrow parameters
     angle = math.atan2(end.y - start.y, end.x - start.x)
     arrow_length = element.stroke_width * 4
-    arrow_angle = math.pi / 6
 
-    x1 = end.x - arrow_length * math.cos(angle - arrow_angle)
-    y1 = end.y - arrow_length * math.sin(angle - arrow_angle)
-    x2 = end.x - arrow_length * math.cos(angle + arrow_angle)
-    y2 = end.y - arrow_length * math.sin(angle + arrow_angle)
+    # Draw arrowhead at end
+    _draw_arrowhead(ctx, end.x, end.y, angle, arrow_length, style)
 
-    ctx.move_to(end.x, end.y)
-    ctx.line_to(x1, y1)
-    ctx.move_to(end.x, end.y)
-    ctx.line_to(x2, y2)
-    ctx.stroke()
+    # For DOUBLE style, also draw arrowhead at start (pointing backward)
+    if style == ArrowStyle.DOUBLE:
+        reverse_angle = angle + math.pi  # Point in opposite direction
+        _draw_arrowhead(ctx, start.x, start.y, reverse_angle, arrow_length, ArrowStyle.OPEN)
 
 
 def _render_rectangle(ctx: Any, element: DrawingElement) -> None:
@@ -680,12 +1056,16 @@ def _render_ellipse(ctx: Any, element: DrawingElement) -> None:
 
 
 def _render_text(ctx: Any, element: DrawingElement) -> None:
-    """Render text."""
+    """Render text with optional bold/italic styles."""
     if not element.points or not element.text:
         return
 
     point = element.points[0]
-    ctx.select_font_face("Sans", 0, 1)  # Normal, Bold
+    # Cairo font slant: 0=normal, 1=italic, 2=oblique
+    # Cairo font weight: 0=normal, 1=bold
+    slant = 1 if element.font_italic else 0
+    weight = 1 if element.font_bold else 0
+    ctx.select_font_face(element.font_family, slant, weight)
     ctx.set_font_size(element.font_size)
     ctx.move_to(point.x, point.y)
     ctx.show_text(element.text)
@@ -896,3 +1276,132 @@ def _render_stamp(ctx: Any, element: DrawingElement) -> None:
     # Draw the stamp
     ctx.move_to(text_x, text_y)
     ctx.show_text(element.stamp)
+
+
+def _render_callout(ctx: Any, element: DrawingElement) -> None:
+    """Render a callout/speech bubble with tail pointer."""
+    if len(element.points) < 2 or not element.text:
+        return
+
+    tail_tip = element.points[0]  # Where the pointer points
+    box_pos = element.points[1]  # Box position
+
+    # Calculate text dimensions
+    ctx.select_font_face("Sans", 0, 0)
+    ctx.set_font_size(element.font_size)
+
+    # Split text into lines and calculate box size
+    lines = element.text.split("\n")
+    line_height = element.font_size * 1.3
+    max_width = 0
+    for line in lines:
+        extents = ctx.text_extents(line)
+        max_width = max(max_width, extents.width)
+
+    padding = 10
+    box_width = max_width + padding * 2
+    box_height = len(lines) * line_height + padding * 2
+    corner_radius = 8
+
+    # Box position (centered on box_pos)
+    box_x = box_pos.x - box_width / 2
+    box_y = box_pos.y - box_height / 2
+
+    # Draw rounded rectangle with tail
+    ctx.new_path()
+
+    # Determine which side the tail should come from
+    dx = tail_tip.x - box_pos.x
+    dy = tail_tip.y - box_pos.y
+
+    # Draw rounded rectangle
+    # Top-left corner
+    ctx.move_to(box_x + corner_radius, box_y)
+
+    # Top edge
+    ctx.line_to(box_x + box_width - corner_radius, box_y)
+    ctx.arc(
+        box_x + box_width - corner_radius,
+        box_y + corner_radius,
+        corner_radius,
+        -math.pi / 2,
+        0,
+    )
+
+    # Right edge
+    ctx.line_to(box_x + box_width, box_y + box_height - corner_radius)
+    ctx.arc(
+        box_x + box_width - corner_radius,
+        box_y + box_height - corner_radius,
+        corner_radius,
+        0,
+        math.pi / 2,
+    )
+
+    # Bottom edge
+    ctx.line_to(box_x + corner_radius, box_y + box_height)
+    ctx.arc(
+        box_x + corner_radius,
+        box_y + box_height - corner_radius,
+        corner_radius,
+        math.pi / 2,
+        math.pi,
+    )
+
+    # Left edge
+    ctx.line_to(box_x, box_y + corner_radius)
+    ctx.arc(box_x + corner_radius, box_y + corner_radius, corner_radius, math.pi, 3 * math.pi / 2)
+
+    ctx.close_path()
+
+    # Fill background
+    fill = element.fill_color or Color(1.0, 1.0, 0.9, 0.95)  # Light yellow default
+    ctx.set_source_rgba(*fill.to_tuple())
+    ctx.fill_preserve()
+
+    # Draw border
+    ctx.set_source_rgba(*element.color.to_tuple())
+    ctx.set_line_width(element.stroke_width)
+    ctx.stroke()
+
+    # Draw tail (triangle pointer)
+    ctx.new_path()
+    # Find edge point closest to tail
+    edge_x = max(box_x + 15, min(box_x + box_width - 15, tail_tip.x))
+    if abs(dy) > abs(dx):  # Tail is more vertical
+        if tail_tip.y > box_y + box_height:  # Tail below box
+            edge_y = box_y + box_height
+        else:  # Tail above box
+            edge_y = box_y
+    else:  # Tail is more horizontal
+        edge_y = max(box_y + 15, min(box_y + box_height - 15, tail_tip.y))
+        if tail_tip.x > box_x + box_width:  # Tail right of box
+            edge_x = box_x + box_width
+        else:  # Tail left of box
+            edge_x = box_x
+
+    # Draw tail triangle
+    tail_width = 12
+    ctx.move_to(tail_tip.x, tail_tip.y)
+    if abs(dy) > abs(dx):  # Vertical tail
+        ctx.line_to(edge_x - tail_width / 2, edge_y)
+        ctx.line_to(edge_x + tail_width / 2, edge_y)
+    else:  # Horizontal tail
+        ctx.line_to(edge_x, edge_y - tail_width / 2)
+        ctx.line_to(edge_x, edge_y + tail_width / 2)
+    ctx.close_path()
+
+    ctx.set_source_rgba(*fill.to_tuple())
+    ctx.fill_preserve()
+    ctx.set_source_rgba(*element.color.to_tuple())
+    ctx.stroke()
+
+    # Draw text
+    ctx.set_source_rgba(*element.color.to_tuple())
+    text_x = box_x + padding
+    text_y = box_y + padding + element.font_size
+
+    for line in lines:
+        ctx.move_to(text_x, text_y)
+        ctx.show_text(line)
+        text_y += line_height

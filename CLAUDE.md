@@ -50,16 +50,26 @@ cd snap && snapcraft
 | `Ctrl+C` | Copy to clipboard |
 | `Ctrl+Z` | Undo |
 | `Ctrl+Y` | Redo |
+| `+` / `-` / `0` | Zoom in / out / reset |
+| `Delete` / `Backspace` | Delete selected annotation |
+| `Escape` | Deselect / Cancel |
+| `V` | Select tool (move/resize with snap guides) |
 | `P` | Pen tool |
 | `H` | Highlighter |
 | `L` | Line |
-| `A` | Arrow |
+| `A` | Arrow (select style from toolbar: open/filled/double) |
 | `R` | Rectangle |
 | `E` | Ellipse |
-| `T` | Text |
+| `T` | Text (use toolbar for bold/italic/font) |
 | `B` | Blur |
 | `X` | Pixelate |
 | `M` | Measure |
+| `N` | Number marker |
+| `I` | Color picker (eyedropper) |
+| `S` | Stamp tool |
+| `Z` | Zoom tool (scroll to zoom) |
+| `K` | Callout/speech bubble |
+| `C` | Crop (hold Shift for 1:1 square) |
 | Right-click | Radial menu for quick tool selection |
 
 ## Packaging

@@ -1,9 +1,7 @@
 """Tests for config module."""
 
-import json
-import pytest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -11,13 +9,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.config import (
     DEFAULT_CONFIG,
     load_config,
-    save_config,
     get_setting,
-    set_setting,
-    reset_config,
     validate_format,
     get_save_path,
-    ensure_config_dir,
 )
 
 

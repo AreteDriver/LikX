@@ -12,8 +12,11 @@
 ## Features
 
 - **Multi-capture**: Fullscreen, region, window on X11 and Wayland
-- **Annotation**: Pen, highlighter, line, arrow, rectangle, ellipse, text
+- **Annotation**: Pen, highlighter, line, arrow (open/filled/double), rectangle, ellipse, text (bold/italic/fonts), callout
+- **Selection**: Move, resize, and delete annotations with snap-to-alignment guides
+- **Markers**: Number markers, stamps (✓✗⚠❓), color picker
 - **Privacy**: Blur and pixelate tools for sensitive data
+- **Crop**: Drag to crop with Shift for 1:1 aspect ratio lock
 - **OCR**: Extract text from screenshots via Tesseract
 - **Pin to desktop**: Keep screenshots always visible while working
 - **Effects**: Shadow, border, background, rounded corners
@@ -69,10 +72,19 @@ likx --window           # Capture window
 - `Ctrl+Shift+W` - Window capture
 
 ### Editor Shortcuts
-- `Ctrl+S` - Save
-- `Ctrl+C` - Copy to clipboard
-- `Ctrl+Z` - Undo
-- `Ctrl+Y` - Redo
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+P` | Command Palette |
+| `Ctrl+S` | Save |
+| `Ctrl+C` | Copy to clipboard |
+| `Ctrl+Z` / `Ctrl+Y` | Undo / Redo |
+| `Delete` / `Backspace` | Delete selected annotation |
+| `V` | Select tool (move/resize) |
+| `P` `H` `L` `A` | Pen, Highlighter, Line, Arrow |
+| `R` `E` `T` `B` | Rectangle, Ellipse, Text, Blur |
+| `X` `M` `N` `I` | Pixelate, Measure, Number, Color Picker |
+| `S` `Z` `K` `C` | Stamp, Zoom, Callout, Crop |
+| Right-click | Radial menu |
 
 ---
 

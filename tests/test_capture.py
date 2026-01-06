@@ -1,7 +1,6 @@
 """Tests for capture module."""
 
 import os
-import pytest
 from unittest.mock import MagicMock, patch
 from pathlib import Path
 

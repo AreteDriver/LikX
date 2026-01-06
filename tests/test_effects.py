@@ -5,8 +5,7 @@ These tests focus on edge cases and error handling that can be tested
 without GTK.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import sys
 from pathlib import Path
@@ -93,3 +92,66 @@ class TestEffectsDefaultValues:
         import inspect
         sig = inspect.signature(round_corners)
         assert sig.parameters['radius'].default == 10
+
+
+class TestNewEffectsFunctionSignatures:
+    """Test new effect functions added in v3.4."""
+
+    def test_adjust_brightness_contrast_signature(self):
+        from src.effects import adjust_brightness_contrast
+        import inspect
+        sig = inspect.signature(adjust_brightness_contrast)
+        params = list(sig.parameters.keys())
+        assert 'pixbuf' in params
+        assert 'brightness' in params
+        assert 'contrast' in params
+
+    def test_invert_colors_signature(self):
+        from src.effects import invert_colors
+        import inspect
+        sig = inspect.signature(invert_colors)
+        params = list(sig.parameters.keys())
+        assert 'pixbuf' in params
+
+    def test_grayscale_signature(self):
+        from src.effects import grayscale
+        import inspect
+        sig = inspect.signature(grayscale)
+        params = list(sig.parameters.keys())
+        assert 'pixbuf' in params
+
+
+class TestNewEffectsDefaultValues:
+    """Test default parameter values for new effects."""
+
+    def test_adjust_brightness_contrast_defaults(self):
+        from src.effects import adjust_brightness_contrast
+        import inspect
+        sig = inspect.signature(adjust_brightness_contrast)
+        assert sig.parameters['brightness'].default == 0.0
+        assert sig.parameters['contrast'].default == 0.0
+
+
+class TestEffectsErrorHandling:
+    """Test that effects gracefully handle errors."""
+
+    def test_adjust_brightness_contrast_returns_original_on_error(self):
+        from src.effects import adjust_brightness_contrast
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+        result = adjust_brightness_contrast(mock_pixbuf, 0.5, 0.5)
+        assert result == mock_pixbuf  # Returns original on error
+
+    def test_invert_colors_returns_original_on_error(self):
+        from src.effects import invert_colors
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+        result = invert_colors(mock_pixbuf)
+        assert result == mock_pixbuf  # Returns original on error
+
+    def test_grayscale_returns_original_on_error(self):
+        from src.effects import grayscale
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+        result = grayscale(mock_pixbuf)
+        assert result == mock_pixbuf  # Returns original on error

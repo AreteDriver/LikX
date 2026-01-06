@@ -153,6 +153,13 @@ def build_command_registry(editor_window) -> List[Command]:
                 "🔍",
                 "Z",
             ),
+            Command(
+                "Callout Tool",
+                ["callout", "speech", "bubble", "comment", "annotation"],
+                lambda: editor_window._set_tool(ToolType.CALLOUT),
+                "💬",
+                "K",
+            ),
         ]
     )
 
