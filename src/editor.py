@@ -3,6 +3,7 @@
 from enum import Enum
 from typing import Optional, List, Tuple, Any, Set
 from dataclasses import dataclass, field
+import copy
 import math
 
 try:
@@ -156,6 +157,8 @@ class EditorState:
         self.selected_indices: Set[int] = set()
         self._drag_start: Optional[Point] = None
         self._resize_handle: Optional[str] = None  # 'nw', 'ne', 'sw', 'se', None
+        # Clipboard for copy/paste annotations
+        self._clipboard: List[DrawingElement] = []
         # Snapping state
         self.snap_enabled = True
         self.snap_threshold = 10.0  # Pixels to trigger snap
@@ -670,6 +673,59 @@ class EditorState:
                     p.y += dy
 
         return True
+
+    def copy_selected(self) -> bool:
+        """Copy selected elements to internal clipboard.
+
+        Returns:
+            True if any elements were copied.
+        """
+        if not self.selected_indices:
+            return False
+
+        # Deep copy selected elements to clipboard
+        self._clipboard = []
+        for idx in sorted(self.selected_indices):
+            if 0 <= idx < len(self.elements):
+                self._clipboard.append(copy.deepcopy(self.elements[idx]))
+
+        return len(self._clipboard) > 0
+
+    def paste_annotations(self, offset: float = 20.0) -> bool:
+        """Paste elements from clipboard with offset.
+
+        Args:
+            offset: Pixel offset to apply to pasted elements (avoids overlap).
+
+        Returns:
+            True if any elements were pasted.
+        """
+        if not self._clipboard:
+            return False
+
+        # Save for undo
+        self.undo_stack.append([e for e in self.elements])
+        self.redo_stack.clear()
+
+        # Paste copies with offset
+        new_indices = []
+        for elem in self._clipboard:
+            new_elem = copy.deepcopy(elem)
+            # Apply offset to all points
+            for p in new_elem.points:
+                p.x += offset
+                p.y += offset
+            self.elements.append(new_elem)
+            new_indices.append(len(self.elements) - 1)
+
+        # Select the newly pasted elements
+        self.selected_indices = set(new_indices)
+
+        return True
+
+    def has_clipboard(self) -> bool:
+        """Check if clipboard has content."""
+        return len(self._clipboard) > 0
 
     def set_snap_enabled(self, enabled: bool) -> None:
         """Enable or disable snapping."""

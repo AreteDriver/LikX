@@ -1679,7 +1679,20 @@ class EditorWindow:
                 self._save()
                 return True
             elif event.keyval == Gdk.KEY_c:
-                self._copy_to_clipboard()
+                # Context-aware: copy annotations if selected, else copy image
+                if self.editor_state.selected_indices:
+                    if self.editor_state.copy_selected():
+                        count = len(self.editor_state.selected_indices)
+                        self._show_toast(f"Copied {count} annotation(s)")
+                else:
+                    self._copy_to_clipboard()
+                return True
+            elif event.keyval == Gdk.KEY_v:
+                # Paste annotations from clipboard
+                if self.editor_state.paste_annotations():
+                    count = len(self.editor_state.selected_indices)
+                    self._show_toast(f"Pasted {count} annotation(s)")
+                    self.drawing_area.queue_draw()
                 return True
             elif event.keyval == Gdk.KEY_z:
                 self._undo()

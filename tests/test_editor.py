@@ -1277,3 +1277,154 @@ class TestKeyboardNudge:
 
         result = state.nudge_selected(1, 1)
         assert result is True
+
+
+class TestCopyPaste:
+    """Test copy/paste annotation functionality."""
+
+    def test_initial_clipboard_empty(self):
+        state = EditorState()
+        assert state.has_clipboard() is False
+        assert state._clipboard == []
+
+    def test_copy_no_selection_returns_false(self):
+        state = EditorState()
+        result = state.copy_selected()
+        assert result is False
+
+    def test_copy_selected_returns_true(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        result = state.copy_selected()
+        assert result is True
+        assert state.has_clipboard() is True
+
+    def test_copy_creates_deep_copy(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        state.copy_selected()
+
+        # Modify original
+        state.elements[0].points[0].x = 999
+
+        # Clipboard should be unchanged
+        assert state._clipboard[0].points[0].x == 10
+
+    def test_paste_no_clipboard_returns_false(self):
+        state = EditorState()
+        result = state.paste_annotations()
+        assert result is False
+
+    def test_paste_creates_new_element(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        state.copy_selected()
+        assert len(state.elements) == 1
+
+        state.paste_annotations()
+        assert len(state.elements) == 2
+
+    def test_paste_applies_offset(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        state.copy_selected()
+        state.paste_annotations(offset=20.0)
+
+        # Original element
+        assert state.elements[0].points[0].x == 10
+        assert state.elements[0].points[0].y == 10
+
+        # Pasted element should be offset
+        assert state.elements[1].points[0].x == 30  # 10 + 20
+        assert state.elements[1].points[0].y == 30  # 10 + 20
+
+    def test_paste_selects_new_elements(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        state.copy_selected()
+        state.paste_annotations()
+
+        # Should have selected the pasted element (index 1)
+        assert state.selected_indices == {1}
+
+    def test_paste_saves_undo_state(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        state.copy_selected()
+        undo_count_before = len(state.undo_stack)
+
+        state.paste_annotations()
+        assert len(state.undo_stack) == undo_count_before + 1
+
+    def test_paste_clears_redo_stack(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.select_at(30, 30)
+        state.copy_selected()
+
+        # Create redo state
+        state.paste_annotations()
+        state.undo()
+        assert len(state.redo_stack) > 0
+
+        # Paste again should clear redo
+        state.paste_annotations()
+        assert len(state.redo_stack) == 0
+
+    def test_copy_multiple_selected(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 100)
+        state.finish_drawing(150, 150)
+
+        state.select_at(30, 30)
+        state.select_at(125, 125, add_to_selection=True)
+        assert len(state.selected_indices) == 2
+
+        state.copy_selected()
+        assert len(state._clipboard) == 2
+
+    def test_paste_multiple_elements(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 100)
+        state.finish_drawing(150, 150)
+
+        state.select_at(30, 30)
+        state.select_at(125, 125, add_to_selection=True)
+        state.copy_selected()
+
+        state.paste_annotations()
+        assert len(state.elements) == 4
+        assert len(state.selected_indices) == 2
+        assert state.selected_indices == {2, 3}

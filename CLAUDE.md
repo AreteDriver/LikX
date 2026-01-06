@@ -47,7 +47,8 @@ cd snap && snapcraft
 |----------|--------|
 | `Ctrl+Shift+P` | Command Palette (search all commands) |
 | `Ctrl+S` | Save |
-| `Ctrl+C` | Copy to clipboard |
+| `Ctrl+C` | Copy selected annotations (or image if none selected) |
+| `Ctrl+V` | Paste annotations |
 | `Ctrl+Z` | Undo |
 | `Ctrl+Y` | Redo |
 | `+` / `-` / `0` | Zoom in / out / reset |
