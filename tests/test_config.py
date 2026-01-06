@@ -111,3 +111,24 @@ class TestGetSetting:
     def test_get_missing_setting_without_default(self):
         value = get_setting("nonexistent_key")
         assert value is None
+
+
+class TestEditorSettings:
+    """Test editor-related settings."""
+
+    def test_default_config_has_grid_size(self):
+        assert "grid_size" in DEFAULT_CONFIG
+        assert DEFAULT_CONFIG["grid_size"] == 20
+
+    def test_default_config_has_snap_to_grid(self):
+        assert "snap_to_grid" in DEFAULT_CONFIG
+        assert DEFAULT_CONFIG["snap_to_grid"] is False
+
+    def test_grid_size_has_valid_range(self):
+        grid_size = DEFAULT_CONFIG["grid_size"]
+        assert 5 <= grid_size <= 100
+
+    def test_load_config_includes_editor_settings(self):
+        cfg = load_config()
+        assert "grid_size" in cfg
+        assert "snap_to_grid" in cfg
