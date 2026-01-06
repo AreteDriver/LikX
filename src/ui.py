@@ -1740,6 +1740,21 @@ class EditorWindow:
                 self.drawing_area.queue_draw()
                 return True
 
+        # Arrow keys to nudge selected annotations
+        # Shift+Arrow = 10px, Arrow = 1px
+        nudge_amount = 10 if shift else 1
+        arrow_offsets = {
+            Gdk.KEY_Up: (0, -nudge_amount),
+            Gdk.KEY_Down: (0, nudge_amount),
+            Gdk.KEY_Left: (-nudge_amount, 0),
+            Gdk.KEY_Right: (nudge_amount, 0),
+        }
+        if event.keyval in arrow_offsets:
+            dx, dy = arrow_offsets[event.keyval]
+            if self.editor_state.nudge_selected(dx, dy):
+                self.drawing_area.queue_draw()
+                return True
+
         # Escape to deselect/cancel
         if event.keyval == Gdk.KEY_Escape:
             if self.editor_state.selected_index is not None:

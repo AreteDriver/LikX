@@ -1173,3 +1173,107 @@ class TestAnnotationSnapping:
         # Should snap to x=100 (dx = 100 - 95 = 5)
         assert snap_dx == 5.0
         assert ('v', 100) in state.active_snap_guides
+
+
+class TestKeyboardNudge:
+    """Test keyboard nudge functionality."""
+
+    def test_nudge_no_selection_returns_false(self):
+        state = EditorState()
+        result = state.nudge_selected(10, 0)
+        assert result is False
+
+    def test_nudge_moves_single_element(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        original_points = [(p.x, p.y) for p in state.elements[0].points]
+
+        state.nudge_selected(5, 0)
+        new_points = [(p.x, p.y) for p in state.elements[0].points]
+
+        assert new_points[0] == (original_points[0][0] + 5, original_points[0][1])
+        assert new_points[1] == (original_points[1][0] + 5, original_points[1][1])
+
+    def test_nudge_moves_multiple_selected(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # First element
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        # Second element
+        state.start_drawing(100, 100)
+        state.finish_drawing(150, 150)
+
+        # Select both
+        state.select_at(30, 30)
+        state.select_at(125, 125, add_to_selection=True)
+        assert len(state.selected_indices) == 2
+
+        orig_elem0 = [(p.x, p.y) for p in state.elements[0].points]
+        orig_elem1 = [(p.x, p.y) for p in state.elements[1].points]
+
+        state.nudge_selected(0, -10)
+
+        # Both elements moved up by 10
+        for i, p in enumerate(state.elements[0].points):
+            assert p.y == orig_elem0[i][1] - 10
+        for i, p in enumerate(state.elements[1].points):
+            assert p.y == orig_elem1[i][1] - 10
+
+    def test_nudge_saves_undo_state(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        undo_count_before = len(state.undo_stack)
+
+        state.nudge_selected(5, 5)
+        assert len(state.undo_stack) == undo_count_before + 1
+
+    def test_nudge_clears_redo_stack(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.select_at(30, 30)
+
+        # Create redo state
+        state.nudge_selected(5, 0)
+        state.undo()
+        assert len(state.redo_stack) > 0
+
+        # Nudge should clear redo
+        state.select_at(30, 30)
+        state.nudge_selected(0, 5)
+        assert len(state.redo_stack) == 0
+
+    def test_nudge_negative_direction(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(100, 100)
+        state.finish_drawing(150, 150)
+
+        state.select_at(125, 125)
+        orig = [(p.x, p.y) for p in state.elements[0].points]
+
+        state.nudge_selected(-20, -15)
+
+        for i, p in enumerate(state.elements[0].points):
+            assert p.x == orig[i][0] - 20
+            assert p.y == orig[i][1] - 15
+
+    def test_nudge_returns_true_on_success(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.select_at(30, 30)
+
+        result = state.nudge_selected(1, 1)
+        assert result is True

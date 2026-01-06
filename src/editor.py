@@ -644,6 +644,33 @@ class EditorState:
         return [self.elements[idx] for idx in sorted(self.selected_indices)
                 if 0 <= idx < len(self.elements)]
 
+    def nudge_selected(self, dx: float, dy: float) -> bool:
+        """Move all selected elements by (dx, dy) pixels.
+
+        Args:
+            dx: Horizontal offset (positive = right)
+            dy: Vertical offset (positive = down)
+
+        Returns:
+            True if any elements were moved.
+        """
+        if not self.selected_indices:
+            return False
+
+        # Save for undo
+        self.undo_stack.append([e for e in self.elements])
+        self.redo_stack.clear()
+
+        # Move all selected elements
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                elem = self.elements[idx]
+                for p in elem.points:
+                    p.x += dx
+                    p.y += dy
+
+        return True
+
     def set_snap_enabled(self, enabled: bool) -> None:
         """Enable or disable snapping."""
         self.snap_enabled = enabled

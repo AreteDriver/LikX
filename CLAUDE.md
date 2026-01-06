@@ -52,8 +52,11 @@ cd snap && snapcraft
 | `Ctrl+Y` | Redo |
 | `+` / `-` / `0` | Zoom in / out / reset |
 | `Delete` / `Backspace` | Delete selected annotation |
+| `Arrow keys` | Nudge selected annotation 1px |
+| `Shift+Arrow keys` | Nudge selected annotation 10px |
 | `Escape` | Deselect / Cancel |
 | `V` | Select tool (move/resize with snap guides) |
+| `Shift+Click` | Add to / toggle selection (multi-select) |
 | `P` | Pen tool |
 | `H` | Highlighter |
 | `L` | Line |
