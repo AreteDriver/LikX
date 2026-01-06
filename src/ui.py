@@ -1240,47 +1240,56 @@ class EditorWindow:
         cr.show_text(dim_text)
 
     def _draw_selection_handles(self, cr) -> None:
-        """Draw selection bounding box and resize handles for selected element."""
-        selected = self.editor_state.get_selected()
-        if not selected:
+        """Draw selection bounding box and resize handles for selected elements."""
+        if not self.editor_state.selected_indices:
             return
 
-        bbox = self.editor_state._get_element_bbox(selected)
-        if not bbox:
-            return
+        # Draw selection box for each selected element
+        for idx in self.editor_state.selected_indices:
+            if 0 <= idx < len(self.editor_state.elements):
+                elem = self.editor_state.elements[idx]
+                bbox = self.editor_state._get_element_bbox(elem)
+                if not bbox:
+                    continue
 
-        x1, y1, x2, y2 = bbox
+                x1, y1, x2, y2 = bbox
 
-        # Draw selection rectangle (dashed blue)
-        cr.set_source_rgba(0.2, 0.5, 1.0, 0.8)
-        cr.set_line_width(1.5)
-        cr.set_dash([4, 4])
-        cr.rectangle(x1, y1, x2 - x1, y2 - y1)
-        cr.stroke()
-        cr.set_dash([])  # Reset dash
+                # Draw selection rectangle (dashed blue)
+                cr.set_source_rgba(0.2, 0.5, 1.0, 0.8)
+                cr.set_line_width(1.5)
+                cr.set_dash([4, 4])
+                cr.rectangle(x1, y1, x2 - x1, y2 - y1)
+                cr.stroke()
+                cr.set_dash([])  # Reset dash
 
-        # Draw resize handles at corners
-        handle_size = 8
-        handles = [
-            (x1, y1),  # nw
-            (x2, y1),  # ne
-            (x1, y2),  # sw
-            (x2, y2),  # se
-        ]
+        # Draw resize handles only for single selection
+        if len(self.editor_state.selected_indices) == 1:
+            idx = next(iter(self.editor_state.selected_indices))
+            elem = self.editor_state.elements[idx]
+            bbox = self.editor_state._get_element_bbox(elem)
+            if bbox:
+                x1, y1, x2, y2 = bbox
+                handle_size = 8
+                handles = [
+                    (x1, y1),  # nw
+                    (x2, y1),  # ne
+                    (x1, y2),  # sw
+                    (x2, y2),  # se
+                ]
 
-        for hx, hy in handles:
-            # White fill with blue border
-            cr.set_source_rgba(1, 1, 1, 1)
-            cr.rectangle(
-                hx - handle_size / 2,
-                hy - handle_size / 2,
-                handle_size,
-                handle_size,
-            )
-            cr.fill_preserve()
-            cr.set_source_rgba(0.2, 0.5, 1.0, 1)
-            cr.set_line_width(1)
-            cr.stroke()
+                for hx, hy in handles:
+                    # White fill with blue border
+                    cr.set_source_rgba(1, 1, 1, 1)
+                    cr.rectangle(
+                        hx - handle_size / 2,
+                        hy - handle_size / 2,
+                        handle_size,
+                        handle_size,
+                    )
+                    cr.fill_preserve()
+                    cr.set_source_rgba(0.2, 0.5, 1.0, 1)
+                    cr.set_line_width(1)
+                    cr.stroke()
 
     def _draw_snap_guides(self, cr) -> None:
         """Draw visual snap guides when dragging an element."""
@@ -1412,7 +1421,9 @@ class EditorWindow:
         if event.button == 1:
             if self.editor_state.current_tool == ToolType.SELECT:
                 # Try to select an element at this position
-                self.editor_state.select_at(img_x, img_y)
+                # Shift+click adds to selection (multi-select)
+                shift_held = event.state & Gdk.ModifierType.SHIFT_MASK
+                self.editor_state.select_at(img_x, img_y, add_to_selection=bool(shift_held))
                 self.drawing_area.queue_draw()
             elif self.editor_state.current_tool == ToolType.TEXT:
                 # Show text input dialog

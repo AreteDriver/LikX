@@ -1,7 +1,7 @@
 """Enhanced image editor module for LikX with full annotation support."""
 
 from enum import Enum
-from typing import Optional, List, Tuple, Any
+from typing import Optional, List, Tuple, Any, Set
 from dataclasses import dataclass, field
 import math
 
@@ -152,8 +152,8 @@ class EditorState:
         self.zoom_level = 1.0  # 1.0 = 100%
         self.pan_offset_x = 0.0  # Pan offset in image coordinates
         self.pan_offset_y = 0.0
-        # Selection state
-        self.selected_index: Optional[int] = None
+        # Selection state (multi-select support)
+        self.selected_indices: Set[int] = set()
         self._drag_start: Optional[Point] = None
         self._resize_handle: Optional[str] = None  # 'nw', 'ne', 'sw', 'se', None
         # Snapping state
@@ -405,13 +405,34 @@ class EditorState:
 
     # === Selection Methods ===
 
-    def select_at(self, x: float, y: float, handle_margin: float = 8.0) -> bool:
+    @property
+    def selected_index(self) -> Optional[int]:
+        """Get single selected index (for backwards compatibility)."""
+        if len(self.selected_indices) == 1:
+            return next(iter(self.selected_indices))
+        return None
+
+    @selected_index.setter
+    def selected_index(self, value: Optional[int]) -> None:
+        """Set single selected index (for backwards compatibility)."""
+        self.selected_indices.clear()
+        if value is not None:
+            self.selected_indices.add(value)
+
+    def select_at(
+        self, x: float, y: float, add_to_selection: bool = False, handle_margin: float = 8.0
+    ) -> bool:
         """Try to select an element at the given position.
+
+        Args:
+            x, y: Click position
+            add_to_selection: If True (Shift+click), add to existing selection
+            handle_margin: Margin for resize handle hit testing
 
         Returns True if an element was selected.
         """
-        # Check if clicking on a resize handle of already selected element
-        if self.selected_index is not None:
+        # Check if clicking on a resize handle of already selected element (single selection only)
+        if len(self.selected_indices) == 1:
             handle = self._hit_test_handles(x, y, handle_margin)
             if handle:
                 self._resize_handle = handle
@@ -421,13 +442,23 @@ class EditorState:
         # Search elements in reverse order (top-most first)
         for i in range(len(self.elements) - 1, -1, -1):
             if self._hit_test_element(self.elements[i], x, y):
-                self.selected_index = i
+                if add_to_selection:
+                    # Toggle selection
+                    if i in self.selected_indices:
+                        self.selected_indices.discard(i)
+                    else:
+                        self.selected_indices.add(i)
+                else:
+                    # Replace selection
+                    self.selected_indices.clear()
+                    self.selected_indices.add(i)
                 self._drag_start = Point(x, y)
                 self._resize_handle = None
                 return True
 
-        # Clicked on empty space - deselect
-        self.deselect()
+        # Clicked on empty space - deselect (unless adding to selection)
+        if not add_to_selection:
+            self.deselect()
         return False
 
     def _hit_test_element(self, elem: DrawingElement, x: float, y: float) -> bool:
@@ -463,10 +494,12 @@ class EditorState:
 
     def _hit_test_handles(self, x: float, y: float, margin: float = 8.0) -> Optional[str]:
         """Check if point hits a resize handle. Returns handle name or None."""
-        if self.selected_index is None:
+        # Only show resize handles for single selection
+        if len(self.selected_indices) != 1:
             return None
 
-        elem = self.elements[self.selected_index]
+        idx = next(iter(self.selected_indices))
+        elem = self.elements[idx]
         bbox = self._get_element_bbox(elem)
         if not bbox:
             return None
@@ -485,35 +518,42 @@ class EditorState:
         return None
 
     def move_selected(self, x: float, y: float) -> bool:
-        """Move selected element to follow mouse at (x, y).
+        """Move selected elements to follow mouse at (x, y).
 
-        Returns True if element was moved.
+        Returns True if elements were moved.
         """
-        if self.selected_index is None or self._drag_start is None:
+        if not self.selected_indices or self._drag_start is None:
             return False
 
-        elem = self.elements[self.selected_index]
-
-        if self._resize_handle:
-            # Resizing
+        # Resize only works for single selection
+        if self._resize_handle and len(self.selected_indices) == 1:
             return self._resize_selected(x, y)
 
-        # Moving
+        # Moving all selected elements
         dx = x - self._drag_start.x
         dy = y - self._drag_start.y
 
-        # Update all points
-        for p in elem.points:
-            p.x += dx
-            p.y += dy
-
-        # Apply snapping
-        bbox = self._get_element_bbox(elem)
-        if bbox:
-            snap_dx, snap_dy = self._apply_snap(bbox)
+        # Move all selected elements
+        for idx in self.selected_indices:
+            elem = self.elements[idx]
             for p in elem.points:
-                p.x += snap_dx
-                p.y += snap_dy
+                p.x += dx
+                p.y += dy
+
+        # Apply snapping (based on first selected element)
+        if self.selected_indices:
+            first_idx = min(self.selected_indices)
+            first_elem = self.elements[first_idx]
+            bbox = self._get_element_bbox(first_elem)
+            if bbox:
+                snap_dx, snap_dy = self._apply_snap(bbox)
+                if snap_dx != 0 or snap_dy != 0:
+                    # Apply snap offset to all selected elements
+                    for idx in self.selected_indices:
+                        elem = self.elements[idx]
+                        for p in elem.points:
+                            p.x += snap_dx
+                            p.y += snap_dy
 
         self._drag_start = Point(x, y)
         return True
@@ -558,7 +598,7 @@ class EditorState:
 
     def finish_move(self) -> None:
         """Finish moving/resizing and save undo state."""
-        if self.selected_index is not None and self._drag_start is not None:
+        if self.selected_indices and self._drag_start is not None:
             # Save state for undo (we modified in place, so save current state)
             pass  # Already tracking via elements list
         self._drag_start = None
@@ -566,33 +606,43 @@ class EditorState:
         self.active_snap_guides.clear()  # Clear snap guides
 
     def delete_selected(self) -> bool:
-        """Delete the selected element.
+        """Delete all selected elements.
 
-        Returns True if an element was deleted.
+        Returns True if any elements were deleted.
         """
-        if self.selected_index is None:
+        if not self.selected_indices:
             return False
 
         # Save for undo
-        self.undo_stack.append(self.elements.copy())
+        self.undo_stack.append([e for e in self.elements])
         self.redo_stack.clear()
 
-        # Remove element
-        del self.elements[self.selected_index]
-        self.selected_index = None
+        # Remove elements in reverse index order to maintain correct indices
+        for idx in sorted(self.selected_indices, reverse=True):
+            if 0 <= idx < len(self.elements):
+                del self.elements[idx]
+
+        self.selected_indices.clear()
         return True
 
     def deselect(self) -> None:
         """Clear the current selection."""
-        self.selected_index = None
+        self.selected_indices.clear()
         self._drag_start = None
         self._resize_handle = None
 
     def get_selected(self) -> Optional[DrawingElement]:
-        """Get the currently selected element."""
-        if self.selected_index is not None and 0 <= self.selected_index < len(self.elements):
-            return self.elements[self.selected_index]
+        """Get the first selected element (for single selection compatibility)."""
+        if self.selected_indices:
+            idx = min(self.selected_indices)
+            if 0 <= idx < len(self.elements):
+                return self.elements[idx]
         return None
+
+    def get_all_selected(self) -> List[DrawingElement]:
+        """Get all selected elements."""
+        return [self.elements[idx] for idx in sorted(self.selected_indices)
+                if 0 <= idx < len(self.elements)]
 
     def set_snap_enabled(self, enabled: bool) -> None:
         """Enable or disable snapping."""
@@ -608,8 +658,8 @@ class EditorState:
         v_lines: List[float] = []
 
         for i, elem in enumerate(self.elements):
-            if i == self.selected_index:
-                continue  # Skip the selected element
+            if i in self.selected_indices:
+                continue  # Skip selected elements
             bbox = self._get_element_bbox(elem)
             if bbox:
                 x1, y1, x2, y2 = bbox

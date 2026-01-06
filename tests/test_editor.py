@@ -735,6 +735,183 @@ class TestResizeHandles:
         assert y2 == 150  # Bottom edge unchanged
 
 
+class TestMultiSelect:
+    """Test multi-select functionality."""
+
+    def test_initial_selected_indices_empty(self):
+        state = EditorState()
+        assert state.selected_indices == set()
+
+    def test_select_adds_to_indices(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+
+        state.select_at(50, 50)
+        assert state.selected_indices == {0}
+
+    def test_shift_click_adds_to_selection(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # Create two elements
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.start_drawing(200, 10)
+        state.finish_drawing(300, 100)
+
+        # Select first
+        state.select_at(50, 50)
+        assert state.selected_indices == {0}
+
+        # Shift+click second
+        state.select_at(250, 50, add_to_selection=True)
+        assert state.selected_indices == {0, 1}
+
+    def test_shift_click_toggles_selection(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+
+        state.select_at(50, 50)
+        assert 0 in state.selected_indices
+
+        # Shift+click same element removes it
+        state.select_at(50, 50, add_to_selection=True)
+        assert 0 not in state.selected_indices
+
+    def test_click_without_shift_replaces_selection(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.start_drawing(200, 10)
+        state.finish_drawing(300, 100)
+
+        # Select first
+        state.select_at(50, 50)
+        # Shift+click second
+        state.select_at(250, 50, add_to_selection=True)
+        assert state.selected_indices == {0, 1}
+
+        # Click first without shift - should replace selection
+        state.select_at(50, 50, add_to_selection=False)
+        assert state.selected_indices == {0}
+
+    def test_get_all_selected_returns_elements(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.start_drawing(200, 10)
+        state.finish_drawing(300, 100)
+
+        state.select_at(50, 50)
+        state.select_at(250, 50, add_to_selection=True)
+
+        selected = state.get_all_selected()
+        assert len(selected) == 2
+
+    def test_move_selected_moves_all(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.start_drawing(200, 10)
+        state.finish_drawing(300, 100)
+
+        # Select both
+        state.select_at(50, 50)
+        state.select_at(250, 50, add_to_selection=True)
+
+        # Move
+        state.move_selected(60, 60)
+
+        # Both should have moved
+        bbox0 = state._get_element_bbox(state.elements[0])
+        bbox1 = state._get_element_bbox(state.elements[1])
+        assert bbox0[0] != 10  # x1 changed
+        assert bbox1[0] != 200  # x1 changed
+
+    def test_delete_selected_deletes_all(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.start_drawing(200, 10)
+        state.finish_drawing(300, 100)
+        state.start_drawing(400, 10)
+        state.finish_drawing(500, 100)
+
+        assert len(state.elements) == 3
+
+        # Select first and third
+        state.select_at(50, 50)
+        state.select_at(450, 50, add_to_selection=True)
+        assert state.selected_indices == {0, 2}
+
+        # Delete
+        result = state.delete_selected()
+        assert result is True
+        assert len(state.elements) == 1
+        assert state.selected_indices == set()
+
+    def test_deselect_clears_all(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.start_drawing(200, 10)
+        state.finish_drawing(300, 100)
+
+        state.select_at(50, 50)
+        state.select_at(250, 50, add_to_selection=True)
+        assert len(state.selected_indices) == 2
+
+        state.deselect()
+        assert state.selected_indices == set()
+
+    def test_resize_handles_only_for_single_selection(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.start_drawing(200, 10)
+        state.finish_drawing(300, 100)
+
+        # Single selection - handles visible
+        state.select_at(50, 50)
+        assert state._hit_test_handles(12, 12) == 'nw'
+
+        # Multi-selection - no handles
+        state.select_at(250, 50, add_to_selection=True)
+        assert state._hit_test_handles(12, 12) is None
+
+    def test_selected_index_property_backwards_compat(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+
+        state.select_at(50, 50)
+        # selected_index property should work for single selection
+        assert state.selected_index == 0
+
+    def test_selected_index_none_for_multi(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.start_drawing(200, 10)
+        state.finish_drawing(300, 100)
+
+        state.select_at(50, 50)
+        state.select_at(250, 50, add_to_selection=True)
+        # selected_index should be None for multi-selection
+        assert state.selected_index is None
+
+
 class TestArrowStyle:
     """Test ArrowStyle enum and arrow style functionality."""
 
