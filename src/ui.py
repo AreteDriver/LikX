@@ -15,10 +15,14 @@ except (ImportError, ValueError):
 
 from . import config
 from .capture import CaptureMode, CaptureResult, capture, save_capture
-from .editor import EditorState, ToolType, COLORS, Color, render_elements
+from .editor import EditorState, ToolType, Color, render_elements
 from .notification import show_notification, show_screenshot_saved, show_screenshot_copied, show_upload_success, show_upload_error
 from .uploader import Uploader
 from .hotkeys import HotkeyManager
+from .ocr import OCREngine
+from .pinned import PinnedWindow
+from .history import HistoryManager
+from .effects import add_shadow, add_border, add_background, round_corners
 
 
 class RegionSelector:
@@ -1449,12 +1453,6 @@ def run_app() -> None:
 # ==========================================
 # PREMIUM FEATURES INTEGRATION
 # ==========================================
-
-from .ocr import OCREngine
-from .pinned import PinnedWindow  
-from .history import HistoryWindow, HistoryManager
-from .effects import add_shadow, add_border, add_background, round_corners
-
 
 # Enhance EditorWindow with premium features
 _EditorWindow_init_original = EditorWindow.__init__

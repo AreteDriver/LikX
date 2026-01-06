@@ -167,9 +167,9 @@ class PinnedWindow:
     def _on_motion(self, widget, event):
         """Handle dragging."""
         if self.dragging:
-            dx = event.x - self.drag_start_x
-            dy = event.y - self.drag_start_y
-            # Could implement pan here if needed
+            # dx, dy available if pan is implemented
+            _ = event.x - self.drag_start_x
+            _ = event.y - self.drag_start_y
         return True
     
     def _on_destroy(self, widget):

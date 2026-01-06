@@ -27,7 +27,7 @@ def show_notification(title: str, message: str, icon: str = "camera-photo",
         notification.set_timeout(timeout)
         notification.show()
         return True
-    except:
+    except Exception:
         pass
     
     # Fallback to notify-send

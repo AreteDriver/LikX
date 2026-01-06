@@ -9,7 +9,7 @@ try:
     import gi
     gi.require_version('Gdk', '3.0')
     gi.require_version('GdkPixbuf', '2.0')
-    from gi.repository import Gdk, GdkPixbuf
+    from gi.repository import GdkPixbuf
     GTK_AVAILABLE = True
 except (ImportError, ValueError):
     GTK_AVAILABLE = False
@@ -587,7 +587,7 @@ def _render_blur(ctx: Any, element: DrawingElement, base_pixbuf: Any) -> None:
         Gdk.cairo_set_source_pixbuf(ctx, blurred, 0, 0)
         ctx.rectangle(x, y, width, height)
         ctx.fill()
-    except:
+    except Exception:
         pass
 
 
@@ -613,5 +613,5 @@ def _render_pixelate(ctx: Any, element: DrawingElement, base_pixbuf: Any) -> Non
         Gdk.cairo_set_source_pixbuf(ctx, pixelated, 0, 0)
         ctx.rectangle(x, y, width, height)
         ctx.fill()
-    except:
+    except Exception:
         pass
