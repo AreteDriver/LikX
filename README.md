@@ -39,8 +39,8 @@ chmod +x LikX-*.AppImage
 
 ### Debian/Ubuntu (.deb)
 ```bash
-wget https://github.com/AreteDriver/LikX/releases/latest/download/likx_3.0.0_all.deb
-sudo dpkg -i likx_3.0.0_all.deb
+wget https://github.com/AreteDriver/LikX/releases/latest/download/likx_3.1.0_all.deb
+sudo dpkg -i likx_3.1.0_all.deb
 sudo apt-get install -f  # Fix dependencies
 ```
 

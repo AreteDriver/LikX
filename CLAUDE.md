@@ -38,6 +38,28 @@ cd snap && snapcraft
 | `src/effects.py` | Shadow, border, round corners |
 | `src/config.py` | User settings persistence |
 | `src/uploader.py` | Imgur cloud upload |
+| `src/command_palette.py` | Ctrl+Shift+P searchable command interface |
+| `src/commands.py` | Command registry for palette |
+| `src/radial_menu.py` | Right-click radial tool selector |
+
+## Keyboard Shortcuts
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+P` | Command Palette (search all commands) |
+| `Ctrl+S` | Save |
+| `Ctrl+C` | Copy to clipboard |
+| `Ctrl+Z` | Undo |
+| `Ctrl+Y` | Redo |
+| `P` | Pen tool |
+| `H` | Highlighter |
+| `L` | Line |
+| `A` | Arrow |
+| `R` | Rectangle |
+| `E` | Ellipse |
+| `T` | Text |
+| `B` | Blur |
+| `X` | Pixelate |
+| Right-click | Radial menu for quick tool selection |
 
 ## Packaging
 - **Snap**: `snap/snapcraft.yaml` - builds with `snapcraft`

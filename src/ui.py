@@ -734,6 +734,34 @@ class EditorWindow:
             self.drawing_area.queue_draw()
             self.statusbar.push(self.statusbar_context, "Cleared")
 
+    def _show_command_palette(self) -> None:
+        """Show the command palette for quick command access."""
+        if not hasattr(self, "_command_palette") or self._command_palette is None:
+            from .commands import build_command_registry
+            from .command_palette import CommandPalette
+
+            commands = build_command_registry(self)
+            self._command_palette = CommandPalette(commands, self.window)
+
+        self._command_palette.show_centered(self.window)
+
+    def _show_radial_menu(self, x: float, y: float) -> None:
+        """Show the radial menu for quick tool selection."""
+        if not hasattr(self, "_radial_menu") or self._radial_menu is None:
+            from .radial_menu import RadialMenu
+
+            self._radial_menu = RadialMenu(self._on_radial_select)
+
+        self._radial_menu.show_at(int(x), int(y))
+
+    def _on_radial_select(self, tool_type) -> None:
+        """Handle tool selection from radial menu."""
+        if tool_type is not None:
+            self._set_tool(tool_type)
+            # Update toggle buttons if they exist
+            if hasattr(self, "tool_buttons") and tool_type in self.tool_buttons:
+                self.tool_buttons[tool_type].set_active(True)
+
     def _save_with_annotations(self, filepath: Path) -> bool:
         """Save the image with annotations rendered."""
         try:
@@ -918,6 +946,9 @@ class EditorWindow:
                 self._show_text_dialog(event.x, event.y)
             else:
                 self.editor_state.start_drawing(event.x, event.y)
+        elif event.button == 3:
+            # Right-click: show radial menu
+            self._show_radial_menu(event.x_root, event.y_root)
         return True
 
     def _on_button_release(self, widget: Gtk.Widget, event: Gdk.EventButton) -> bool:
@@ -974,6 +1005,12 @@ class EditorWindow:
     def _on_key_press(self, widget: Gtk.Widget, event: Gdk.EventKey) -> bool:
         """Handle keyboard shortcuts."""
         ctrl = event.state & Gdk.ModifierType.CONTROL_MASK
+        shift = event.state & Gdk.ModifierType.SHIFT_MASK
+
+        # Ctrl+Shift+P - Command Palette
+        if ctrl and shift and event.keyval in (Gdk.KEY_p, Gdk.KEY_P):
+            self._show_command_palette()
+            return True
 
         # Ctrl shortcuts
         if ctrl:
