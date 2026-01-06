@@ -40,9 +40,9 @@ if [ ! -f "appimagetool-x86_64.AppImage" ]; then
     chmod +x appimagetool-x86_64.AppImage
 fi
 
-# Build AppImage
+# Build AppImage (use --appimage-extract-and-run to work without FUSE)
 echo "Building AppImage..."
-ARCH=$ARCH ./appimagetool-x86_64.AppImage --no-appstream "${APPDIR}" "${APP_NAME}-${VERSION}-${ARCH}.AppImage"
+ARCH=$ARCH APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool-x86_64.AppImage --no-appstream "${APPDIR}" "${APP_NAME}-${VERSION}-${ARCH}.AppImage"
 
 echo "=== Build complete: ${APP_NAME}-${VERSION}-${ARCH}.AppImage ==="
 ls -lh "${APP_NAME}-${VERSION}-${ARCH}.AppImage"
