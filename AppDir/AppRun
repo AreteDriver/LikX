@@ -1,0 +1,18 @@
+#!/bin/bash
+# AppRun for LikX AppImage
+
+SELF=$(readlink -f "$0")
+HERE=${SELF%/*}
+
+# Set up environment
+export PATH="${HERE}/usr/bin:${PATH}"
+export LD_LIBRARY_PATH="${HERE}/usr/lib:${HERE}/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
+export PYTHONPATH="${HERE}/opt/likx:${PYTHONPATH}"
+export GI_TYPELIB_PATH="${HERE}/usr/lib/girepository-1.0:${GI_TYPELIB_PATH}"
+export XDG_DATA_DIRS="${HERE}/usr/share:${XDG_DATA_DIRS}"
+
+# Tesseract data
+export TESSDATA_PREFIX="${HERE}/usr/share/tesseract-ocr/4.00/tessdata"
+
+cd "${HERE}/opt/likx"
+exec python3 main.py "$@"
