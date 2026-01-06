@@ -2756,6 +2756,128 @@ class TestRotate:
         assert not state.rotate_selected(90)
 
 
+class TestOpacity:
+    """Test opacity/transparency functionality."""
+
+    def test_set_opacity_no_selection(self):
+        state = EditorState()
+        assert not state.set_selected_opacity(0.5)
+
+    def test_set_opacity_changes_alpha(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.select_at(50, 25)
+        assert state.elements[0].color.a == 1.0  # Default
+
+        assert state.set_selected_opacity(0.5)
+        assert state.elements[0].color.a == 0.5
+
+    def test_set_opacity_clamps_values(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.select_at(50, 25)
+
+        # Test upper clamp
+        state.set_selected_opacity(1.5)
+        assert state.elements[0].color.a == 1.0
+
+        # Test lower clamp
+        state.set_selected_opacity(-0.5)
+        assert state.elements[0].color.a == 0.0
+
+    def test_adjust_opacity_increases(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.select_at(50, 25)
+        state.set_selected_opacity(0.5)
+
+        assert state.adjust_selected_opacity(0.1)
+        assert abs(state.elements[0].color.a - 0.6) < 0.01
+
+    def test_adjust_opacity_decreases(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.select_at(50, 25)
+        state.set_selected_opacity(0.5)
+
+        assert state.adjust_selected_opacity(-0.2)
+        assert abs(state.elements[0].color.a - 0.3) < 0.01
+
+    def test_adjust_opacity_clamps_at_bounds(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.select_at(50, 25)
+
+        # Try to go above 1.0
+        state.set_selected_opacity(0.95)
+        state.adjust_selected_opacity(0.2)
+        assert state.elements[0].color.a == 1.0
+
+        # Try to go below 0.0
+        state.set_selected_opacity(0.05)
+        state.adjust_selected_opacity(-0.2)
+        assert state.elements[0].color.a == 0.0
+
+    def test_get_opacity_returns_value(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.select_at(50, 25)
+        state.set_selected_opacity(0.7)
+
+        opacity = state.get_selected_opacity()
+        assert abs(opacity - 0.7) < 0.01
+
+    def test_get_opacity_no_selection(self):
+        state = EditorState()
+        assert state.get_selected_opacity() is None
+
+    def test_opacity_skips_locked(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        # Reset alpha to known state (in case of shared Color object pollution)
+        state.elements[0].color.a = 1.0
+        original_alpha = state.elements[0].color.a
+
+        state.elements[0].locked = True
+        state.select_at(50, 25)
+
+        # Should return False because element is locked
+        assert not state.set_selected_opacity(0.5)
+        assert state.elements[0].color.a == original_alpha  # Unchanged
+
+    def test_set_opacity_saves_undo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        initial_undo_count = len(state.undo_stack)
+        state.select_at(50, 25)
+        state.set_selected_opacity(0.5)
+        assert len(state.undo_stack) == initial_undo_count + 1
+
+
 class TestLock:
     """Test lock/unlock functionality."""
 

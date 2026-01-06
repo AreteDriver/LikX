@@ -71,6 +71,8 @@ cd snap && snapcraft
 | `Ctrl+Alt+F` | Flip selected vertically |
 | `Ctrl+R` | Rotate selected 90° clockwise |
 | `Ctrl+Shift+R` | Rotate selected 90° counter-clockwise |
+| `Shift+]` | Increase opacity 10% |
+| `Shift+[` | Decrease opacity 10% |
 | `Ctrl+L` | Lock/unlock selected elements |
 | `Ctrl+'` | Toggle grid snap |
 | `+` / `-` / `0` | Zoom in / out / reset |

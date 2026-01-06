@@ -70,6 +70,10 @@ class Color:
         """Convert to tuple format."""
         return (self.r, self.g, self.b, self.a)
 
+    def copy(self) -> "Color":
+        """Create a copy of this color."""
+        return Color(self.r, self.g, self.b, self.a)
+
     @classmethod
     def from_hex(cls, hex_color: str) -> "Color":
         """Create a Color from hex string (e.g., '#FF0000')."""
@@ -234,7 +238,7 @@ class EditorState:
         self.is_drawing = True
         self.current_element = DrawingElement(
             tool=self.current_tool,
-            color=self.current_color,
+            color=self.current_color.copy(),
             stroke_width=self.stroke_width,
             points=[Point(x, y)],
             font_size=self.font_size,
@@ -288,7 +292,7 @@ class EditorState:
 
         element = DrawingElement(
             tool=ToolType.TEXT,
-            color=self.current_color,
+            color=self.current_color.copy(),
             stroke_width=self.stroke_width,
             points=[Point(x, y)],
             text=text,
@@ -306,7 +310,7 @@ class EditorState:
         """Add a numbered marker at the given position."""
         element = DrawingElement(
             tool=ToolType.NUMBER,
-            color=self.current_color,
+            color=self.current_color.copy(),
             stroke_width=self.stroke_width,
             points=[Point(x, y)],
             number=self.number_counter,
@@ -334,7 +338,7 @@ class EditorState:
         """Add a stamp/emoji at the given position."""
         element = DrawingElement(
             tool=ToolType.STAMP,
-            color=self.current_color,
+            color=self.current_color.copy(),
             stroke_width=self.stroke_width,
             points=[Point(x, y)],
             stamp=self.current_stamp,
@@ -360,7 +364,7 @@ class EditorState:
 
         element = DrawingElement(
             tool=ToolType.CALLOUT,
-            color=self.current_color,
+            color=self.current_color.copy(),
             stroke_width=self.stroke_width,
             points=[Point(tail_x, tail_y), Point(box_x, box_y)],
             text=text,
@@ -1591,6 +1595,82 @@ class EditorState:
                     p.y = center_y + dx * sin_a + dy * cos_a
 
         return True
+
+    def set_selected_opacity(self, opacity: float) -> bool:
+        """Set the opacity of selected elements.
+
+        Args:
+            opacity: Opacity value from 0.0 (transparent) to 1.0 (opaque).
+
+        Returns:
+            True if any elements were modified.
+        """
+        if not self.selected_indices:
+            return False
+
+        opacity = max(0.0, min(1.0, opacity))  # Clamp to [0, 1]
+
+        # Check if any non-locked elements exist
+        modifiable = [
+            idx for idx in self.selected_indices
+            if 0 <= idx < len(self.elements) and not self.elements[idx].locked
+        ]
+        if not modifiable:
+            return False
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        for idx in modifiable:
+            self.elements[idx].color.a = opacity
+
+        return True
+
+    def adjust_selected_opacity(self, delta: float) -> bool:
+        """Adjust the opacity of selected elements by a delta.
+
+        Args:
+            delta: Amount to adjust opacity (e.g., +0.1 or -0.1).
+
+        Returns:
+            True if any elements were modified.
+        """
+        if not self.selected_indices:
+            return False
+
+        # Check if any non-locked elements exist
+        modifiable = [
+            idx for idx in self.selected_indices
+            if 0 <= idx < len(self.elements) and not self.elements[idx].locked
+        ]
+        if not modifiable:
+            return False
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        for idx in modifiable:
+            elem = self.elements[idx]
+            new_opacity = max(0.0, min(1.0, elem.color.a + delta))
+            elem.color.a = new_opacity
+
+        return True
+
+    def get_selected_opacity(self) -> Optional[float]:
+        """Get the opacity of the first selected element.
+
+        Returns:
+            Opacity value or None if no selection.
+        """
+        if not self.selected_indices:
+            return None
+
+        idx = next(iter(self.selected_indices))
+        if 0 <= idx < len(self.elements):
+            return self.elements[idx].color.a
+        return None
 
     def toggle_lock_selected(self) -> bool:
         """Toggle lock state of selected elements.

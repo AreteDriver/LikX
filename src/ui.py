@@ -1979,6 +1979,25 @@ class EditorWindow:
                 self.drawing_area.queue_draw()
                 return True
 
+        # Shift+[ / Shift+] - Adjust opacity
+        if shift and not ctrl and not alt:
+            if event.keyval == Gdk.KEY_bracketleft:
+                if self.editor_state.adjust_selected_opacity(-0.1):
+                    opacity = self.editor_state.get_selected_opacity()
+                    self._show_toast(f"Opacity: {int(opacity * 100)}%")
+                    self.drawing_area.queue_draw()
+                else:
+                    self._show_toast("Select element(s) to adjust opacity")
+                return True
+            elif event.keyval == Gdk.KEY_bracketright:
+                if self.editor_state.adjust_selected_opacity(0.1):
+                    opacity = self.editor_state.get_selected_opacity()
+                    self._show_toast(f"Opacity: {int(opacity * 100)}%")
+                    self.drawing_area.queue_draw()
+                else:
+                    self._show_toast("Select element(s) to adjust opacity")
+                return True
+
         # Tool shortcuts (no modifier)
         tool_shortcuts = {
             Gdk.KEY_p: ToolType.PEN,
