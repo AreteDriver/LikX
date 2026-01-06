@@ -1503,3 +1503,154 @@ class TestRecentColors:
 
         # Recent color should be unchanged
         assert state.recent_colors[0].r == 1.0
+
+
+class TestLayerOrdering:
+    """Test layer ordering functionality."""
+
+    def test_bring_to_front_no_selection_returns_false(self):
+        state = EditorState()
+        result = state.bring_to_front()
+        assert result is False
+
+    def test_send_to_back_no_selection_returns_false(self):
+        state = EditorState()
+        result = state.send_to_back()
+        assert result is False
+
+    def test_bring_to_front_moves_element(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # Create 3 elements
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)  # Index 0
+        state.start_drawing(60, 60)
+        state.finish_drawing(100, 100)  # Index 1
+        state.start_drawing(110, 110)
+        state.finish_drawing(150, 150)  # Index 2
+
+        # Select first element (index 0)
+        state.select_at(30, 30)
+        assert state.selected_index == 0
+
+        # Bring to front
+        state.bring_to_front()
+
+        # First element should now be at index 2 (last)
+        assert 2 in state.selected_indices
+        # The moved element should have its original points
+        assert state.elements[2].points[0].x == 10
+
+    def test_send_to_back_moves_element(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # Create 3 elements
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)  # Index 0
+        state.start_drawing(60, 60)
+        state.finish_drawing(100, 100)  # Index 1
+        state.start_drawing(110, 110)
+        state.finish_drawing(150, 150)  # Index 2
+
+        # Select last element (index 2)
+        state.select_at(130, 130)
+        assert state.selected_index == 2
+
+        # Send to back
+        state.send_to_back()
+
+        # Last element should now be at index 0 (first)
+        assert 0 in state.selected_indices
+        # The moved element should have its original points
+        assert state.elements[0].points[0].x == 110
+
+    def test_bring_to_front_saves_undo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(60, 60)
+        state.finish_drawing(100, 100)
+
+        state.select_at(30, 30)
+        undo_count_before = len(state.undo_stack)
+
+        state.bring_to_front()
+        assert len(state.undo_stack) == undo_count_before + 1
+
+    def test_send_to_back_saves_undo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(60, 60)
+        state.finish_drawing(100, 100)
+
+        state.select_at(80, 80)
+        undo_count_before = len(state.undo_stack)
+
+        state.send_to_back()
+        assert len(state.undo_stack) == undo_count_before + 1
+
+    def test_bring_to_front_clears_redo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(60, 60)
+        state.finish_drawing(100, 100)
+
+        state.select_at(30, 30)
+        state.bring_to_front()
+        state.undo()
+        assert len(state.redo_stack) > 0
+
+        state.select_at(30, 30)
+        state.bring_to_front()
+        assert len(state.redo_stack) == 0
+
+    def test_bring_to_front_multi_select(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # Create 4 elements
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)  # 0
+        state.start_drawing(60, 60)
+        state.finish_drawing(100, 100)  # 1
+        state.start_drawing(110, 110)
+        state.finish_drawing(150, 150)  # 2
+        state.start_drawing(160, 160)
+        state.finish_drawing(200, 200)  # 3
+
+        # Select elements 0 and 1
+        state.select_at(30, 30)
+        state.select_at(80, 80, add_to_selection=True)
+        assert len(state.selected_indices) == 2
+
+        state.bring_to_front()
+
+        # Elements 0 and 1 should now be at indices 2 and 3
+        assert state.selected_indices == {2, 3}
+
+    def test_send_to_back_multi_select(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        # Create 4 elements
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)  # 0
+        state.start_drawing(60, 60)
+        state.finish_drawing(100, 100)  # 1
+        state.start_drawing(110, 110)
+        state.finish_drawing(150, 150)  # 2
+        state.start_drawing(160, 160)
+        state.finish_drawing(200, 200)  # 3
+
+        # Select elements 2 and 3
+        state.select_at(130, 130)
+        state.select_at(180, 180, add_to_selection=True)
+        assert len(state.selected_indices) == 2
+
+        state.send_to_back()
+
+        # Elements 2 and 3 should now be at indices 0 and 1
+        assert state.selected_indices == {0, 1}

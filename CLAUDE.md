@@ -51,6 +51,8 @@ cd snap && snapcraft
 | `Ctrl+V` | Paste annotations |
 | `Ctrl+Z` | Undo |
 | `Ctrl+Y` | Redo |
+| `Ctrl+]` | Bring selected to front |
+| `Ctrl+[` | Send selected to back |
 | `+` / `-` / `0` | Zoom in / out / reset |
 | `Delete` / `Backspace` | Delete selected annotation |
 | `Arrow keys` | Nudge selected annotation 1px |

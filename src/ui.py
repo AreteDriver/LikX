@@ -1740,6 +1740,18 @@ class EditorWindow:
             elif event.keyval == Gdk.KEY_y:
                 self._redo()
                 return True
+            elif event.keyval == Gdk.KEY_bracketright:
+                # Ctrl+] - Bring to front
+                if self.editor_state.bring_to_front():
+                    self._show_toast("Brought to front")
+                    self.drawing_area.queue_draw()
+                return True
+            elif event.keyval == Gdk.KEY_bracketleft:
+                # Ctrl+[ - Send to back
+                if self.editor_state.send_to_back():
+                    self._show_toast("Sent to back")
+                    self.drawing_area.queue_draw()
+                return True
 
         # Tool shortcuts (no modifier)
         tool_shortcuts = {

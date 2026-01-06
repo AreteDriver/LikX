@@ -751,6 +751,67 @@ class EditorState:
         """Check if clipboard has content."""
         return len(self._clipboard) > 0
 
+    def bring_to_front(self) -> bool:
+        """Move selected elements to front (top of stack).
+
+        Returns:
+            True if any elements were moved.
+        """
+        if not self.selected_indices:
+            return False
+
+        # Save for undo
+        self.undo_stack.append([e for e in self.elements])
+        self.redo_stack.clear()
+
+        # Extract selected elements (in order)
+        selected = []
+        remaining = []
+        for i, elem in enumerate(self.elements):
+            if i in self.selected_indices:
+                selected.append(elem)
+            else:
+                remaining.append(elem)
+
+        # Rebuild: remaining first, then selected (on top)
+        self.elements = remaining + selected
+
+        # Update selection indices to new positions
+        new_start = len(remaining)
+        self.selected_indices = set(range(new_start, new_start + len(selected)))
+
+        return True
+
+    def send_to_back(self) -> bool:
+        """Move selected elements to back (bottom of stack).
+
+        Returns:
+            True if any elements were moved.
+        """
+        if not self.selected_indices:
+            return False
+
+        # Save for undo
+        self.undo_stack.append([e for e in self.elements])
+        self.redo_stack.clear()
+
+        # Extract selected elements (in order)
+        selected = []
+        remaining = []
+        for i, elem in enumerate(self.elements):
+            if i in self.selected_indices:
+                selected.append(elem)
+            else:
+                remaining.append(elem)
+
+        # Rebuild: selected first (at back), then remaining
+        self.elements = selected + remaining
+
+        # Update selection indices to new positions (starting from 0)
+        self.selected_indices = set(range(len(selected)))
+
+        return True
+
     def set_snap_enabled(self, enabled: bool) -> None:
         """Enable or disable snapping."""
         self.snap_enabled = enabled
