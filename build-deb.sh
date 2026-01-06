@@ -2,7 +2,7 @@
 # Build .deb package for LikX (simple dpkg-deb method)
 set -e
 
-VERSION="3.2.0"
+VERSION="3.22.0"
 PKGNAME="likx"
 ARCH="all"
 BUILDDIR="build-deb"
