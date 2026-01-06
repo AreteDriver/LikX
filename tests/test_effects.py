@@ -155,3 +155,132 @@ class TestEffectsErrorHandling:
         mock_pixbuf.get_width.side_effect = Exception("test error")
         result = grayscale(mock_pixbuf)
         assert result == mock_pixbuf  # Returns original on error
+
+    def test_add_shadow_returns_original_on_error(self):
+        from src.effects import add_shadow
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+        result = add_shadow(mock_pixbuf, 10, 0.5)
+        assert result == mock_pixbuf
+
+    def test_add_border_returns_original_on_error(self):
+        from src.effects import add_border
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+        result = add_border(mock_pixbuf, 5, (0, 0, 0, 1))
+        assert result == mock_pixbuf
+
+    def test_add_background_returns_original_on_error(self):
+        from src.effects import add_background
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+        result = add_background(mock_pixbuf, (1, 1, 1, 1), 20)
+        assert result == mock_pixbuf
+
+    def test_round_corners_returns_original_on_error(self):
+        from src.effects import round_corners
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+        result = round_corners(mock_pixbuf, 10)
+        assert result == mock_pixbuf
+
+
+class TestEffectsEdgeCases:
+    """Test edge cases for effect functions."""
+
+    def test_adjust_brightness_contrast_extreme_brightness(self):
+        """Test with extreme brightness values."""
+        from src.effects import adjust_brightness_contrast
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+
+        # Should not raise with extreme values
+        result = adjust_brightness_contrast(mock_pixbuf, brightness=1.0, contrast=0.0)
+        assert result == mock_pixbuf
+
+        result = adjust_brightness_contrast(mock_pixbuf, brightness=-1.0, contrast=0.0)
+        assert result == mock_pixbuf
+
+    def test_adjust_brightness_contrast_extreme_contrast(self):
+        """Test with extreme contrast values."""
+        from src.effects import adjust_brightness_contrast
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+
+        result = adjust_brightness_contrast(mock_pixbuf, brightness=0.0, contrast=1.0)
+        assert result == mock_pixbuf
+
+        result = adjust_brightness_contrast(mock_pixbuf, brightness=0.0, contrast=-1.0)
+        assert result == mock_pixbuf
+
+    def test_add_shadow_zero_size(self):
+        """Test shadow with zero size."""
+        from src.effects import add_shadow
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+
+        result = add_shadow(mock_pixbuf, shadow_size=0, opacity=0.5)
+        assert result == mock_pixbuf
+
+    def test_add_shadow_zero_opacity(self):
+        """Test shadow with zero opacity."""
+        from src.effects import add_shadow
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+
+        result = add_shadow(mock_pixbuf, shadow_size=10, opacity=0.0)
+        assert result == mock_pixbuf
+
+    def test_add_border_zero_width(self):
+        """Test border with zero width."""
+        from src.effects import add_border
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+
+        result = add_border(mock_pixbuf, border_width=0)
+        assert result == mock_pixbuf
+
+    def test_add_border_custom_color(self):
+        """Test border with custom color."""
+        from src.effects import add_border
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+
+        result = add_border(mock_pixbuf, border_width=5, color=(1, 0, 0, 1))
+        assert result == mock_pixbuf
+
+    def test_add_background_zero_padding(self):
+        """Test background with zero padding."""
+        from src.effects import add_background
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+
+        result = add_background(mock_pixbuf, padding=0)
+        assert result == mock_pixbuf
+
+    def test_add_background_custom_color(self):
+        """Test background with custom color."""
+        from src.effects import add_background
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+
+        result = add_background(mock_pixbuf, bg_color=(0.5, 0.5, 0.5, 1), padding=10)
+        assert result == mock_pixbuf
+
+    def test_round_corners_zero_radius(self):
+        """Test round corners with zero radius."""
+        from src.effects import round_corners
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+
+        result = round_corners(mock_pixbuf, radius=0)
+        assert result == mock_pixbuf
+
+    def test_round_corners_large_radius(self):
+        """Test round corners with large radius."""
+        from src.effects import round_corners
+        mock_pixbuf = MagicMock()
+        mock_pixbuf.get_width.side_effect = Exception("test error")
+
+        result = round_corners(mock_pixbuf, radius=100)
+        assert result == mock_pixbuf
