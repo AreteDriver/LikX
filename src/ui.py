@@ -1896,6 +1896,24 @@ class EditorWindow:
                 self._show_toast("Select element(s) to flip")
             return True
 
+        # Ctrl+Shift+R - Rotate 90° counter-clockwise
+        if ctrl and shift and event.keyval in (Gdk.KEY_r, Gdk.KEY_R):
+            if self.editor_state.rotate_selected(-90):
+                self._show_toast("Rotated -90°")
+                self.drawing_area.queue_draw()
+            else:
+                self._show_toast("Select element(s) to rotate")
+            return True
+
+        # Ctrl+R - Rotate 90° clockwise
+        if ctrl and not shift and not alt and event.keyval in (Gdk.KEY_r, Gdk.KEY_R):
+            if self.editor_state.rotate_selected(90):
+                self._show_toast("Rotated 90°")
+                self.drawing_area.queue_draw()
+            else:
+                self._show_toast("Select element(s) to rotate")
+            return True
+
         # Ctrl shortcuts
         if ctrl:
             if event.keyval == Gdk.KEY_s:

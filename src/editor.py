@@ -1536,6 +1536,62 @@ class EditorState:
 
         return True
 
+    def rotate_selected(self, angle_degrees: float) -> bool:
+        """Rotate selected elements by the specified angle around their center.
+
+        Args:
+            angle_degrees: Angle in degrees (positive = clockwise).
+
+        Returns:
+            True if any elements were rotated.
+        """
+        if not self.selected_indices:
+            return False
+
+        # Collect all points from non-locked selected elements
+        all_points = []
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                elem = self.elements[idx]
+                if elem.locked:
+                    continue
+                for p in elem.points:
+                    all_points.append((p.x, p.y))
+
+        if not all_points:
+            return False
+
+        # Calculate center of all points
+        all_x = [p[0] for p in all_points]
+        all_y = [p[1] for p in all_points]
+        center_x = (min(all_x) + max(all_x)) / 2
+        center_y = (min(all_y) + max(all_y)) / 2
+
+        # Convert angle to radians (negative because screen Y is inverted)
+        angle_rad = math.radians(-angle_degrees)
+        cos_a = math.cos(angle_rad)
+        sin_a = math.sin(angle_rad)
+
+        # Save for undo
+        self.undo_stack.append([copy.deepcopy(e) for e in self.elements])
+        self.redo_stack.clear()
+
+        # Rotate points around center
+        for idx in self.selected_indices:
+            if 0 <= idx < len(self.elements):
+                elem = self.elements[idx]
+                if elem.locked:
+                    continue
+                for p in elem.points:
+                    # Translate to origin
+                    dx = p.x - center_x
+                    dy = p.y - center_y
+                    # Rotate
+                    p.x = center_x + dx * cos_a - dy * sin_a
+                    p.y = center_y + dx * sin_a + dy * cos_a
+
+        return True
+
     def toggle_lock_selected(self) -> bool:
         """Toggle lock state of selected elements.
 

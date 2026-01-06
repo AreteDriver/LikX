@@ -2668,6 +2668,94 @@ class TestFlip:
         assert not state.flip_horizontal()
 
 
+class TestRotate:
+    """Test rotation functionality."""
+
+    def test_rotate_no_selection(self):
+        state = EditorState()
+        assert not state.rotate_selected(90)
+
+    def test_rotate_90_clockwise(self):
+        state = EditorState()
+        state.set_tool(ToolType.LINE)
+        # Horizontal line from (0, 50) to (100, 50)
+        state.start_drawing(0, 50)
+        state.finish_drawing(100, 50)
+
+        state.select_at(50, 50)
+        assert state.rotate_selected(90)
+
+        # After 90° clockwise rotation around center (50, 50):
+        # In screen coords (Y-down), clockwise: (0, 50) -> (50, 100), (100, 50) -> (50, 0)
+        p0 = state.elements[0].points[0]
+        p1 = state.elements[0].points[1]
+        assert abs(p0.x - 50) < 0.1
+        assert abs(p0.y - 100) < 0.1
+        assert abs(p1.x - 50) < 0.1
+        assert abs(p1.y - 0) < 0.1
+
+    def test_rotate_90_counter_clockwise(self):
+        state = EditorState()
+        state.set_tool(ToolType.LINE)
+        # Horizontal line from (0, 50) to (100, 50)
+        state.start_drawing(0, 50)
+        state.finish_drawing(100, 50)
+
+        state.select_at(50, 50)
+        assert state.rotate_selected(-90)
+
+        # After 90° counter-clockwise rotation around center (50, 50):
+        # In screen coords (Y-down), counter-clockwise: (0, 50) -> (50, 0), (100, 50) -> (50, 100)
+        p0 = state.elements[0].points[0]
+        p1 = state.elements[0].points[1]
+        assert abs(p0.x - 50) < 0.1
+        assert abs(p0.y - 0) < 0.1
+        assert abs(p1.x - 50) < 0.1
+        assert abs(p1.y - 100) < 0.1
+
+    def test_rotate_180(self):
+        state = EditorState()
+        state.set_tool(ToolType.LINE)
+        # Line from (0, 0) to (100, 100)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 100)
+
+        state.select_at(50, 50)
+        assert state.rotate_selected(180)
+
+        # After 180° rotation around center (50, 50):
+        # (0, 0) -> (100, 100), (100, 100) -> (0, 0)
+        p0 = state.elements[0].points[0]
+        p1 = state.elements[0].points[1]
+        assert abs(p0.x - 100) < 0.1
+        assert abs(p0.y - 100) < 0.1
+        assert abs(p1.x - 0) < 0.1
+        assert abs(p1.y - 0) < 0.1
+
+    def test_rotate_saves_undo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        initial_undo_count = len(state.undo_stack)
+        state.select_at(50, 25)
+        state.rotate_selected(45)
+        assert len(state.undo_stack) == initial_undo_count + 1
+
+    def test_rotate_skips_locked(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(0, 0)
+        state.finish_drawing(100, 50)
+
+        state.elements[0].locked = True
+        state.select_at(50, 25)
+
+        # Should return False because all selected are locked
+        assert not state.rotate_selected(90)
+
+
 class TestLock:
     """Test lock/unlock functionality."""
 

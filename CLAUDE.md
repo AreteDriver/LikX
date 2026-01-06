@@ -69,6 +69,8 @@ cd snap && snapcraft
 | `Ctrl+Alt+S` | Match size to first selected (2+ elements) |
 | `Ctrl+Shift+F` | Flip selected horizontally |
 | `Ctrl+Alt+F` | Flip selected vertically |
+| `Ctrl+R` | Rotate selected 90° clockwise |
+| `Ctrl+Shift+R` | Rotate selected 90° counter-clockwise |
 | `Ctrl+L` | Lock/unlock selected elements |
 | `Ctrl+'` | Toggle grid snap |
 | `+` / `-` / `0` | Zoom in / out / reset |
