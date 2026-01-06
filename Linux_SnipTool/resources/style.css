@@ -1,208 +1,317 @@
-/* Linux SnipTool - Modern GTK3 Theme */
+/* Linux SnipTool - Futuristic Dark Theme */
+/* Inspired by cyberpunk aesthetics with glassmorphism */
+
+/* === BASE COLORS === */
+/* Background: Deep space blue-black */
+/* Accent Primary: Electric purple #8b5cf6 */
+/* Accent Secondary: Cyan blue #60a5fa */
+/* Text: Soft white #cdd6f4 */
 
 /* Main window styling */
 window {
-    background-color: #1e1e2e;
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16162a 100%);
 }
 
-/* Title styling */
+/* === TITLE SECTION === */
 .title-label {
-    font-size: 24px;
-    font-weight: bold;
-    color: #cdd6f4;
-    margin-bottom: 8px;
+    font-size: 28px;
+    font-weight: 700;
+    color: #f5f5f5;
+    margin-bottom: 4px;
 }
 
-/* Description text */
 .desc-label {
-    color: #a6adc8;
-    font-size: 13px;
-    margin-bottom: 16px;
+    color: rgba(166, 173, 200, 0.8);
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 20px;
 }
 
-/* Big capture buttons */
+/* === CAPTURE BUTTONS (Glass Cards) === */
 .capture-button {
-    background: linear-gradient(180deg, #45475a 0%, #313244 100%);
-    background-color: #45475a;
-    border: 1px solid #585b70;
-    border-radius: 12px;
-    color: #cdd6f4;
+    background: linear-gradient(135deg, rgba(30, 30, 50, 0.8) 0%, rgba(20, 20, 35, 0.9) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 16px;
+    color: #e0e0e0;
     font-size: 15px;
     font-weight: 600;
-    padding: 16px 24px;
-    margin: 4px 0;
-    min-height: 56px;
-    transition: all 200ms ease;
+    padding: 18px 24px;
+    margin: 6px 0;
+    min-height: 60px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .capture-button:hover {
-    background-color: #585b70;
-    border-color: #89b4fa;
-    box-shadow: 0 4px 12px rgba(137, 180, 250, 0.2);
+    background: linear-gradient(135deg, rgba(40, 40, 65, 0.9) 0%, rgba(30, 30, 50, 0.95) 100%);
+    border-color: rgba(139, 92, 246, 0.6);
+    box-shadow: 0 8px 30px rgba(139, 92, 246, 0.25), 0 0 20px rgba(139, 92, 246, 0.15);
+    color: #ffffff;
 }
 
 .capture-button:active {
-    background-color: #313244;
+    box-shadow: 0 2px 10px rgba(139, 92, 246, 0.2);
 }
 
-/* Fullscreen button - blue accent */
+/* Fullscreen button - Cyan glow accent */
 .capture-button.fullscreen {
-    border-left: 4px solid #89b4fa;
+    border-left: 3px solid #60a5fa;
+}
+.capture-button.fullscreen:hover {
+    box-shadow: 0 8px 30px rgba(96, 165, 250, 0.3), 0 0 20px rgba(96, 165, 250, 0.2);
 }
 
-/* Region button - green accent */
+/* Region button - Green glow accent */
 .capture-button.region {
-    border-left: 4px solid #a6e3a1;
+    border-left: 3px solid #34d399;
+}
+.capture-button.region:hover {
+    box-shadow: 0 8px 30px rgba(52, 211, 153, 0.3), 0 0 20px rgba(52, 211, 153, 0.2);
 }
 
-/* Window button - purple accent */
+/* Window button - Purple glow accent */
 .capture-button.window {
-    border-left: 4px solid #cba6f7;
+    border-left: 3px solid #a78bfa;
+}
+.capture-button.window:hover {
+    box-shadow: 0 8px 30px rgba(167, 139, 250, 0.3), 0 0 20px rgba(167, 139, 250, 0.2);
 }
 
-/* Bottom action buttons */
+/* === ACTION BUTTONS (Bottom) === */
 .action-button {
-    background-color: #313244;
-    border: 1px solid #45475a;
-    border-radius: 8px;
-    color: #bac2de;
+    background: rgba(25, 25, 40, 0.7);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 10px;
+    color: #a6adc8;
     font-size: 13px;
-    padding: 10px 16px;
-    min-height: 36px;
+    font-weight: 500;
+    padding: 12px 20px;
+    min-height: 40px;
 }
 
 .action-button:hover {
-    background-color: #45475a;
+    background: rgba(35, 35, 55, 0.8);
+    border-color: rgba(139, 92, 246, 0.5);
     color: #cdd6f4;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
 }
 
-/* Toolbar styling */
+/* === TOOLBAR (Editor) === */
 toolbar {
-    background-color: #181825;
-    border-bottom: 1px solid #313244;
-    padding: 4px 8px;
+    background: linear-gradient(180deg, #1e1e2e 0%, #181825 100%);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+    padding: 6px 10px;
 }
 
 toolbar button {
     background-color: transparent;
     border: none;
-    border-radius: 6px;
-    color: #cdd6f4;
-    padding: 6px 10px;
+    border-radius: 8px;
+    color: #a6adc8;
+    padding: 8px 12px;
     margin: 2px;
 }
 
 toolbar button:hover {
-    background-color: #313244;
+    background: rgba(139, 92, 246, 0.15);
+    color: #cdd6f4;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
 }
 
 toolbar button:active,
 toolbar button:checked {
-    background-color: #45475a;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.35) 0%, rgba(96, 165, 250, 0.35) 100%);
+    color: #ffffff;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+}
+
+/* Tool button styling */
+.tool-button {
+    background: rgba(30, 30, 46, 0.6);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 8px;
+    color: #a6adc8;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.tool-button:hover {
+    background: rgba(40, 40, 60, 0.8);
+    border-color: rgba(139, 92, 246, 0.5);
+    color: #cdd6f4;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
 }
 
 /* Separator styling */
-toolbar separator {
-    background-color: #45475a;
-    margin: 4px 8px;
+toolbar separator,
+.toolbar-separator {
+    background: linear-gradient(180deg, transparent 20%, rgba(139, 92, 246, 0.3) 50%, transparent 80%);
+    margin: 6px 10px;
+    min-width: 1px;
 }
 
-/* Statusbar */
+/* === STATUSBAR === */
 statusbar {
-    background-color: #181825;
-    color: #6c7086;
-    font-size: 12px;
-    padding: 4px 12px;
-    border-top: 1px solid #313244;
+    background: linear-gradient(180deg, #181825 0%, #11111b 100%);
+    color: rgba(166, 173, 200, 0.6);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 6px 16px;
+    border-top: 1px solid rgba(139, 92, 246, 0.2);
 }
 
-/* Scrolled window */
+/* === SCROLLED WINDOW === */
 scrolledwindow {
-    background-color: #11111b;
+    background-color: #0a0a12;
 }
 
-/* Spinbutton */
+/* === SPINBUTTON === */
 spinbutton {
-    background-color: #313244;
-    border: 1px solid #45475a;
-    border-radius: 6px;
+    background: rgba(30, 30, 46, 0.8);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
     color: #cdd6f4;
-    padding: 4px 8px;
+    padding: 6px 10px;
 }
 
 spinbutton:focus {
-    border-color: #89b4fa;
+    border-color: rgba(139, 92, 246, 0.6);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.25);
 }
 
-/* Dialog styling */
+/* === DIALOGS === */
 dialog {
-    background-color: #1e1e2e;
+    background: linear-gradient(135deg, #1a1a2e 0%, #151525 100%);
 }
 
 dialog headerbar {
-    background-color: #181825;
-    border-bottom: 1px solid #313244;
+    background: linear-gradient(180deg, #1e1e2e 0%, #181825 100%);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.3);
 }
 
-/* Message dialog */
 messagedialog {
-    background-color: #1e1e2e;
+    background: linear-gradient(135deg, #1a1a2e 0%, #151525 100%);
 }
 
 messagedialog .message-area {
     color: #cdd6f4;
 }
 
-/* Entry fields */
+/* === ENTRY FIELDS === */
 entry {
-    background-color: #313244;
-    border: 1px solid #45475a;
-    border-radius: 6px;
+    background: rgba(25, 25, 40, 0.8);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
     color: #cdd6f4;
-    padding: 8px 12px;
+    padding: 10px 14px;
 }
 
 entry:focus {
-    border-color: #89b4fa;
-    box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.2);
+    border-color: rgba(139, 92, 246, 0.7);
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.25), inset 0 0 10px rgba(139, 92, 246, 0.05);
 }
 
-/* Labels */
+/* === LABELS === */
 label {
     color: #cdd6f4;
 }
 
-/* Checkbuttons */
+/* === CHECKBUTTONS === */
 checkbutton {
     color: #cdd6f4;
 }
 
 checkbutton check {
-    background-color: #313244;
-    border: 1px solid #45475a;
+    background: rgba(30, 30, 46, 0.8);
+    border: 1px solid rgba(139, 92, 246, 0.3);
     border-radius: 4px;
 }
 
+checkbutton check:hover {
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
 checkbutton check:checked {
-    background-color: #89b4fa;
-    border-color: #89b4fa;
+    background: linear-gradient(135deg, #8b5cf6 0%, #60a5fa 100%);
+    border-color: #8b5cf6;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
 }
 
-/* About dialog */
+/* === ABOUT DIALOG === */
 aboutdialog {
-    background-color: #1e1e2e;
+    background: linear-gradient(135deg, #1a1a2e 0%, #151525 100%);
 }
 
-/* History button styling */
-.history-button {
-    background-color: #313244;
-    border: 1px solid #45475a;
+/* === NOTEBOOK (Tabs) === */
+notebook {
+    background: transparent;
+}
+
+notebook header {
+    background: rgba(20, 20, 35, 0.8);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+notebook tab {
+    background: transparent;
+    border: none;
+    color: #6c7086;
+    padding: 8px 16px;
+}
+
+notebook tab:hover {
+    color: #a6adc8;
+}
+
+notebook tab:checked {
+    color: #cdd6f4;
+    border-bottom: 2px solid #8b5cf6;
+    box-shadow: 0 2px 10px rgba(139, 92, 246, 0.3);
+}
+
+/* === COMBO BOX === */
+combobox {
+    background: rgba(30, 30, 46, 0.8);
+    border: 1px solid rgba(139, 92, 246, 0.3);
     border-radius: 8px;
-    padding: 8px;
-    margin: 4px;
+    color: #cdd6f4;
 }
 
-.history-button:hover {
-    background-color: #45475a;
-    border-color: #89b4fa;
+combobox:hover {
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
+/* === FILE CHOOSER === */
+filechooser {
+    background: #1a1a2e;
+}
+
+/* === SCROLLBAR === */
+scrollbar {
+    background: transparent;
+}
+
+scrollbar slider {
+    background: rgba(139, 92, 246, 0.3);
+    border-radius: 10px;
+    min-width: 8px;
+    min-height: 8px;
+}
+
+scrollbar slider:hover {
+    background: rgba(139, 92, 246, 0.5);
+}
+
+/* === BUTTON GENERAL === */
+button {
+}
+
+/* === COLOR BUTTON === */
+colorbutton {
+    border-radius: 8px;
+    border: 2px solid rgba(139, 92, 246, 0.4);
+}
+
+colorbutton:hover {
+    border-color: rgba(139, 92, 246, 0.7);
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
 }

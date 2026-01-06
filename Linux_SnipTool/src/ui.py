@@ -217,14 +217,10 @@ class EditorWindow:
         
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.window.add(main_box)
-        
-        # Top toolbar - tools
-        self.toolbar = self._create_toolbar()
-        main_box.pack_start(self.toolbar, False, False, 0)
-        
-        # Color toolbar
-        self.color_toolbar = self._create_color_toolbar()
-        main_box.pack_start(self.color_toolbar, False, False, 0)
+
+        # Horizontal ribbon toolbar
+        self.ribbon = self._create_ribbon_toolbar()
+        main_box.pack_start(self.ribbon, False, False, 0)
         
         # Drawing area with scrolling
         scrolled = Gtk.ScrolledWindow()
@@ -303,7 +299,7 @@ class EditorWindow:
 
     def _update_cursor(self) -> None:
         """Update cursor based on current tool."""
-        if not self.drawing_area.get_window():
+        if not hasattr(self, 'drawing_area') or not self.drawing_area.get_window():
             return
 
         drawing_tools = {ToolType.PEN, ToolType.HIGHLIGHTER, ToolType.LINE,
@@ -315,112 +311,336 @@ class EditorWindow:
         else:
             self.drawing_area.get_window().set_cursor(self._arrow_cursor)
 
-    def _create_toolbar(self) -> Gtk.Toolbar:
-        """Create the main tool toolbar."""
-        toolbar = Gtk.Toolbar()
-        toolbar.set_style(Gtk.ToolbarStyle.BOTH)
-        
-        tools = [
-            ("✏️ Pen", ToolType.PEN, "Draw freehand"),
-            ("🖍️ Highlighter", ToolType.HIGHLIGHTER, "Highlight areas"),
-            ("📏 Line", ToolType.LINE, "Draw straight line"),
-            ("➡️ Arrow", ToolType.ARROW, "Draw arrow"),
-            ("⬜ Rectangle", ToolType.RECTANGLE, "Draw rectangle"),
-            ("⭕ Ellipse", ToolType.ELLIPSE, "Draw ellipse"),
-            ("📝 Text", ToolType.TEXT, "Add text"),
-            ("🔍 Blur", ToolType.BLUR, "Blur region"),
-            ("◼️ Pixelate", ToolType.PIXELATE, "Pixelate region"),
-            ("🗑️ Eraser", ToolType.ERASER, "Erase"),
+    def _create_ribbon_toolbar(self) -> Gtk.Box:
+        """Create a hybrid dark/practical ribbon toolbar."""
+        css = b"""
+        /* === HYBRID DARK THEME (Aesthetic + Practical) === */
+        .hybrid-ribbon {
+            background: linear-gradient(180deg, #252536 0%, #1e1e2e 100%);
+            border-bottom: 1px solid #3d3d5c;
+            padding: 4px 6px;
+            min-height: 52px;
+        }
+
+        /* Clean panel groups */
+        .tool-panel {
+            background: rgba(40, 40, 60, 0.5);
+            border: 1px solid rgba(80, 80, 120, 0.3);
+            border-radius: 8px;
+            padding: 4px 8px;
+            margin: 0 2px;
+        }
+
+        /* Readable group labels */
+        .panel-label {
+            font-size: 9px;
+            font-weight: 600;
+            color: #8888aa;
+            margin-top: 2px;
+        }
+
+        /* Tool buttons - clear and clickable */
+        .tool-btn {
+            min-width: 28px;
+            min-height: 28px;
+            padding: 3px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            background: transparent;
+            color: #c0c0d0;
+            font-size: 13px;
+        }
+        .tool-btn:hover {
+            background: rgba(100, 100, 180, 0.2);
+            border-color: rgba(130, 130, 200, 0.4);
+            color: #ffffff;
+        }
+        .tool-btn:checked {
+            background: rgba(100, 130, 220, 0.35);
+            border-color: #6688dd;
+            color: #ffffff;
+        }
+
+        /* Action buttons (save, copy, upload) */
+        .action-btn {
+            min-width: 28px;
+            min-height: 28px;
+            padding: 3px 6px;
+            border: 1px solid rgba(100, 180, 100, 0.4);
+            border-radius: 6px;
+            background: rgba(80, 160, 80, 0.15);
+            color: #90d090;
+            font-size: 13px;
+        }
+        .action-btn:hover {
+            background: rgba(80, 180, 80, 0.3);
+            border-color: rgba(100, 200, 100, 0.6);
+            color: #ffffff;
+        }
+
+        /* Color swatches - clear circles */
+        .color-swatch {
+            min-width: 16px;
+            min-height: 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(60, 60, 80, 0.8);
+        }
+        .color-swatch:hover {
+            border-color: #8888cc;
+            border-width: 2px;
+        }
+
+        /* Vertical separator */
+        .panel-sep {
+            background: rgba(100, 100, 140, 0.3);
+            min-width: 1px;
+            margin: 4px 4px;
+        }
+
+        /* Size spinner - readable */
+        .size-spin {
+            background: rgba(35, 35, 50, 0.9);
+            border: 1px solid rgba(80, 80, 120, 0.5);
+            border-radius: 4px;
+            color: #d0d0e0;
+            padding: 2px 4px;
+            min-width: 45px;
+        }
+        .size-spin:focus {
+            border-color: #7788cc;
+        }
+
+        /* Color picker button */
+        .color-picker {
+            border-radius: 6px;
+            border: 2px solid rgba(80, 80, 120, 0.5);
+        }
+        .color-picker:hover {
+            border-color: #8888cc;
+        }
+        """
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            self._load_css(css),
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        ribbon = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        ribbon.get_style_context().add_class("hybrid-ribbon")
+
+        # === TOOLS GROUP ===
+        tools_group = self._create_tool_panel("Tools")
+        tools_grid = Gtk.Grid(row_spacing=1, column_spacing=1)
+        self.tool_buttons = {}
+        # Clear icons with text tooltips
+        tool_icons = [
+            ("✎", ToolType.PEN, "Pen (P)", 0, 0),
+            ("—", ToolType.LINE, "Line (L)", 1, 0),
+            ("▭", ToolType.RECTANGLE, "Rectangle (R)", 2, 0),
+            ("A", ToolType.TEXT, "Text (T)", 3, 0),
+            ("▓", ToolType.HIGHLIGHTER, "Highlighter (H)", 0, 1),
+            ("→", ToolType.ARROW, "Arrow (A)", 1, 1),
+            ("○", ToolType.ELLIPSE, "Ellipse (E)", 2, 1),
+            ("✕", ToolType.ERASER, "Eraser", 3, 1),
         ]
-        
-        for label, tool, tooltip in tools:
-            button = Gtk.ToolButton(label=label)
-            button.set_tooltip_text(tooltip)
-            button.connect("clicked", lambda b, t=tool: self._set_tool(t))
-            toolbar.insert(button, -1)
-        
-        toolbar.insert(Gtk.SeparatorToolItem(), -1)
-        
-        # Size controls
-        size_item = Gtk.ToolItem()
-        size_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
-        size_label = Gtk.Label(label="Size:")
+        for icon, tool, tip, col, row in tool_icons:
+            btn = Gtk.ToggleButton(label=icon)
+            btn.set_tooltip_text(tip)
+            btn.get_style_context().add_class("tool-btn")
+            btn.connect("toggled", self._on_tool_toggled, tool)
+            self.tool_buttons[tool] = btn
+            tools_grid.attach(btn, col, row, 1, 1)
+        self.tool_buttons[ToolType.PEN].set_active(True)
+        tools_group.pack_start(tools_grid, False, False, 0)
+        ribbon.pack_start(tools_group, False, False, 0)
+        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
+
+        # === PRIVACY GROUP ===
+        priv_group = self._create_tool_panel("Privacy")
+        priv_grid = Gtk.Grid(row_spacing=1, column_spacing=1)
+        for icon, tool, tip, col in [("▦", ToolType.BLUR, "Blur (B)", 0), ("▤", ToolType.PIXELATE, "Pixelate (X)", 1)]:
+            btn = Gtk.ToggleButton(label=icon)
+            btn.set_tooltip_text(tip)
+            btn.get_style_context().add_class("tool-btn")
+            btn.connect("toggled", self._on_tool_toggled, tool)
+            self.tool_buttons[tool] = btn
+            priv_grid.attach(btn, col, 0, 1, 1)
+        priv_group.pack_start(priv_grid, False, False, 0)
+        ribbon.pack_start(priv_group, False, False, 0)
+        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
+
+        # === SIZE GROUP ===
+        size_group = self._create_tool_panel("Size")
         self.size_spin = Gtk.SpinButton()
         self.size_spin.set_range(1, 50)
-        self.size_spin.set_value(2)
+        self.size_spin.set_value(3)
         self.size_spin.set_increments(1, 5)
+        self.size_spin.set_tooltip_text("Brush size")
+        self.size_spin.get_style_context().add_class("size-spin")
         self.size_spin.connect("value-changed", self._on_size_changed)
-        size_box.pack_start(size_label, False, False, 0)
-        size_box.pack_start(self.size_spin, False, False, 0)
-        size_item.add(size_box)
-        toolbar.insert(size_item, -1)
-        
-        return toolbar
-    
-    def _create_color_toolbar(self) -> Gtk.Toolbar:
-        """Create the color selection toolbar."""
-        toolbar = Gtk.Toolbar()
-        toolbar.set_style(Gtk.ToolbarStyle.ICONS)
-        
-        for color_name, color in COLORS.items():
-            button = Gtk.ToolButton()
-            button.set_tooltip_text(color_name.capitalize())
-            
-            # Create colored icon
-            box = Gtk.Box()
-            box.set_size_request(24, 24)
-            box.override_background_color(
-                Gtk.StateFlags.NORMAL,
-                Gdk.RGBA(color.r, color.g, color.b, color.a)
-            )
-            button.set_icon_widget(box)
-            
-            button.connect("clicked", lambda b, c=color: self._set_color(c))
-            toolbar.insert(button, -1)
-        
-        toolbar.insert(Gtk.SeparatorToolItem(), -1)
-        
-        # Action buttons
-        undo_btn = Gtk.ToolButton(label="↶ Undo")
-        undo_btn.set_tooltip_text("Undo last action (Ctrl+Z)")
-        undo_btn.connect("clicked", lambda b: self._undo())
-        toolbar.insert(undo_btn, -1)
-        
-        redo_btn = Gtk.ToolButton(label="↷ Redo")
-        redo_btn.set_tooltip_text("Redo (Ctrl+Y)")
-        redo_btn.connect("clicked", lambda b: self._redo())
-        toolbar.insert(redo_btn, -1)
-        
-        clear_btn = Gtk.ToolButton(label="🗑️ Clear All")
-        clear_btn.set_tooltip_text("Clear all annotations")
-        clear_btn.connect("clicked", lambda b: self._clear())
-        toolbar.insert(clear_btn, -1)
-        
-        toolbar.insert(Gtk.SeparatorToolItem(), -1)
-        
-        # Save/Upload buttons
-        save_btn = Gtk.ToolButton(label="💾 Save")
-        save_btn.set_tooltip_text("Save to file (Ctrl+S)")
-        save_btn.connect("clicked", lambda b: self._save())
-        toolbar.insert(save_btn, -1)
-        
-        upload_btn = Gtk.ToolButton(label="☁️ Upload")
-        upload_btn.set_tooltip_text("Upload to cloud")
-        upload_btn.connect("clicked", lambda b: self._upload())
-        toolbar.insert(upload_btn, -1)
-        
-        copy_btn = Gtk.ToolButton(label="📋 Copy")
-        copy_btn.set_tooltip_text("Copy to clipboard (Ctrl+C)")
-        copy_btn.connect("clicked", lambda b: self._copy_to_clipboard())
-        toolbar.insert(copy_btn, -1)
-        
-        return toolbar
-    
+        size_group.pack_start(self.size_spin, False, False, 0)
+        ribbon.pack_start(size_group, False, False, 0)
+        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
+
+        # === COLORS GROUP (Standard 20-color palette) ===
+        colors_group = self._create_tool_panel("Colors")
+        colors_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        # Standard practical palette - 20 colors
+        palette = [
+            # Row 1: Dark shades
+            (0, 0, 0), (0.4, 0.4, 0.4), (0.5, 0, 0), (0.5, 0.25, 0), (0.5, 0.5, 0),
+            (0, 0.4, 0), (0, 0.4, 0.4), (0, 0, 0.5), (0.3, 0, 0.5), (0.5, 0, 0.3),
+            # Row 2: Bright shades
+            (1, 1, 1), (0.75, 0.75, 0.75), (1, 0, 0), (1, 0.5, 0), (1, 1, 0),
+            (0, 0.8, 0), (0, 0.8, 0.8), (0, 0, 1), (0.6, 0.3, 1), (1, 0.4, 0.7),
+        ]
+        color_grid = Gtk.Grid(row_spacing=2, column_spacing=2)
+        for i, (r, g, b) in enumerate(palette):
+            btn = Gtk.Button()
+            btn.get_style_context().add_class("color-swatch")
+            da = Gtk.DrawingArea()
+            da.set_size_request(16, 16)
+            da.connect("draw", lambda w, cr, r=r, g=g, b=b: self._draw_color_dot(cr, r, g, b))
+            btn.add(da)
+            btn.set_tooltip_text(f"RGB({int(r*255)},{int(g*255)},{int(b*255)})")
+            btn.connect("clicked", lambda b, r=r, g=g, bl=b: self._set_color_rgb(r, g, bl))
+            color_grid.attach(btn, i % 10, i // 10, 1, 1)
+        colors_box.pack_start(color_grid, False, False, 0)
+        # Custom color picker
+        self.color_btn = Gtk.ColorButton()
+        self.color_btn.set_rgba(Gdk.RGBA(1, 0, 0, 1))  # Default red
+        self.color_btn.set_tooltip_text("Custom color")
+        self.color_btn.get_style_context().add_class("color-picker")
+        self.color_btn.connect("color-set", self._on_color_chosen)
+        colors_box.pack_start(self.color_btn, False, False, 4)
+        colors_group.pack_start(colors_box, False, False, 0)
+        ribbon.pack_start(colors_group, False, False, 0)
+        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
+
+        # === EDIT GROUP ===
+        edit_group = self._create_tool_panel("Edit")
+        edit_box = Gtk.Box(spacing=2)
+        for icon, cb, tip in [("↶", self._undo, "Undo (Ctrl+Z)"), ("↷", self._redo, "Redo (Ctrl+Y)"), ("✕", self._clear, "Clear All")]:
+            btn = Gtk.Button(label=icon)
+            btn.set_tooltip_text(tip)
+            btn.get_style_context().add_class("tool-btn")
+            btn.connect("clicked", lambda b, c=cb: c())
+            edit_box.pack_start(btn, False, False, 0)
+        edit_group.pack_start(edit_box, False, False, 0)
+        ribbon.pack_start(edit_group, False, False, 0)
+
+        # Spacer
+        ribbon.pack_start(Gtk.Box(), True, True, 0)
+
+        # === OUTPUT GROUP ===
+        out_group = self._create_tool_panel("Output")
+        out_box = Gtk.Box(spacing=3)
+        for icon, cb, tip in [("📋", self._copy_to_clipboard, "Copy"), ("💾", self._save, "Save"), ("☁", self._upload, "Upload")]:
+            btn = Gtk.Button(label=icon)
+            btn.set_tooltip_text(tip)
+            btn.get_style_context().add_class("action-btn")
+            btn.connect("clicked", lambda b, c=cb: c())
+            out_box.pack_start(btn, False, False, 0)
+        out_group.pack_start(out_box, False, False, 0)
+        ribbon.pack_start(out_group, False, False, 0)
+
+        return ribbon
+
+    def _load_css(self, css: bytes) -> Gtk.CssProvider:
+        """Load CSS into a provider."""
+        provider = Gtk.CssProvider()
+        provider.load_from_data(css)
+        return provider
+
+    def _create_glass_panel(self, label: str) -> Gtk.Box:
+        """Create a futuristic glass panel group with label."""
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        box.get_style_context().add_class("glass-panel")
+        lbl = Gtk.Label(label=label)
+        lbl.get_style_context().add_class("glass-label")
+        box.pack_end(lbl, False, False, 0)
+        return box
+
+    def _create_tool_panel(self, label: str) -> Gtk.Box:
+        """Create a hybrid tool panel group with readable label."""
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        box.get_style_context().add_class("tool-panel")
+        lbl = Gtk.Label(label=label)
+        lbl.get_style_context().add_class("panel-label")
+        box.pack_end(lbl, False, False, 0)
+        return box
+
+    def _create_panel_sep(self) -> Gtk.Separator:
+        """Create panel separator for hybrid theme."""
+        sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        sep.set_margin_start(4)
+        sep.set_margin_end(4)
+        return sep
+
+    def _create_ribbon_group(self, label: str) -> Gtk.Box:
+        """Create a ribbon group with label (legacy)."""
+        return self._create_glass_panel(label)
+
+    def _create_ribbon_sep(self) -> Gtk.Separator:
+        """Create ribbon separator."""
+        sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        sep.get_style_context().add_class("neo-sep")
+        return sep
+
+    def _draw_color_dot(self, cr, r: float, g: float, b: float) -> bool:
+        """Draw a color dot (legacy)."""
+        return self._draw_neo_color(cr, r, g, b)
+
+    def _draw_neo_color(self, cr, r: float, g: float, b: float) -> bool:
+        """Draw a futuristic color circle with glow effect."""
+        # Outer glow
+        cr.set_source_rgba(r, g, b, 0.3)
+        cr.arc(9, 9, 9, 0, 3.14159 * 2)
+        cr.fill()
+        # Main color
+        cr.set_source_rgb(r, g, b)
+        cr.arc(9, 9, 7, 0, 3.14159 * 2)
+        cr.fill()
+        # Inner highlight
+        cr.set_source_rgba(1, 1, 1, 0.3)
+        cr.arc(7, 7, 3, 0, 3.14159 * 2)
+        cr.fill()
+        return True
+
+    def _set_color_rgb(self, r: float, g: float, b: float) -> None:
+        """Set color from RGB and update button."""
+        self.editor_state.set_color(Color(r, g, b, 1.0))
+        self.color_btn.set_rgba(Gdk.RGBA(r, g, b, 1.0))
+
+    def _create_separator(self) -> Gtk.Separator:
+        """Create a vertical separator."""
+        sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        sep.get_style_context().add_class("toolbar-separator")
+        return sep
+
+    def _on_tool_toggled(self, button: Gtk.ToggleButton, tool: ToolType) -> None:
+        """Handle tool toggle button."""
+        if button.get_active():
+            # Deactivate other tool buttons
+            for t, btn in self.tool_buttons.items():
+                if t != tool and btn.get_active():
+                    btn.set_active(False)
+            self._set_tool(tool)
+        elif not any(btn.get_active() for btn in self.tool_buttons.values()):
+            # Ensure at least one tool is always selected
+            button.set_active(True)
+
+    def _on_color_chosen(self, button: Gtk.ColorButton) -> None:
+        """Handle color picker selection."""
+        rgba = button.get_rgba()
+        self._set_color(Color(rgba.red, rgba.green, rgba.blue, rgba.alpha))
+
     def _set_tool(self, tool: ToolType) -> None:
         """Set the current drawing tool."""
         self.editor_state.set_tool(tool)
         self._update_cursor()
-        self.statusbar.push(self.statusbar_context, f"Tool: {tool.value}")
+        if hasattr(self, 'statusbar'):
+            self.statusbar.push(self.statusbar_context, f"Tool: {tool.value}")
     
     def _set_color(self, color: Color) -> None:
         """Set the current drawing color."""
@@ -614,11 +834,11 @@ class EditorWindow:
         """Draw the screenshot and annotations."""
         Gdk.cairo_set_source_pixbuf(cr, self.result.pixbuf, 0, 0)
         cr.paint()
-        
+
         elements = self.editor_state.get_elements()
         if elements:
-            render_elements(cr.get_target(), elements, self.result.pixbuf)
-        
+            render_elements(cr, elements, self.result.pixbuf)
+
         return True
     
     def _on_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> bool:
@@ -641,7 +861,7 @@ class EditorWindow:
     
     def _on_motion(self, widget: Gtk.Widget, event: Gdk.EventMotion) -> bool:
         """Handle mouse motion."""
-        if self.editor_state.current_tool != ToolType.TEXT:
+        if self.editor_state.is_drawing and self.editor_state.current_tool != ToolType.TEXT:
             self.editor_state.continue_drawing(event.x, event.y)
             self.drawing_area.queue_draw()
         return True
@@ -683,20 +903,48 @@ class EditorWindow:
     def _on_key_press(self, widget: Gtk.Widget, event: Gdk.EventKey) -> bool:
         """Handle keyboard shortcuts."""
         ctrl = event.state & Gdk.ModifierType.CONTROL_MASK
-        
-        if ctrl and event.keyval == Gdk.KEY_s:
-            self._save()
+
+        # Ctrl shortcuts
+        if ctrl:
+            if event.keyval == Gdk.KEY_s:
+                self._save()
+                return True
+            elif event.keyval == Gdk.KEY_c:
+                self._copy_to_clipboard()
+                return True
+            elif event.keyval == Gdk.KEY_z:
+                self._undo()
+                return True
+            elif event.keyval == Gdk.KEY_y:
+                self._redo()
+                return True
+
+        # Tool shortcuts (no modifier)
+        tool_shortcuts = {
+            Gdk.KEY_p: ToolType.PEN,
+            Gdk.KEY_h: ToolType.HIGHLIGHTER,
+            Gdk.KEY_l: ToolType.LINE,
+            Gdk.KEY_a: ToolType.ARROW,
+            Gdk.KEY_r: ToolType.RECTANGLE,
+            Gdk.KEY_e: ToolType.ELLIPSE,
+            Gdk.KEY_t: ToolType.TEXT,
+            Gdk.KEY_b: ToolType.BLUR,
+            Gdk.KEY_x: ToolType.PIXELATE,
+        }
+        if event.keyval in tool_shortcuts:
+            tool = tool_shortcuts[event.keyval]
+            self._set_tool(tool)
+            # Update toggle buttons if they exist
+            if hasattr(self, 'tool_buttons') and tool in self.tool_buttons:
+                self.tool_buttons[tool].set_active(True)
             return True
-        elif ctrl and event.keyval == Gdk.KEY_c:
-            self._copy_to_clipboard()
+
+        # Escape to deselect/cancel
+        if event.keyval == Gdk.KEY_Escape:
+            self.editor_state.cancel_drawing()
+            self.drawing_area.queue_draw()
             return True
-        elif ctrl and event.keyval == Gdk.KEY_z:
-            self._undo()
-            return True
-        elif ctrl and event.keyval == Gdk.KEY_y:
-            self._redo()
-            return True
-        
+
         return False
     
     def _on_destroy(self, widget: Gtk.Widget) -> None:
@@ -782,11 +1030,6 @@ class MainWindow:
         bottom_box.set_margin_top(16)
         main_box.pack_start(bottom_box, False, False, 0)
 
-        history_btn = Gtk.Button(label="📚 History")
-        history_btn.get_style_context().add_class("action-button")
-        history_btn.connect("clicked", self._on_history)
-        bottom_box.pack_start(history_btn, True, True, 0)
-
         settings_btn = Gtk.Button(label="⚙️ Settings")
         settings_btn.get_style_context().add_class("action-button")
         settings_btn.connect("clicked", self._on_settings)
@@ -831,17 +1074,20 @@ class MainWindow:
         return button
 
     def _on_history(self, button: Gtk.Button) -> None:
-        """Show screenshot history browser."""
+        """Open screenshot folder in file manager."""
+        import subprocess
+        cfg = config.load_config()
+        folder = Path(cfg.get("save_directory", str(Path.home() / "Pictures" / "Screenshots")))
+        folder.mkdir(parents=True, exist_ok=True)
         try:
-            from .history import HistoryWindow
-            HistoryWindow()
+            subprocess.Popen(["xdg-open", str(folder)])
         except Exception as e:
             dialog = Gtk.MessageDialog(
                 transient_for=self.window,
-                message_type=Gtk.MessageType.INFO,
+                message_type=Gtk.MessageType.ERROR,
                 buttons=Gtk.ButtonsType.OK,
-                text="History",
-                secondary_text=f"Could not open history: {e}"
+                text="Error",
+                secondary_text=f"Could not open folder: {e}"
             )
             dialog.run()
             dialog.destroy()
@@ -1216,48 +1462,67 @@ _EditorWindow_init_original = EditorWindow.__init__
 def _EditorWindow_init_enhanced(self, result):
     """Enhanced init with premium features."""
     _EditorWindow_init_original(self, result)
-    
+
     # Initialize premium features
     self.ocr_engine = OCREngine()
     self.history_manager = HistoryManager()
-    
-    # Add premium buttons to toolbar
-    separator = Gtk.SeparatorToolItem()
-    self.color_toolbar.insert(separator, -1)
-    
-    # OCR button
-    ocr_btn = Gtk.ToolButton(label="📝 OCR")
+
+    # Find the spacer in the toolbar to insert before it
+    toolbar_children = self.ribbon.get_children()
+    spacer_index = len(toolbar_children) - 2  # Before Clear button
+
+    # Add separator
+    sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+    sep.get_style_context().add_class("toolbar-separator")
+    self.ribbon.pack_start(sep, False, False, 0)
+    self.ribbon.reorder_child(sep, spacer_index)
+
+    # === OCR Button ===
+    ocr_btn = Gtk.Button(label="OCR")
     ocr_btn.set_tooltip_text("Extract text from image (Tesseract)")
+    ocr_btn.get_style_context().add_class("tool-button")
     ocr_btn.connect("clicked", lambda b: self._extract_text())
-    self.color_toolbar.insert(ocr_btn, -1)
-    
-    # Pin button  
-    pin_btn = Gtk.ToolButton(label="📌 Pin")
+    self.ribbon.pack_start(ocr_btn, False, False, 0)
+    self.ribbon.reorder_child(ocr_btn, spacer_index + 1)
+
+    # === Pin Button ===
+    pin_btn = Gtk.Button(label="📌")
     pin_btn.set_tooltip_text("Pin to desktop (always on top)")
+    pin_btn.get_style_context().add_class("tool-button")
     pin_btn.connect("clicked", lambda b: self._pin_to_desktop())
-    self.color_toolbar.insert(pin_btn, -1)
-    
-    # Effects toolbar buttons
-    shadow_btn = Gtk.ToolButton(label="✨ Shadow")
-    shadow_btn.set_tooltip_text("Add drop shadow")
-    shadow_btn.connect("clicked", lambda b: self._apply_shadow())
-    self.color_toolbar.insert(shadow_btn, -1)
+    self.ribbon.pack_start(pin_btn, False, False, 0)
+    self.ribbon.reorder_child(pin_btn, spacer_index + 2)
 
-    border_btn = Gtk.ToolButton(label="🖼️ Border")
-    border_btn.set_tooltip_text("Add border")
-    border_btn.connect("clicked", lambda b: self._apply_border())
-    self.color_toolbar.insert(border_btn, -1)
+    # === Effects Popover Button ===
+    effects_btn = Gtk.Button(label="FX ▾")
+    effects_btn.set_tooltip_text("Image Effects")
+    effects_btn.get_style_context().add_class("tool-button")
 
-    bg_btn = Gtk.ToolButton(label="🎨 BG")
-    bg_btn.set_tooltip_text("Add background")
-    bg_btn.connect("clicked", lambda b: self._apply_background())
-    self.color_toolbar.insert(bg_btn, -1)
+    effects_popover = Gtk.Popover()
+    effects_popover.set_relative_to(effects_btn)
+    effects_grid = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+    effects_grid.set_margin_start(8)
+    effects_grid.set_margin_end(8)
+    effects_grid.set_margin_top(8)
+    effects_grid.set_margin_bottom(8)
 
-    corners_btn = Gtk.ToolButton(label="⚪ Round")
-    corners_btn.set_tooltip_text("Round corners")
-    corners_btn.connect("clicked", lambda b: self._apply_round_corners())
-    self.color_toolbar.insert(corners_btn, -1)
-    
+    effects_items = [
+        ("✨ Drop Shadow", self._apply_shadow),
+        ("🖼 Add Border", self._apply_border),
+        ("🎨 Background", self._apply_background),
+        ("◐ Round Corners", self._apply_round_corners),
+    ]
+    for label, callback in effects_items:
+        row = Gtk.Button(label=label)
+        row.set_relief(Gtk.ReliefStyle.NONE)
+        row.connect("clicked", lambda b, cb=callback, p=effects_popover: (cb(), p.popdown()))
+        effects_grid.pack_start(row, False, False, 0)
+
+    effects_popover.add(effects_grid)
+    effects_btn.connect("clicked", lambda b: effects_popover.show_all())
+    self.ribbon.pack_start(effects_btn, False, False, 0)
+    self.ribbon.reorder_child(effects_btn, spacer_index + 3)
+
     self.window.show_all()
 
 
@@ -1437,40 +1702,33 @@ EditorWindow._apply_round_corners = _apply_round_corners
 _MainWindow_init_original = MainWindow.__init__
 
 def _MainWindow_init_enhanced(self):
-    """Enhanced main window with history."""
+    """Enhanced main window."""
     _MainWindow_init_original(self)
-    
-    # Add history button
-    history_btn = self._create_big_button(
-        "📚 Browse History",
-        "View and manage past screenshots",
-        self._on_history
-    )
-    
-    # Insert before settings button
+
+    # Add quick actions button
     children = self.window.get_children()[0].get_children()
     button_box = children[2]  # The button box
-    button_box.pack_start(history_btn, False, False, 0)
-    button_box.reorder_child(history_btn, 3)  # After window capture
-    
-    # Add quick actions button
     quick_btn = self._create_big_button(
         "⚡ Quick Actions",
         "Common screenshot workflows",
         self._on_quick_actions
     )
     button_box.pack_start(quick_btn, False, False, 0)
-    button_box.reorder_child(quick_btn, 4)
-    
+    button_box.reorder_child(quick_btn, 3)
+
     self.window.show_all()
 
 
 def _on_history(self, button):
-    """Open history browser."""
+    """Open screenshot folder in file manager."""
+    import subprocess
+    cfg = config.load_config()
+    folder = Path(cfg.get("save_directory", str(Path.home() / "Pictures" / "Screenshots")))
+    folder.mkdir(parents=True, exist_ok=True)
     try:
-        HistoryWindow(self.window)
+        subprocess.Popen(["xdg-open", str(folder)])
     except Exception as e:
-        show_notification("History Browser", str(e), icon="dialog-error")
+        show_notification("Error", f"Could not open folder: {e}", icon="dialog-error")
 
 
 def _on_quick_actions(self, button):
@@ -1482,11 +1740,10 @@ def _on_quick_actions(self, button):
         text="⚡ Quick Actions",
     )
     dialog.format_secondary_text(
-        "Premium Features:\n\n" +
+        "Features:\n\n" +
         "• 📝 OCR: Extract text from screenshots\n" +
         "• 📌 Pin: Keep screenshots always on top\n" +
         "• ✨ Effects: Add shadows, borders, backgrounds\n" +
-        "• 📚 History: Browse all past screenshots\n" +
         "• 🔍 Blur/Pixelate: Privacy protection\n" +
         "• ☁️ Upload: Share via Imgur\n\n" +
         "All features available in the editor!"

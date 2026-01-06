@@ -178,7 +178,12 @@ class EditorState:
             self.elements.append(self.current_element)
             self.current_element = None
             self.is_drawing = False
-    
+
+    def cancel_drawing(self) -> None:
+        """Cancel the current drawing operation without saving."""
+        self.current_element = None
+        self.is_drawing = False
+
     def add_text(self, x: float, y: float, text: str) -> None:
         """Add a text element at the given position."""
         if not text:
@@ -381,11 +386,11 @@ def apply_pixelate_region(pixbuf: Any, x: int, y: int, width: int, height: int, 
     return new_pixbuf
 
 
-def render_elements(surface: Any, elements: List[DrawingElement], base_pixbuf: Optional[Any] = None) -> None:
-    """Render drawing elements to a Cairo surface.
-    
+def render_elements(surface_or_ctx: Any, elements: List[DrawingElement], base_pixbuf: Optional[Any] = None) -> None:
+    """Render drawing elements to a Cairo surface or context.
+
     Args:
-        surface: Cairo surface to render to.
+        surface_or_ctx: Cairo surface or context to render to.
         elements: List of DrawingElement objects to render.
         base_pixbuf: Optional base pixbuf for blur/pixelate operations.
     """
@@ -393,8 +398,12 @@ def render_elements(surface: Any, elements: List[DrawingElement], base_pixbuf: O
         import cairo
     except ImportError:
         return
-    
-    ctx = cairo.Context(surface)
+
+    # Accept either a surface or an existing context
+    if isinstance(surface_or_ctx, cairo.Context):
+        ctx = surface_or_ctx
+    else:
+        ctx = cairo.Context(surface_or_ctx)
     
     for element in elements:
         if not element.points:
