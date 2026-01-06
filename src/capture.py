@@ -465,11 +465,12 @@ def save_capture(
         return CaptureResult(False, error=f"Failed to save: {str(e)}")
 
 
-def copy_to_clipboard(result: CaptureResult) -> bool:
+def copy_to_clipboard(result: CaptureResult, use_gtk: bool = True) -> bool:
     """Copy a captured screenshot to the clipboard.
 
     Args:
         result: The CaptureResult containing the pixbuf.
+        use_gtk: If True, try GTK clipboard first. Set False for CLI mode.
 
     Returns:
         True if successful, False otherwise.
@@ -477,19 +478,70 @@ def copy_to_clipboard(result: CaptureResult) -> bool:
     if not result.success or result.pixbuf is None:
         return False
 
-    if not GTK_AVAILABLE:
-        return False
+    # Try external clipboard tools first (they persist after exit)
+    display_server = detect_display_server()
+    temp_file = f"/tmp/likx_clip_{int(time.time())}.png"
 
     try:
-        from gi.repository import Gtk
+        if result.pixbuf:
+            result.pixbuf.savev(temp_file, "png", [], [])
 
-        clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-        clipboard.set_image(result.pixbuf)
-        clipboard.store()
-        return True
+        if display_server == DisplayServer.WAYLAND:
+            # wl-copy for Wayland
+            with open(temp_file, "rb") as f:
+                proc = subprocess.Popen(
+                    ["wl-copy", "--type", "image/png"],
+                    stdin=f,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                proc.wait(timeout=5)
+                if proc.returncode == 0:
+                    os.unlink(temp_file)
+                    return True
+        else:
+            # xclip for X11 - use background mode to persist
+            proc = subprocess.Popen(
+                ["xclip", "-selection", "clipboard", "-t", "image/png", temp_file],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            # Don't wait - xclip forks to background
+            time.sleep(0.1)  # Brief wait for xclip to read file
+            if proc.poll() is None or proc.returncode == 0:
+                # Keep temp file for xclip to serve (it will be cleaned up by /tmp)
+                return True
 
+    except FileNotFoundError:
+        pass  # External tool not found, fall through to GTK
     except Exception:
-        return False
+        pass
+
+    # Cleanup temp file if external tools failed
+    if os.path.exists(temp_file):
+        os.unlink(temp_file)
+
+    # Fallback to GTK clipboard (works when running in GUI context)
+    if use_gtk and GTK_AVAILABLE:
+        try:
+            gi.require_version("Gtk", "3.0")
+            from gi.repository import Gtk
+
+            if not Gtk.init_check()[0]:
+                Gtk.init([])
+
+            clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+            clipboard.set_image(result.pixbuf)
+            clipboard.store()
+
+            while Gtk.events_pending():
+                Gtk.main_iteration_do(False)
+
+            return True
+        except Exception:
+            pass
+
+    return False
 
 
 def capture(

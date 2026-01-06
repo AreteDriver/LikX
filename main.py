@@ -21,7 +21,7 @@ from pathlib import Path
 
 from src import __version__
 from src.config import load_config, get_save_path
-from src.capture import CaptureMode, capture, save_capture
+from src.capture import CaptureMode, capture, save_capture, copy_to_clipboard
 from src.notification import show_screenshot_saved, show_notification
 
 
@@ -64,6 +64,13 @@ def parse_args():
 
     parser.add_argument(
         "--no-edit", action="store_true", help="Skip the editor and save directly"
+    )
+
+    parser.add_argument(
+        "--copy",
+        "-c",
+        action="store_true",
+        help="Copy to clipboard (with --no-edit: copy instead of save)",
     )
 
     return parser.parse_args()
@@ -138,15 +145,26 @@ def main():
 
     # Either save directly or open editor
     if args.no_edit:
-        result = save_capture(result, output_path)
-        if result.success:
-            print(f"Screenshot saved to: {result.filepath}")
-            cfg = load_config()
-            if cfg.get("show_notification", True):
-                show_screenshot_saved(str(result.filepath))
+        if args.copy:
+            # Copy to clipboard instead of saving
+            if copy_to_clipboard(result):
+                print("Screenshot copied to clipboard")
+                cfg = load_config()
+                if cfg.get("show_notification", True):
+                    show_notification("Screenshot Copied", "Image copied to clipboard")
+            else:
+                print("Failed to copy to clipboard", file=sys.stderr)
+                sys.exit(1)
         else:
-            print(f"Failed to save: {result.error}", file=sys.stderr)
-            sys.exit(1)
+            result = save_capture(result, output_path)
+            if result.success:
+                print(f"Screenshot saved to: {result.filepath}")
+                cfg = load_config()
+                if cfg.get("show_notification", True):
+                    show_screenshot_saved(str(result.filepath))
+            else:
+                print(f"Failed to save: {result.error}", file=sys.stderr)
+                sys.exit(1)
     else:
         # Open editor
         try:

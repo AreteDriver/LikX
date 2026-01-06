@@ -68,11 +68,13 @@ class RegionSelector:
         self.drawing_area.connect("button-press-event", self._on_button_press)
         self.drawing_area.connect("button-release-event", self._on_button_release)
         self.drawing_area.connect("motion-notify-event", self._on_motion)
+        self.drawing_area.connect("scroll-event", self._on_scroll)
 
         self.drawing_area.add_events(
             Gdk.EventMask.BUTTON_PRESS_MASK
             | Gdk.EventMask.BUTTON_RELEASE_MASK
             | Gdk.EventMask.POINTER_MOTION_MASK
+            | Gdk.EventMask.SCROLL_MASK
         )
         self.window.add_events(Gdk.EventMask.KEY_PRESS_MASK)
 
@@ -249,21 +251,30 @@ class EditorWindow:
         self.drawing_area.connect("button-press-event", self._on_button_press)
         self.drawing_area.connect("button-release-event", self._on_button_release)
         self.drawing_area.connect("motion-notify-event", self._on_motion)
+        self.drawing_area.connect("scroll-event", self._on_scroll)
 
         self.drawing_area.add_events(
             Gdk.EventMask.BUTTON_PRESS_MASK
             | Gdk.EventMask.BUTTON_RELEASE_MASK
             | Gdk.EventMask.POINTER_MOTION_MASK
+            | Gdk.EventMask.SCROLL_MASK
         )
 
         scrolled.add(self.drawing_area)
         main_box.pack_start(scrolled, True, True, 0)
 
-        # Status bar
+        # Status bar with zoom indicator
+        status_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         self.statusbar = Gtk.Statusbar()
         self.statusbar_context = self.statusbar.get_context_id("editor")
         self.statusbar.push(self.statusbar_context, "Ready")
-        main_box.pack_start(self.statusbar, False, False, 0)
+        status_box.pack_start(self.statusbar, True, True, 0)
+
+        # Zoom label
+        self.zoom_label = Gtk.Label(label="100%")
+        self.zoom_label.set_size_request(60, -1)
+        status_box.pack_end(self.zoom_label, False, False, 4)
+        main_box.pack_start(status_box, False, False, 0)
 
         self.window.show_all()
 
@@ -467,6 +478,10 @@ class EditorWindow:
             ("○", ToolType.ELLIPSE, "Ellipse (E)", 2, 1),
             ("✕", ToolType.ERASER, "Eraser", 3, 1),
             ("📏", ToolType.MEASURE, "Measure (M)", 0, 2),
+            ("①", ToolType.NUMBER, "Number Marker (N)", 1, 2),
+            ("💧", ToolType.COLORPICKER, "Color Picker (I)", 2, 2),
+            ("✓", ToolType.STAMP, "Stamp (S)", 3, 2),
+            ("🔍", ToolType.ZOOM, "Zoom (Z) - Scroll to zoom", 0, 3),
         ]
         for icon, tool, tip, col, row in tool_icons:
             btn = Gtk.ToggleButton(label=icon)
@@ -495,6 +510,23 @@ class EditorWindow:
             priv_grid.attach(btn, col, 0, 1, 1)
         priv_group.pack_start(priv_grid, False, False, 0)
         ribbon.pack_start(priv_group, False, False, 0)
+        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
+
+        # === STAMPS GROUP ===
+        stamps_group = self._create_tool_panel("Stamps")
+        stamps_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        self.stamp_buttons = {}
+        stamps = ["✓", "✗", "⚠", "❓", "⭐", "❤", "👍", "👎"]
+        for stamp in stamps:
+            btn = Gtk.ToggleButton(label=stamp)
+            btn.set_tooltip_text(f"Stamp: {stamp}")
+            btn.get_style_context().add_class("stamp-btn")
+            btn.connect("toggled", self._on_stamp_toggled, stamp)
+            self.stamp_buttons[stamp] = btn
+            stamps_box.pack_start(btn, False, False, 0)
+        self.stamp_buttons["✓"].set_active(True)
+        stamps_group.pack_start(stamps_box, False, False, 0)
+        ribbon.pack_start(stamps_group, False, False, 0)
         ribbon.pack_start(self._create_panel_sep(), False, False, 0)
 
         # === SIZE GROUP ===
@@ -684,6 +716,18 @@ class EditorWindow:
             self._set_tool(tool)
         elif not any(btn.get_active() for btn in self.tool_buttons.values()):
             # Ensure at least one tool is always selected
+            button.set_active(True)
+
+    def _on_stamp_toggled(self, button: Gtk.ToggleButton, stamp: str) -> None:
+        """Handle stamp selection toggle."""
+        if button.get_active():
+            # Deactivate other stamp buttons
+            for s, btn in self.stamp_buttons.items():
+                if s != stamp and btn.get_active():
+                    btn.set_active(False)
+            self.editor_state.set_stamp(stamp)
+        elif not any(btn.get_active() for btn in self.stamp_buttons.values()):
+            # Ensure at least one stamp is always selected
             button.set_active(True)
 
     def _on_color_chosen(self, button: Gtk.ColorButton) -> None:
@@ -929,24 +973,57 @@ class EditorWindow:
             self.statusbar.push(self.statusbar_context, f"Copy failed: {e}")
 
     def _on_draw(self, widget: Gtk.Widget, cr) -> bool:
-        """Draw the screenshot and annotations."""
+        """Draw the screenshot and annotations with zoom support."""
+        zoom = self.editor_state.zoom_level
+
+        # Update drawing area size based on zoom
+        base_width = self.result.pixbuf.get_width()
+        base_height = self.result.pixbuf.get_height()
+        new_width = int(base_width * zoom)
+        new_height = int(base_height * zoom)
+        self.drawing_area.set_size_request(new_width, new_height)
+
+        # Apply zoom transform
+        cr.scale(zoom, zoom)
+
+        # Draw the image
         Gdk.cairo_set_source_pixbuf(cr, self.result.pixbuf, 0, 0)
         cr.paint()
 
+        # Draw annotations (also scaled)
         elements = self.editor_state.get_elements()
         if elements:
             render_elements(cr, elements, self.result.pixbuf)
 
         return True
 
+    def _screen_to_image(self, x: float, y: float) -> tuple:
+        """Convert screen coordinates to image coordinates (accounting for zoom)."""
+        zoom = self.editor_state.zoom_level
+        return x / zoom, y / zoom
+
     def _on_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> bool:
         """Handle mouse button press."""
+        # Convert screen coords to image coords
+        img_x, img_y = self._screen_to_image(event.x, event.y)
+
         if event.button == 1:
             if self.editor_state.current_tool == ToolType.TEXT:
                 # Show text input dialog
-                self._show_text_dialog(event.x, event.y)
+                self._show_text_dialog(img_x, img_y)
+            elif self.editor_state.current_tool == ToolType.NUMBER:
+                # Place number marker on click
+                self.editor_state.add_number(img_x, img_y)
+                self.drawing_area.queue_draw()
+            elif self.editor_state.current_tool == ToolType.COLORPICKER:
+                # Pick color from image
+                self._pick_color(img_x, img_y)
+            elif self.editor_state.current_tool == ToolType.STAMP:
+                # Place stamp on click
+                self.editor_state.add_stamp(img_x, img_y)
+                self.drawing_area.queue_draw()
             else:
-                self.editor_state.start_drawing(event.x, event.y)
+                self.editor_state.start_drawing(img_x, img_y)
         elif event.button == 3:
             # Right-click: show radial menu
             self._show_radial_menu(event.x_root, event.y_root)
@@ -954,21 +1031,53 @@ class EditorWindow:
 
     def _on_button_release(self, widget: Gtk.Widget, event: Gdk.EventButton) -> bool:
         """Handle mouse button release."""
+        img_x, img_y = self._screen_to_image(event.x, event.y)
         if event.button == 1:
             if self.editor_state.current_tool != ToolType.TEXT:
-                self.editor_state.finish_drawing(event.x, event.y)
+                self.editor_state.finish_drawing(img_x, img_y)
                 self.drawing_area.queue_draw()
         return True
 
     def _on_motion(self, widget: Gtk.Widget, event: Gdk.EventMotion) -> bool:
         """Handle mouse motion."""
+        img_x, img_y = self._screen_to_image(event.x, event.y)
         if (
             self.editor_state.is_drawing
             and self.editor_state.current_tool != ToolType.TEXT
         ):
-            self.editor_state.continue_drawing(event.x, event.y)
+            self.editor_state.continue_drawing(img_x, img_y)
             self.drawing_area.queue_draw()
         return True
+
+    def _on_scroll(self, widget: Gtk.Widget, event: Gdk.EventScroll) -> bool:
+        """Handle scroll events for zooming."""
+        # Only zoom when Ctrl is held or when Zoom tool is active
+        ctrl = event.state & Gdk.ModifierType.CONTROL_MASK
+        is_zoom_tool = self.editor_state.current_tool == ToolType.ZOOM
+
+        if ctrl or is_zoom_tool:
+            if event.direction == Gdk.ScrollDirection.UP:
+                self.editor_state.zoom_in()
+            elif event.direction == Gdk.ScrollDirection.DOWN:
+                self.editor_state.zoom_out()
+            elif event.direction == Gdk.ScrollDirection.SMOOTH:
+                # Handle smooth scrolling (trackpads)
+                _, dx, dy = event.get_scroll_deltas()
+                if dy < 0:
+                    self.editor_state.zoom_in(1.1)
+                elif dy > 0:
+                    self.editor_state.zoom_out(1.1)
+
+            self._update_zoom_label()
+            self.drawing_area.queue_draw()
+            return True
+        return False
+
+    def _update_zoom_label(self) -> None:
+        """Update the zoom percentage label."""
+        if hasattr(self, "zoom_label"):
+            percent = int(self.editor_state.zoom_level * 100)
+            self.zoom_label.set_text(f"{percent}%")
 
     def _show_text_dialog(self, x: float, y: float) -> None:
         """Show dialog to input text."""
@@ -1002,6 +1111,31 @@ class EditorWindow:
         if response == Gtk.ResponseType.OK and text:
             self.editor_state.add_text(x, y, text)
             self.drawing_area.queue_draw()
+
+    def _pick_color(self, x: float, y: float) -> None:
+        """Pick color from image and set as current color."""
+        color = self.editor_state.pick_color(x, y)
+        if color:
+            self.editor_state.set_color(color)
+            # Update UI color button if it exists
+            if hasattr(self, "color_buttons"):
+                # Deselect all preset colors
+                for btn in self.color_buttons.values():
+                    btn.set_active(False)
+            # Show feedback
+            hex_color = "#{:02x}{:02x}{:02x}".format(
+                int(color.r * 255), int(color.g * 255), int(color.b * 255)
+            )
+            self._show_toast(f"Color picked: {hex_color}")
+
+    def _show_toast(self, message: str) -> None:
+        """Show a brief toast notification."""
+        # Use statusbar if available, otherwise just print
+        if hasattr(self, "statusbar"):
+            ctx = self.statusbar.get_context_id("toast")
+            self.statusbar.push(ctx, message)
+            # Auto-clear after 2 seconds
+            GLib.timeout_add(2000, lambda: self.statusbar.pop(ctx))
 
     def _on_key_press(self, widget: Gtk.Widget, event: Gdk.EventKey) -> bool:
         """Handle keyboard shortcuts."""
@@ -1040,6 +1174,10 @@ class EditorWindow:
             Gdk.KEY_b: ToolType.BLUR,
             Gdk.KEY_x: ToolType.PIXELATE,
             Gdk.KEY_m: ToolType.MEASURE,
+            Gdk.KEY_n: ToolType.NUMBER,
+            Gdk.KEY_i: ToolType.COLORPICKER,
+            Gdk.KEY_s: ToolType.STAMP,
+            Gdk.KEY_z: ToolType.ZOOM,
         }
         if event.keyval in tool_shortcuts:
             tool = tool_shortcuts[event.keyval]
@@ -1047,6 +1185,23 @@ class EditorWindow:
             # Update toggle buttons if they exist
             if hasattr(self, "tool_buttons") and tool in self.tool_buttons:
                 self.tool_buttons[tool].set_active(True)
+            return True
+
+        # Zoom shortcuts (no modifier)
+        if event.keyval in (Gdk.KEY_plus, Gdk.KEY_equal, Gdk.KEY_KP_Add):
+            self.editor_state.zoom_in()
+            self._update_zoom_label()
+            self.drawing_area.queue_draw()
+            return True
+        if event.keyval in (Gdk.KEY_minus, Gdk.KEY_KP_Subtract):
+            self.editor_state.zoom_out()
+            self._update_zoom_label()
+            self.drawing_area.queue_draw()
+            return True
+        if event.keyval == Gdk.KEY_0:
+            self.editor_state.reset_zoom()
+            self._update_zoom_label()
+            self.drawing_area.queue_draw()
             return True
 
         # Escape to deselect/cancel

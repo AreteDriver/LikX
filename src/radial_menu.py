@@ -23,7 +23,7 @@ RADIAL_ITEMS: List[Tuple[str, Optional[ToolType], str]] = [
     ("Draw", ToolType.PEN, "✏️"),  # Top-right (45°)
     ("Arrow", ToolType.ARROW, "➡️"),  # Right (90°)
     ("Shape", ToolType.RECTANGLE, "⬜"),  # Bottom-right (135°)
-    ("Eraser", ToolType.ERASER, "🧹"),  # Bottom (180°)
+    ("Number", ToolType.NUMBER, "①"),  # Bottom (180°)
     ("Measure", ToolType.MEASURE, "📏"),  # Bottom-left (225°)
     ("Text", ToolType.TEXT, "📝"),  # Left (270°)
     ("Blur", ToolType.BLUR, "🔍"),  # Top-left (315°)

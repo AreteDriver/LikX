@@ -132,6 +132,66 @@ def build_command_registry(editor_window) -> List[Command]:
                 "📏",
                 "M",
             ),
+            Command(
+                "Color Picker",
+                ["color", "picker", "eyedropper", "sample", "pipette"],
+                lambda: editor_window._set_tool(ToolType.COLORPICKER),
+                "💧",
+                "I",
+            ),
+            Command(
+                "Stamp Tool",
+                ["stamp", "emoji", "sticker", "icon", "checkmark"],
+                lambda: editor_window._set_tool(ToolType.STAMP),
+                "✓",
+                "S",
+            ),
+            Command(
+                "Zoom Tool",
+                ["zoom", "magnify", "enlarge", "scale"],
+                lambda: editor_window._set_tool(ToolType.ZOOM),
+                "🔍",
+                "Z",
+            ),
+        ]
+    )
+
+    # === ZOOM ACTIONS ===
+    commands.extend(
+        [
+            Command(
+                "Zoom In",
+                ["zoom in", "enlarge", "bigger", "magnify"],
+                lambda: (
+                    editor_window.editor_state.zoom_in(),
+                    editor_window._update_zoom_label(),
+                    editor_window.drawing_area.queue_draw(),
+                ),
+                "🔎",
+                "+",
+            ),
+            Command(
+                "Zoom Out",
+                ["zoom out", "shrink", "smaller", "reduce"],
+                lambda: (
+                    editor_window.editor_state.zoom_out(),
+                    editor_window._update_zoom_label(),
+                    editor_window.drawing_area.queue_draw(),
+                ),
+                "🔍",
+                "-",
+            ),
+            Command(
+                "Reset Zoom",
+                ["reset zoom", "100%", "actual size", "fit"],
+                lambda: (
+                    editor_window.editor_state.reset_zoom(),
+                    editor_window._update_zoom_label(),
+                    editor_window.drawing_area.queue_draw(),
+                ),
+                "↺",
+                "0",
+            ),
         ]
     )
 

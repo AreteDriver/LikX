@@ -33,6 +33,10 @@ class ToolType(Enum):
     CROP = "crop"
     ERASER = "eraser"
     MEASURE = "measure"
+    NUMBER = "number"
+    COLORPICKER = "colorpicker"
+    STAMP = "stamp"
+    ZOOM = "zoom"
 
 
 @dataclass
@@ -100,6 +104,8 @@ class DrawingElement:
     text: str = ""
     filled: bool = False
     font_size: int = 16
+    number: int = 0  # For NUMBER tool
+    stamp: str = ""  # For STAMP tool
 
 
 class EditorState:
@@ -122,6 +128,12 @@ class EditorState:
         self.is_drawing = False
         self.current_element: Optional[DrawingElement] = None
         self.font_size = 16
+        self.number_counter = 1  # For NUMBER tool
+        self.current_stamp = "✓"  # Default stamp
+        # Zoom state
+        self.zoom_level = 1.0  # 1.0 = 100%
+        self.pan_offset_x = 0.0  # Pan offset in image coordinates
+        self.pan_offset_y = 0.0
 
     def set_pixbuf(self, pixbuf: Any) -> None:
         """Set the pixbuf to edit."""
@@ -212,6 +224,108 @@ class EditorState:
         self.undo_stack.append(self.elements.copy())
         self.redo_stack.clear()
         self.elements.append(element)
+
+    def add_number(self, x: float, y: float) -> None:
+        """Add a numbered marker at the given position."""
+        element = DrawingElement(
+            tool=ToolType.NUMBER,
+            color=self.current_color,
+            stroke_width=self.stroke_width,
+            points=[Point(x, y)],
+            number=self.number_counter,
+            font_size=self.font_size,
+        )
+
+        self.undo_stack.append(self.elements.copy())
+        self.redo_stack.clear()
+        self.elements.append(element)
+        self.number_counter += 1
+
+    def reset_number_counter(self) -> None:
+        """Reset the number counter to 1."""
+        self.number_counter = 1
+
+    def set_stamp(self, stamp: str) -> None:
+        """Set the current stamp emoji."""
+        self.current_stamp = stamp
+
+    def add_stamp(self, x: float, y: float) -> None:
+        """Add a stamp/emoji at the given position."""
+        element = DrawingElement(
+            tool=ToolType.STAMP,
+            color=self.current_color,
+            stroke_width=self.stroke_width,
+            points=[Point(x, y)],
+            stamp=self.current_stamp,
+            font_size=self.font_size,
+        )
+
+        self.undo_stack.append(self.elements.copy())
+        self.redo_stack.clear()
+        self.elements.append(element)
+
+    def pick_color(self, x: float, y: float) -> Optional[Color]:
+        """Pick color from the current pixbuf at given position.
+
+        Returns:
+            Color at position, or None if out of bounds.
+        """
+        if self.current_pixbuf is None:
+            return None
+
+        px = int(x)
+        py = int(y)
+        width = self.current_pixbuf.get_width()
+        height = self.current_pixbuf.get_height()
+
+        if px < 0 or px >= width or py < 0 or py >= height:
+            return None
+
+        n_channels = self.current_pixbuf.get_n_channels()
+        rowstride = self.current_pixbuf.get_rowstride()
+        pixels = self.current_pixbuf.get_pixels()
+
+        offset = py * rowstride + px * n_channels
+        r = pixels[offset] / 255.0
+        g = pixels[offset + 1] / 255.0
+        b = pixels[offset + 2] / 255.0
+
+        return Color(r, g, b, 1.0)
+
+    def zoom_in(self, factor: float = 1.25) -> None:
+        """Increase zoom level."""
+        self.zoom_level = min(8.0, self.zoom_level * factor)
+
+    def zoom_out(self, factor: float = 1.25) -> None:
+        """Decrease zoom level."""
+        self.zoom_level = max(0.25, self.zoom_level / factor)
+
+    def reset_zoom(self) -> None:
+        """Reset zoom to 100% and center pan."""
+        self.zoom_level = 1.0
+        self.pan_offset_x = 0.0
+        self.pan_offset_y = 0.0
+
+    def pan(self, dx: float, dy: float) -> None:
+        """Pan the view by given offset."""
+        self.pan_offset_x += dx / self.zoom_level
+        self.pan_offset_y += dy / self.zoom_level
+
+    def zoom_at(self, x: float, y: float, factor: float) -> None:
+        """Zoom centered on a specific point."""
+        old_zoom = self.zoom_level
+        if factor > 1:
+            self.zoom_in(factor)
+        else:
+            self.zoom_out(1.0 / factor)
+
+        # Adjust pan to keep the mouse position fixed
+        new_zoom = self.zoom_level
+        if new_zoom != old_zoom:
+            # Calculate how the point position changes
+            zoom_ratio = new_zoom / old_zoom
+            self.pan_offset_x = x - (x - self.pan_offset_x) * zoom_ratio
+            self.pan_offset_y = y - (y - self.pan_offset_y) * zoom_ratio
 
     def undo(self) -> bool:
         """Undo the last drawing action.
@@ -458,6 +572,10 @@ def render_elements(
             _render_pixelate(ctx, element, base_pixbuf)
         elif element.tool == ToolType.MEASURE:
             _render_measure(ctx, element)
+        elif element.tool == ToolType.NUMBER:
+            _render_number(ctx, element)
+        elif element.tool == ToolType.STAMP:
+            _render_stamp(ctx, element)
 
 
 def _render_freehand(ctx: Any, element: DrawingElement) -> None:
@@ -719,3 +837,62 @@ def _render_measure(ctx: Any, element: DrawingElement) -> None:
     ctx.set_source_rgba(1, 1, 1, 1)  # White text
     ctx.move_to(text_x, text_y)
     ctx.show_text(label)
+
+
+def _render_number(ctx: Any, element: DrawingElement) -> None:
+    """Render a numbered circle marker."""
+    if not element.points:
+        return
+
+    point = element.points[0]
+    r, g, b, a = element.color.to_tuple()
+
+    # Circle radius based on number of digits
+    num_str = str(element.number)
+    radius = max(14, 10 + len(num_str) * 4)
+
+    # Draw filled circle background
+    ctx.arc(point.x, point.y, radius, 0, 2 * math.pi)
+    ctx.set_source_rgba(r, g, b, a)
+    ctx.fill_preserve()
+
+    # Draw circle border (slightly darker)
+    ctx.set_source_rgba(r * 0.7, g * 0.7, b * 0.7, a)
+    ctx.set_line_width(2)
+    ctx.stroke()
+
+    # Draw the number text (white)
+    ctx.set_source_rgba(1, 1, 1, 1)
+    ctx.select_font_face("Sans", 0, 1)  # Normal, Bold
+    font_size = max(12, radius - 2)
+    ctx.set_font_size(font_size)
+
+    # Center the text
+    extents = ctx.text_extents(num_str)
+    text_x = point.x - extents.width / 2 - extents.x_bearing
+    text_y = point.y - extents.height / 2 - extents.y_bearing
+
+    ctx.move_to(text_x, text_y)
+    ctx.show_text(num_str)
+
+
+def _render_stamp(ctx: Any, element: DrawingElement) -> None:
+    """Render a stamp/emoji."""
+    if not element.points or not element.stamp:
+        return
+
+    point = element.points[0]
+
+    # Use larger font size for stamps
+    font_size = max(24, element.font_size * 2)
+    ctx.select_font_face("Sans", 0, 0)  # Normal weight
+    ctx.set_font_size(font_size)
+
+    # Get text extents to center the stamp
+    extents = ctx.text_extents(element.stamp)
+    text_x = point.x - extents.width / 2 - extents.x_bearing
+    text_y = point.y - extents.height / 2 - extents.y_bearing
+
+    # Draw the stamp
+    ctx.move_to(text_x, text_y)
+    ctx.show_text(element.stamp)
