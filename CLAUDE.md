@@ -100,6 +100,24 @@ cd snap && snapcraft
 | `C` | Crop (hold Shift for 1:1 square) |
 | Right-click | Radial menu for quick tool selection |
 
+## Tool Features
+
+### Measurement Tool (`M`)
+- Shows pixel distance between two points
+- Displays width × height dimensions for non-diagonal lines
+- Shows angle (∠) for non-axis-aligned lines
+- Dashed extension lines for horizontal/vertical measurements
+
+### Stamp Tool (`S`)
+16 preset stamps in 2 rows:
+- Row 1: ✓ ✗ ⚠ ❓ ⭐ ❤ 👍 👎 (common)
+- Row 2: ➡ ⬆ ⬇ ⬅ ● ■ ▲ ℹ (arrows & shapes)
+
+### Grid Snap (`Ctrl+'`)
+- Configure grid size (5-100px) in Settings → Editor tab
+- Elements snap to grid when moving/resizing
+- Arrow keys nudge to nearest grid line when enabled
+
 ## Packaging
 - **Snap**: `snap/snapcraft.yaml` - builds with `snapcraft`
 - **AppImage**: `AppDir/` + `build-appimage.sh`
