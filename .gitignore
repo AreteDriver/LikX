@@ -67,8 +67,10 @@ venv.bak/
 *.jpeg
 *.bmp
 *.gif
-!resources/icons/
-!resources/screenshots/examples/
+!resources/icons/*.png
+!resources/icons/*.svg
+!snap/gui/*.png
+!AppDir/*.png
 
 # Config
 config.json

@@ -50,15 +50,15 @@ def ensure_config_dir() -> bool:
 def load_config() -> Dict[str, Any]:
     """Load configuration from file."""
     config = DEFAULT_CONFIG.copy()
-    
+
     if CONFIG_FILE.exists():
         try:
-            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                 user_config = json.load(f)
                 config.update(user_config)
         except (json.JSONDecodeError, IOError):
             pass
-    
+
     return config
 
 
@@ -66,9 +66,9 @@ def save_config(config: Dict[str, Any]) -> bool:
     """Save configuration to file."""
     if not ensure_config_dir():
         return False
-    
+
     try:
-        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=4)
         return True
     except IOError:
@@ -100,20 +100,23 @@ def validate_format(format_str: str) -> bool:
     return format_str.lower() in [fmt.lower() for fmt in supported]
 
 
-def get_save_path(filename: Optional[str] = None, format_str: Optional[str] = None) -> Path:
+def get_save_path(
+    filename: Optional[str] = None, format_str: Optional[str] = None
+) -> Path:
     """Generate a save path for a screenshot."""
     config = load_config()
     save_dir = Path(config.get("save_directory", DEFAULT_CONFIG["save_directory"]))
-    
+
     save_dir = Path(save_dir).expanduser()
     save_dir.mkdir(parents=True, exist_ok=True)
-    
+
     if filename is None:
         from datetime import datetime
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"screenshot_{timestamp}"
-    
+
     if format_str is None:
         format_str = config.get("default_format", DEFAULT_CONFIG["default_format"])
-    
+
     return save_dir / f"{filename}.{format_str}"
