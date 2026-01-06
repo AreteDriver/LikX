@@ -1,0 +1,12 @@
+linux-sniptool (2.0.0-1) unstable; urgency=medium
+
+  * Initial .deb package release
+  * Hybrid dark theme with improved usability
+  * Full X11 and Wayland support
+  * 10 annotation tools (pen, highlighter, arrow, shapes, text, blur, pixelate)
+  * OCR text extraction via Tesseract
+  * Pin-to-desktop mode
+  * Visual effects (shadow, border, rounded corners)
+  * Imgur cloud upload
+
+ -- AreteDriver <aretedriver@users.noreply.github.com>  Mon, 06 Jan 2025 12:00:00 +0000

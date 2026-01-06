@@ -1,0 +1,26 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Linux SnipTool
+GenericName=Screenshot Tool
+Comment=Capture, annotate, and share screenshots
+Exec=linux-sniptool
+Icon=linux-sniptool
+Terminal=false
+Categories=Graphics;Utility;GTK;
+Keywords=screenshot;snip;capture;screen;grab;annotation;
+StartupNotify=true
+StartupWMClass=linux-sniptool
+Actions=fullscreen;region;window;
+
+[Desktop Action fullscreen]
+Name=Capture Fullscreen
+Exec=linux-sniptool --fullscreen
+
+[Desktop Action region]
+Name=Capture Region
+Exec=linux-sniptool --region
+
+[Desktop Action window]
+Name=Capture Window
+Exec=linux-sniptool --window
