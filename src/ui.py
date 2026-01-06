@@ -1375,6 +1375,35 @@ class EditorWindow:
         zoom = self.editor_state.zoom_level
         return x / zoom, y / zoom
 
+    def _update_resize_cursor(self, img_x: float, img_y: float) -> None:
+        """Update cursor based on hover position over resize handles."""
+        # Map handle names to cursor types
+        handle_cursors = {
+            'nw': Gdk.CursorType.TOP_LEFT_CORNER,
+            'ne': Gdk.CursorType.TOP_RIGHT_CORNER,
+            'sw': Gdk.CursorType.BOTTOM_LEFT_CORNER,
+            'se': Gdk.CursorType.BOTTOM_RIGHT_CORNER,
+        }
+
+        handle = self.editor_state._hit_test_handles(img_x, img_y)
+        if handle and handle in handle_cursors:
+            cursor = Gdk.Cursor.new_for_display(
+                self.window.get_display(), handle_cursors[handle]
+            )
+            self.drawing_area.get_window().set_cursor(cursor)
+        elif self.editor_state.get_selected():
+            # Hovering over selected element - show move cursor
+            elem = self.editor_state.get_selected()
+            if self.editor_state._hit_test_element(elem, img_x, img_y):
+                cursor = Gdk.Cursor.new_for_display(
+                    self.window.get_display(), Gdk.CursorType.FLEUR
+                )
+                self.drawing_area.get_window().set_cursor(cursor)
+            else:
+                self.drawing_area.get_window().set_cursor(None)
+        else:
+            self.drawing_area.get_window().set_cursor(None)
+
     def _on_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> bool:
         """Handle mouse button press."""
         # Convert screen coords to image coords
@@ -1450,6 +1479,9 @@ class EditorWindow:
             if self.editor_state._drag_start is not None:
                 if self.editor_state.move_selected(img_x, img_y):
                     self.drawing_area.queue_draw()
+            else:
+                # Update cursor based on hover position
+                self._update_resize_cursor(img_x, img_y)
             return True
 
         if self.editor_state.is_drawing:

@@ -589,6 +589,152 @@ class TestEditorStateSelection:
         assert y2 == 150
 
 
+class TestResizeHandles:
+    """Test resize handle functionality."""
+
+    def test_hit_test_handles_no_selection(self):
+        state = EditorState()
+        assert state._hit_test_handles(50, 50) is None
+
+    def test_hit_test_handles_nw_corner(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.select_at(50, 50)
+
+        # Click near top-left corner (10, 10)
+        handle = state._hit_test_handles(12, 12)
+        assert handle == 'nw'
+
+    def test_hit_test_handles_se_corner(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.select_at(50, 50)
+
+        # Click near bottom-right corner (100, 100)
+        handle = state._hit_test_handles(98, 98)
+        assert handle == 'se'
+
+    def test_hit_test_handles_ne_corner(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.select_at(50, 50)
+
+        # Click near top-right corner (100, 10)
+        handle = state._hit_test_handles(98, 12)
+        assert handle == 'ne'
+
+    def test_hit_test_handles_sw_corner(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.select_at(50, 50)
+
+        # Click near bottom-left corner (10, 100)
+        handle = state._hit_test_handles(12, 98)
+        assert handle == 'sw'
+
+    def test_hit_test_handles_miss(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.select_at(50, 50)
+
+        # Click in center (not on handle)
+        handle = state._hit_test_handles(55, 55)
+        assert handle is None
+
+    def test_select_at_starts_resize_mode(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.select_at(50, 50)
+
+        # Click on resize handle
+        state.select_at(12, 12)  # nw corner
+        assert state._resize_handle == 'nw'
+        assert state._drag_start is not None
+
+    def test_resize_selected_changes_size(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.select_at(50, 50)
+
+        # Start resize from se corner
+        state.select_at(98, 98)  # se corner
+        assert state._resize_handle == 'se'
+
+        # Drag to expand
+        state.move_selected(150, 150)
+
+        # Element should be larger
+        bbox = state._get_element_bbox(state.elements[0])
+        assert bbox is not None
+        x1, y1, x2, y2 = bbox
+        assert x2 == 150
+        assert y2 == 150
+
+    def test_resize_enforces_minimum_size(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.select_at(50, 50)
+
+        # Start resize from se corner
+        state.select_at(98, 98)
+
+        # Try to make it too small (should be prevented)
+        result = state._resize_selected(15, 15)  # Try to shrink to < 10px
+        assert result is False  # Should reject too-small resize
+
+    def test_finish_move_clears_resize_handle(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(100, 100)
+        state.select_at(50, 50)
+
+        # Start resize
+        state.select_at(98, 98)  # se corner
+        assert state._resize_handle == 'se'
+
+        # Finish
+        state.finish_move()
+        assert state._resize_handle is None
+
+    def test_resize_nw_corner(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(50, 50)
+        state.finish_drawing(150, 150)
+        state.select_at(100, 100)
+
+        # Start resize from nw corner
+        state.select_at(52, 52)
+        assert state._resize_handle == 'nw'
+
+        # Drag to move top-left corner
+        state.move_selected(20, 30)
+
+        bbox = state._get_element_bbox(state.elements[0])
+        x1, y1, x2, y2 = bbox
+        assert x1 == 20
+        assert y1 == 30
+        assert x2 == 150  # Right edge unchanged
+        assert y2 == 150  # Bottom edge unchanged
+
+
 class TestArrowStyle:
     """Test ArrowStyle enum and arrow style functionality."""
 
