@@ -231,6 +231,9 @@ class EditorWindow:
         self.result = result
         self.editor_state = EditorState(result.pixbuf)
         self.uploader = Uploader()
+
+        # Apply saved editor settings
+        self._apply_editor_settings()
         self._crosshair_cursor = None
         self._arrow_cursor = None
 
@@ -874,6 +877,13 @@ class EditorWindow:
         """Handle color picker selection."""
         rgba = button.get_rgba()
         self._set_color(Color(rgba.red, rgba.green, rgba.blue, rgba.alpha))
+
+    def _apply_editor_settings(self) -> None:
+        """Apply saved editor settings from config."""
+        cfg = config.load_config()
+        grid_size = cfg.get("grid_size", 20)
+        snap_enabled = cfg.get("snap_to_grid", False)
+        self.editor_state.set_grid_snap(snap_enabled, grid_size)
 
     def _set_tool(self, tool: ToolType) -> None:
         """Set the current drawing tool."""
@@ -2402,6 +2412,10 @@ class SettingsDialog:
         upload_box = self._create_upload_settings()
         notebook.append_page(upload_box, Gtk.Label(label="Upload"))
 
+        # Editor settings tab
+        editor_box = self._create_editor_settings()
+        notebook.append_page(editor_box, Gtk.Label(label="Editor"))
+
         self.dialog.show_all()
 
         response = self.dialog.run()
@@ -2542,6 +2556,67 @@ class SettingsDialog:
 
         return box
 
+    def _create_editor_settings(self) -> Gtk.Box:
+        """Create editor settings tab."""
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        box.set_border_width(10)
+
+        # Grid settings header
+        grid_header = Gtk.Label(xalign=0)
+        grid_header.set_markup("<b>Grid Settings</b>")
+        box.pack_start(grid_header, False, False, 0)
+
+        # Grid size slider
+        size_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        size_label = Gtk.Label(label="Grid size (pixels):", xalign=0)
+        size_label.set_size_request(150, -1)
+
+        # Value label that updates with slider
+        self.grid_size_value = Gtk.Label(label=f"{self.cfg.get('grid_size', 20)}px")
+        self.grid_size_value.set_size_request(50, -1)
+
+        # Slider for grid size (5-100 pixels)
+        self.grid_size_scale = Gtk.Scale.new_with_range(
+            Gtk.Orientation.HORIZONTAL, 5, 100, 5
+        )
+        self.grid_size_scale.set_value(self.cfg.get("grid_size", 20))
+        self.grid_size_scale.set_draw_value(False)  # We use our own label
+        self.grid_size_scale.set_hexpand(True)
+        self.grid_size_scale.connect("value-changed", self._on_grid_size_changed)
+
+        size_box.pack_start(size_label, False, False, 0)
+        size_box.pack_start(self.grid_size_scale, True, True, 0)
+        size_box.pack_start(self.grid_size_value, False, False, 0)
+        box.pack_start(size_box, False, False, 0)
+
+        # Snap to grid default checkbox
+        self.snap_grid_check = Gtk.CheckButton(
+            label="Enable grid snap by default (Ctrl+' to toggle)"
+        )
+        self.snap_grid_check.set_active(self.cfg.get("snap_to_grid", False))
+        box.pack_start(self.snap_grid_check, False, False, 0)
+
+        box.pack_start(Gtk.Separator(), False, False, 10)
+
+        # Grid info
+        info_label = Gtk.Label(xalign=0)
+        info_label.set_markup(
+            "<b>Keyboard Shortcuts:</b>\n\n"
+            + "• <b>Ctrl+'</b>: Toggle grid snap on/off\n"
+            + "• <b>Arrow keys</b>: Nudge 1px (or snap to grid)\n"
+            + "• <b>Shift+Arrow</b>: Nudge 10px\n\n"
+            + "<i>Grid snap helps align elements precisely.</i>"
+        )
+        info_label.set_line_wrap(True)
+        box.pack_start(info_label, False, False, 0)
+
+        return box
+
+    def _on_grid_size_changed(self, scale: Gtk.Scale) -> None:
+        """Update grid size value label."""
+        value = int(scale.get_value())
+        self.grid_size_value.set_text(f"{value}px")
+
     def _browse_directory(self, button: Gtk.Button) -> None:
         """Browse for save directory."""
         dialog = Gtk.FileChooserDialog(
@@ -2575,6 +2650,9 @@ class SettingsDialog:
         self.cfg["include_cursor"] = self.cursor_check.get_active()
         self.cfg["upload_service"] = self.service_combo.get_active_text() or "imgur"
         self.cfg["auto_upload"] = self.auto_upload_check.get_active()
+        # Editor settings
+        self.cfg["grid_size"] = int(self.grid_size_scale.get_value())
+        self.cfg["snap_to_grid"] = self.snap_grid_check.get_active()
 
         if config.save_config(self.cfg):
             show_notification("Settings Saved", "Your preferences have been saved")

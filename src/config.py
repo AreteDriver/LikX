@@ -21,6 +21,9 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "theme": "system",
     "upload_service": "imgur",  # imgur, fileio, none
     "auto_upload": False,
+    # Editor settings
+    "grid_size": 20,  # Grid snap size in pixels (5-100)
+    "snap_to_grid": False,  # Whether grid snap is enabled by default
 }
 
 # Configuration file path
