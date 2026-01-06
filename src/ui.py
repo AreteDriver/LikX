@@ -527,16 +527,23 @@ class EditorWindow:
 
         # === STAMPS GROUP ===
         stamps_group = self._create_tool_panel("Stamps")
-        stamps_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        stamps_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         self.stamp_buttons = {}
-        stamps = ["✓", "✗", "⚠", "❓", "⭐", "❤", "👍", "👎"]
-        for stamp in stamps:
-            btn = Gtk.ToggleButton(label=stamp)
-            btn.set_tooltip_text(f"Stamp: {stamp}")
-            btn.get_style_context().add_class("stamp-btn")
-            btn.connect("toggled", self._on_stamp_toggled, stamp)
-            self.stamp_buttons[stamp] = btn
-            stamps_box.pack_start(btn, False, False, 0)
+        # Two rows of stamps for better organization
+        stamp_rows = [
+            ["✓", "✗", "⚠", "❓", "⭐", "❤", "👍", "👎"],  # Common
+            ["➡", "⬆", "⬇", "⬅", "●", "■", "▲", "ℹ"],  # Arrows & shapes
+        ]
+        for row_stamps in stamp_rows:
+            row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+            for stamp in row_stamps:
+                btn = Gtk.ToggleButton(label=stamp)
+                btn.set_tooltip_text(f"Stamp: {stamp}")
+                btn.get_style_context().add_class("stamp-btn")
+                btn.connect("toggled", self._on_stamp_toggled, stamp)
+                self.stamp_buttons[stamp] = btn
+                row_box.pack_start(btn, False, False, 0)
+            stamps_box.pack_start(row_box, False, False, 0)
         self.stamp_buttons["✓"].set_active(True)
         stamps_group.pack_start(stamps_box, False, False, 0)
         ribbon.pack_start(stamps_group, False, False, 0)
