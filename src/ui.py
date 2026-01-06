@@ -659,6 +659,16 @@ class EditorWindow:
         self.color_btn.get_style_context().add_class("color-picker")
         self.color_btn.connect("color-set", self._on_color_chosen)
         colors_box.pack_start(self.color_btn, False, False, 4)
+
+        # Recent colors row
+        recent_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        recent_label = Gtk.Label(label="Recent:")
+        recent_label.get_style_context().add_class("panel-label")
+        recent_box.pack_start(recent_label, False, False, 2)
+        self.recent_colors_box = Gtk.Box(spacing=2)
+        recent_box.pack_start(self.recent_colors_box, False, False, 0)
+        colors_box.pack_start(recent_box, False, False, 2)
+
         colors_group.pack_start(colors_box, False, False, 0)
         ribbon.pack_start(colors_group, False, False, 0)
         ribbon.pack_start(self._create_panel_sep(), False, False, 0)
@@ -765,6 +775,35 @@ class EditorWindow:
         """Set color from RGB and update button."""
         self.editor_state.set_color(Color(r, g, b, 1.0))
         self.color_btn.set_rgba(Gdk.RGBA(r, g, b, 1.0))
+        self._update_recent_colors()
+
+    def _update_recent_colors(self) -> None:
+        """Update the recent colors display in toolbar."""
+        if not hasattr(self, "recent_colors_box"):
+            return
+
+        # Clear existing buttons
+        for child in self.recent_colors_box.get_children():
+            self.recent_colors_box.remove(child)
+
+        # Add buttons for each recent color
+        for color in self.editor_state.get_recent_colors():
+            btn = Gtk.Button()
+            btn.get_style_context().add_class("color-swatch")
+            da = Gtk.DrawingArea()
+            da.set_size_request(16, 16)
+            r, g, b = color.r, color.g, color.b
+            da.connect(
+                "draw", lambda w, cr, r=r, g=g, b=b: self._draw_color_dot(cr, r, g, b)
+            )
+            btn.add(da)
+            btn.set_tooltip_text(f"RGB({int(r * 255)},{int(g * 255)},{int(b * 255)})")
+            btn.connect(
+                "clicked", lambda b, r=r, g=g, bl=b: self._set_color_rgb(r, g, bl)
+            )
+            self.recent_colors_box.pack_start(btn, False, False, 0)
+
+        self.recent_colors_box.show_all()
 
     def _create_separator(self) -> Gtk.Separator:
         """Create a vertical separator."""
@@ -839,6 +878,7 @@ class EditorWindow:
     def _set_color(self, color: Color) -> None:
         """Set the current drawing color."""
         self.editor_state.set_color(color)
+        self._update_recent_colors()
 
     def _on_size_changed(self, spin: Gtk.SpinButton) -> None:
         """Handle size change."""

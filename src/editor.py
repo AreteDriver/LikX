@@ -139,6 +139,8 @@ class EditorState:
         self.redo_stack: List[List[DrawingElement]] = []
         self.current_tool = ToolType.PEN
         self.current_color = COLORS["red"]
+        self.recent_colors: List[Color] = []  # Last 8 used colors
+        self.max_recent_colors = 8
         self.stroke_width = 2.0
         self.is_drawing = False
         self.current_element: Optional[DrawingElement] = None
@@ -177,8 +179,30 @@ class EditorState:
         self.current_tool = tool
 
     def set_color(self, color: Color) -> None:
-        """Set the current drawing color."""
+        """Set the current drawing color and add to recent colors."""
         self.current_color = color
+        self._add_recent_color(color)
+
+    def _add_recent_color(self, color: Color) -> None:
+        """Add a color to recent colors list (most recent first)."""
+        # Check if color already exists (by value comparison)
+        for i, c in enumerate(self.recent_colors):
+            if (c.r == color.r and c.g == color.g and
+                c.b == color.b and c.a == color.a):
+                # Move to front
+                self.recent_colors.pop(i)
+                break
+
+        # Add to front
+        self.recent_colors.insert(0, copy.deepcopy(color))
+
+        # Trim to max size
+        if len(self.recent_colors) > self.max_recent_colors:
+            self.recent_colors = self.recent_colors[:self.max_recent_colors]
+
+    def get_recent_colors(self) -> List[Color]:
+        """Get list of recently used colors (most recent first)."""
+        return self.recent_colors.copy()
 
     def set_stroke_width(self, width: float) -> None:
         """Set the stroke width."""

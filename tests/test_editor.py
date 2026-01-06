@@ -1428,3 +1428,78 @@ class TestCopyPaste:
         assert len(state.elements) == 4
         assert len(state.selected_indices) == 2
         assert state.selected_indices == {2, 3}
+
+
+class TestRecentColors:
+    """Test recent colors functionality."""
+
+    def test_initial_recent_colors_empty(self):
+        state = EditorState()
+        assert state.recent_colors == []
+        assert state.get_recent_colors() == []
+
+    def test_set_color_adds_to_recent(self):
+        state = EditorState()
+        state.set_color(Color(1.0, 0.0, 0.0))
+        assert len(state.recent_colors) == 1
+        assert state.recent_colors[0].r == 1.0
+
+    def test_recent_colors_most_recent_first(self):
+        state = EditorState()
+        state.set_color(Color(1.0, 0.0, 0.0))  # Red
+        state.set_color(Color(0.0, 1.0, 0.0))  # Green
+        state.set_color(Color(0.0, 0.0, 1.0))  # Blue
+
+        assert len(state.recent_colors) == 3
+        assert state.recent_colors[0].b == 1.0  # Blue is most recent
+        assert state.recent_colors[1].g == 1.0  # Green
+        assert state.recent_colors[2].r == 1.0  # Red
+
+    def test_max_recent_colors_limit(self):
+        state = EditorState()
+        state.max_recent_colors = 3
+
+        state.set_color(Color(1.0, 0.0, 0.0))
+        state.set_color(Color(0.0, 1.0, 0.0))
+        state.set_color(Color(0.0, 0.0, 1.0))
+        state.set_color(Color(1.0, 1.0, 0.0))  # Should push red out
+
+        assert len(state.recent_colors) == 3
+        # Red should be gone, yellow is first
+        assert state.recent_colors[0].r == 1.0 and state.recent_colors[0].g == 1.0
+
+    def test_duplicate_color_moves_to_front(self):
+        state = EditorState()
+        state.set_color(Color(1.0, 0.0, 0.0))  # Red
+        state.set_color(Color(0.0, 1.0, 0.0))  # Green
+        state.set_color(Color(1.0, 0.0, 0.0))  # Red again
+
+        # Should have 2 colors, red first
+        assert len(state.recent_colors) == 2
+        assert state.recent_colors[0].r == 1.0 and state.recent_colors[0].g == 0.0
+        assert state.recent_colors[1].g == 1.0
+
+    def test_get_recent_colors_returns_copy(self):
+        state = EditorState()
+        state.set_color(Color(1.0, 0.0, 0.0))
+
+        colors = state.get_recent_colors()
+        colors.clear()  # Modify the returned list
+
+        # Original should be unchanged
+        assert len(state.recent_colors) == 1
+
+    def test_recent_colors_default_max_is_8(self):
+        state = EditorState()
+        assert state.max_recent_colors == 8
+
+    def test_add_recent_color_creates_deep_copy(self):
+        state = EditorState()
+        original = Color(1.0, 0.0, 0.0)
+        state.set_color(original)
+
+        # Modify original
+        original.r = 0.5
+
+        # Recent color should be unchanged
+        assert state.recent_colors[0].r == 1.0
