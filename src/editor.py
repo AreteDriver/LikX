@@ -751,6 +751,40 @@ class EditorState:
         """Check if clipboard has content."""
         return len(self._clipboard) > 0
 
+    def duplicate_selected(self, offset: float = 20.0) -> bool:
+        """Duplicate selected elements with offset.
+
+        This is a convenience method that copies and pastes in one operation.
+
+        Args:
+            offset: Pixel offset for duplicated elements.
+
+        Returns:
+            True if any elements were duplicated.
+        """
+        if not self.selected_indices:
+            return False
+
+        # Save for undo
+        self.undo_stack.append([e for e in self.elements])
+        self.redo_stack.clear()
+
+        # Duplicate selected elements with offset
+        new_indices = []
+        for idx in sorted(self.selected_indices):
+            if 0 <= idx < len(self.elements):
+                new_elem = copy.deepcopy(self.elements[idx])
+                for p in new_elem.points:
+                    p.x += offset
+                    p.y += offset
+                self.elements.append(new_elem)
+                new_indices.append(len(self.elements) - 1)
+
+        # Select the duplicated elements
+        self.selected_indices = set(new_indices)
+
+        return len(new_indices) > 0
+
     def bring_to_front(self) -> bool:
         """Move selected elements to front (top of stack).
 

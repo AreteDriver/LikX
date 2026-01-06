@@ -1752,6 +1752,13 @@ class EditorWindow:
                     self._show_toast("Sent to back")
                     self.drawing_area.queue_draw()
                 return True
+            elif event.keyval == Gdk.KEY_d:
+                # Ctrl+D - Duplicate selected
+                if self.editor_state.duplicate_selected():
+                    count = len(self.editor_state.selected_indices)
+                    self._show_toast(f"Duplicated {count} annotation(s)")
+                    self.drawing_area.queue_draw()
+                return True
 
         # Tool shortcuts (no modifier)
         tool_shortcuts = {

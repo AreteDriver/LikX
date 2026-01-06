@@ -1654,3 +1654,110 @@ class TestLayerOrdering:
 
         # Elements 2 and 3 should now be at indices 0 and 1
         assert state.selected_indices == {0, 1}
+
+
+class TestDuplicate:
+    """Test duplicate functionality."""
+
+    def test_duplicate_no_selection_returns_false(self):
+        state = EditorState()
+        result = state.duplicate_selected()
+        assert result is False
+
+    def test_duplicate_creates_new_element(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        assert len(state.elements) == 1
+
+        state.duplicate_selected()
+        assert len(state.elements) == 2
+
+    def test_duplicate_applies_offset(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        state.duplicate_selected(offset=15.0)
+
+        # Original
+        assert state.elements[0].points[0].x == 10
+        # Duplicate with offset
+        assert state.elements[1].points[0].x == 25  # 10 + 15
+
+    def test_duplicate_selects_new_elements(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        assert state.selected_indices == {0}
+
+        state.duplicate_selected()
+        assert state.selected_indices == {1}
+
+    def test_duplicate_saves_undo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        undo_count_before = len(state.undo_stack)
+
+        state.duplicate_selected()
+        assert len(state.undo_stack) == undo_count_before + 1
+
+    def test_duplicate_clears_redo(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        state.duplicate_selected()
+        state.undo()
+        assert len(state.redo_stack) > 0
+
+        # Deselect first (undo doesn't reset selection indices)
+        state.deselect()
+        state.select_at(30, 30)
+        state.duplicate_selected()
+        assert len(state.redo_stack) == 0
+
+    def test_duplicate_multiple_selected(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+        state.start_drawing(100, 100)
+        state.finish_drawing(150, 150)
+
+        state.select_at(30, 30)
+        state.select_at(125, 125, add_to_selection=True)
+        assert len(state.selected_indices) == 2
+
+        state.duplicate_selected()
+        assert len(state.elements) == 4
+        assert state.selected_indices == {2, 3}
+
+    def test_duplicate_creates_deep_copy(self):
+        state = EditorState()
+        state.set_tool(ToolType.RECTANGLE)
+        state.start_drawing(10, 10)
+        state.finish_drawing(50, 50)
+
+        state.select_at(30, 30)
+        state.duplicate_selected()
+
+        # Modify original
+        state.elements[0].points[0].x = 999
+
+        # Duplicate should be unchanged (except for offset)
+        assert state.elements[1].points[0].x == 30  # 10 + 20 offset

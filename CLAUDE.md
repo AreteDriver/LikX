@@ -53,6 +53,7 @@ cd snap && snapcraft
 | `Ctrl+Y` | Redo |
 | `Ctrl+]` | Bring selected to front |
 | `Ctrl+[` | Send selected to back |
+| `Ctrl+D` | Duplicate selected annotations |
 | `+` / `-` / `0` | Zoom in / out / reset |
 | `Delete` / `Backspace` | Delete selected annotation |
 | `Arrow keys` | Nudge selected annotation 1px |
