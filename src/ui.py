@@ -466,6 +466,7 @@ class EditorWindow:
             ("→", ToolType.ARROW, "Arrow (A)", 1, 1),
             ("○", ToolType.ELLIPSE, "Ellipse (E)", 2, 1),
             ("✕", ToolType.ERASER, "Eraser", 3, 1),
+            ("📏", ToolType.MEASURE, "Measure (M)", 0, 2),
         ]
         for icon, tool, tip, col, row in tool_icons:
             btn = Gtk.ToggleButton(label=icon)
@@ -1038,6 +1039,7 @@ class EditorWindow:
             Gdk.KEY_t: ToolType.TEXT,
             Gdk.KEY_b: ToolType.BLUR,
             Gdk.KEY_x: ToolType.PIXELATE,
+            Gdk.KEY_m: ToolType.MEASURE,
         }
         if event.keyval in tool_shortcuts:
             tool = tool_shortcuts[event.keyval]

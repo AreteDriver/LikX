@@ -59,6 +59,7 @@ cd snap && snapcraft
 | `T` | Text |
 | `B` | Blur |
 | `X` | Pixelate |
+| `M` | Measure |
 | Right-click | Radial menu for quick tool selection |
 
 ## Packaging

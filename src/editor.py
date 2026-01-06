@@ -32,6 +32,7 @@ class ToolType(Enum):
     PIXELATE = "pixelate"
     CROP = "crop"
     ERASER = "eraser"
+    MEASURE = "measure"
 
 
 @dataclass
@@ -455,6 +456,8 @@ def render_elements(
             _render_blur(ctx, element, base_pixbuf)
         elif element.tool == ToolType.PIXELATE and base_pixbuf:
             _render_pixelate(ctx, element, base_pixbuf)
+        elif element.tool == ToolType.MEASURE:
+            _render_measure(ctx, element)
 
 
 def _render_freehand(ctx: Any, element: DrawingElement) -> None:
@@ -637,3 +640,82 @@ def _render_pixelate(ctx: Any, element: DrawingElement, base_pixbuf: Any) -> Non
         ctx.fill()
     except Exception:
         pass
+
+
+def _render_measure(ctx: Any, element: DrawingElement) -> None:
+    """Render a measurement line with pixel distance and dimensions."""
+    if len(element.points) < 2:
+        return
+
+    start = element.points[0]
+    end = element.points[-1]
+
+    # Calculate measurements
+    dx = end.x - start.x
+    dy = end.y - start.y
+    distance = math.sqrt(dx * dx + dy * dy)
+    width = abs(dx)
+    height = abs(dy)
+
+    # Line angle for perpendicular end markers
+    line_angle = math.atan2(dy, dx)
+    perp_angle = line_angle + math.pi / 2
+    marker_size = 6
+
+    # Draw the main measurement line
+    r, g, b, a = element.color.to_tuple()
+    ctx.set_source_rgba(r, g, b, a)
+    ctx.set_line_width(element.stroke_width)
+    ctx.move_to(start.x, start.y)
+    ctx.line_to(end.x, end.y)
+    ctx.stroke()
+
+    # Draw perpendicular end markers
+    for point in [start, end]:
+        px1 = point.x + marker_size * math.cos(perp_angle)
+        py1 = point.y + marker_size * math.sin(perp_angle)
+        px2 = point.x - marker_size * math.cos(perp_angle)
+        py2 = point.y - marker_size * math.sin(perp_angle)
+        ctx.move_to(px1, py1)
+        ctx.line_to(px2, py2)
+        ctx.stroke()
+
+    # Prepare text label
+    ctx.select_font_face("Sans", 0, 1)  # Normal, Bold
+    font_size = max(12, min(16, element.stroke_width * 4))
+    ctx.set_font_size(font_size)
+
+    # Build label text
+    label = f"{distance:.0f}px"
+    if width > 10 and height > 10:
+        label += f" ({width:.0f}×{height:.0f})"
+
+    # Get text extents for background
+    extents = ctx.text_extents(label)
+    text_width = extents.width
+    text_height = extents.height
+
+    # Position label at midpoint of line
+    mid_x = (start.x + end.x) / 2
+    mid_y = (start.y + end.y) / 2
+
+    # Offset text perpendicular to line to avoid overlap
+    offset = 12
+    text_x = mid_x + offset * math.cos(perp_angle) - text_width / 2
+    text_y = mid_y + offset * math.sin(perp_angle) + text_height / 2
+
+    # Draw semi-transparent background behind text
+    padding = 4
+    ctx.set_source_rgba(0, 0, 0, 0.7)
+    ctx.rectangle(
+        text_x - padding,
+        text_y - text_height - padding,
+        text_width + padding * 2,
+        text_height + padding * 2,
+    )
+    ctx.fill()
+
+    # Draw the text
+    ctx.set_source_rgba(1, 1, 1, 1)  # White text
+    ctx.move_to(text_x, text_y)
+    ctx.show_text(label)

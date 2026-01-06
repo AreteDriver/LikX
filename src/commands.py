@@ -125,6 +125,13 @@ def build_command_registry(editor_window) -> List[Command]:
                 "①",
                 "N",
             ),
+            Command(
+                "Measure Tool",
+                ["measure", "ruler", "distance", "size", "dimension", "pixel"],
+                lambda: editor_window._set_tool(ToolType.MEASURE),
+                "📏",
+                "M",
+            ),
         ]
     )
 
