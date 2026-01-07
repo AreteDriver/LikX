@@ -20,7 +20,7 @@ cp "$ICON_DIR/likx-256.png" ~/.local/share/icons/hicolor/256x256/apps/likx.png
 cp "$ICON_DIR/likx-128.png" ~/.local/share/icons/hicolor/128x128/apps/likx.png
 cp "$ICON_DIR/likx-64.png" ~/.local/share/icons/hicolor/64x64/apps/likx.png
 cp "$ICON_DIR/likx-48.png" ~/.local/share/icons/hicolor/48x48/apps/likx.png
-cp "$ICON_DIR/app_icon.svg" ~/.local/share/icons/hicolor/scalable/apps/likx.svg
+cp "$ICON_DIR/likx.svg" ~/.local/share/icons/hicolor/scalable/apps/likx.svg
 
 echo "  Icons installed"
 
