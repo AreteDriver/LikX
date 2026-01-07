@@ -217,6 +217,10 @@ class RegionSelector:
             self.drawing_area.queue_draw()
         return True
 
+    def _on_scroll(self, widget: Gtk.Widget, event: Gdk.EventScroll) -> bool:
+        """Handle scroll events (no-op for region selector)."""
+        return False
+
 
 class EditorWindow:
     """Enhanced screenshot editor window with all annotation tools."""
