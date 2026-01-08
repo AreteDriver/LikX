@@ -1,0 +1,85 @@
+name: likx
+version: '3.2.0'
+summary: Screenshot utility with annotation and OCR for Linux
+description: |
+  LikX is a comprehensive screenshot tool for Linux desktops.
+
+  Features:
+  * Multi-capture: Fullscreen, region, window on X11 and Wayland
+  * Annotation: Pen, highlighter, line, arrow, rectangle, ellipse, text
+  * Privacy: Blur and pixelate tools for sensitive data
+  * OCR: Extract text from screenshots via Tesseract
+  * Pin to desktop: Keep screenshots visible while working
+  * Effects: Shadow, border, background, rounded corners
+  * Cloud upload: One-click Imgur sharing
+
+grade: stable
+confinement: strict
+base: core22
+
+architectures:
+  - build-on: amd64
+
+apps:
+  likx:
+    command: bin/likx
+    desktop: share/applications/likx.desktop
+    extensions: [gnome]
+    plugs:
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - unity7
+      - home
+      - network
+      - gsettings
+      - opengl
+
+layout:
+  /usr/share/tesseract-ocr:
+    bind: $SNAP/usr/share/tesseract-ocr
+
+parts:
+  likx:
+    plugin: dump
+    source: .
+    organize:
+      main.py: opt/likx/main.py
+      src/*: opt/likx/src/
+      resources/*: opt/likx/resources/
+    stage-packages:
+      - python3
+      - python3-gi
+      - python3-gi-cairo
+      - python3-cairo
+      - gir1.2-gtk-3.0
+      - gir1.2-gdkpixbuf-2.0
+      - xdotool
+      - gnome-screenshot
+      - tesseract-ocr
+      - tesseract-ocr-eng
+      - xclip
+    override-prime: |
+      craftctl default
+      # Create launcher script
+      mkdir -p $CRAFT_PRIME/bin
+      cat > $CRAFT_PRIME/bin/likx << 'EOF'
+      #!/bin/bash
+      cd $SNAP/opt/likx
+      exec python3 main.py "$@"
+      EOF
+      chmod +x $CRAFT_PRIME/bin/likx
+      # Desktop entry
+      mkdir -p $CRAFT_PRIME/share/applications
+      cp $CRAFT_PRIME/snap/gui/likx.desktop $CRAFT_PRIME/share/applications/ || true
+      # Icon
+      mkdir -p $CRAFT_PRIME/share/icons/hicolor/256x256/apps
+      cp $CRAFT_PRIME/snap/gui/likx.png $CRAFT_PRIME/share/icons/hicolor/256x256/apps/ || true
+
+  desktop-file:
+    plugin: dump
+    source: snap/gui
+    organize:
+      likx.desktop: snap/gui/likx.desktop
+      likx.png: snap/gui/likx.png

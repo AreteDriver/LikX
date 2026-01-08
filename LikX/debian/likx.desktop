@@ -1,0 +1,26 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=LikX
+GenericName=Screenshot Tool
+Comment=Capture, annotate, and share screenshots
+Exec=likx
+Icon=likx
+Terminal=false
+Categories=Graphics;Utility;GTK;
+Keywords=screenshot;snip;capture;screen;grab;annotation;
+StartupNotify=true
+StartupWMClass=likx
+Actions=fullscreen;region;window;
+
+[Desktop Action fullscreen]
+Name=Capture Fullscreen
+Exec=likx --fullscreen
+
+[Desktop Action region]
+Name=Capture Region
+Exec=likx --region
+
+[Desktop Action window]
+Name=Capture Window
+Exec=likx --window

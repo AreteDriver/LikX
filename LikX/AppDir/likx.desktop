@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=LikX
+GenericName=Screenshot Tool
+Comment=Capture, annotate, and share screenshots
+Exec=AppRun
+Icon=likx
+Terminal=false
+Type=Application
+Categories=Graphics;Utility;
+Keywords=screenshot;capture;snip;annotation;ocr;
+StartupNotify=true

@@ -1,8 +1,8 @@
-# Linux SnipTool
+# LikX
 
 **Polished screenshot utility for Ubuntu** — Region capture, annotation, OCR, and pin-to-desktop with production-grade UX.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](Linux_SnipTool/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LikX/LICENSE)
 [![Python: 3.8+](https://img.shields.io/badge/Python-3.8+-green.svg)](https://python.org)
 [![GTK: 3.0](https://img.shields.io/badge/GTK-3.0-orange.svg)](https://www.gtk.org/)
 
@@ -10,7 +10,7 @@
 
 ## What It Is
 
-Linux SnipTool is a comprehensive screenshot tool designed to fill the gap in Linux desktop tooling. It provides feature parity with Windows/Mac tools like ShareX and CleanShot while supporting both X11 and Wayland display servers.
+LikX is a comprehensive screenshot tool designed to fill the gap in Linux desktop tooling. It provides feature parity with Windows/Mac tools like ShareX and CleanShot while supporting both X11 and Wayland display servers.
 
 Beyond basic capture, the editor includes annotation tools (pen, highlighter, arrows, shapes, text), privacy features (blur, pixelate), OCR text extraction, and a pin-to-desktop mode for reference screenshots.
 
@@ -20,7 +20,7 @@ Beyond basic capture, the editor includes annotation tools (pen, highlighter, ar
 
 **Problem**: Linux screenshot tools lag behind Windows/Mac equivalents. Existing options either lack features, don't support Wayland, or have dated UX.
 
-**Solution**: Linux SnipTool provides:
+**Solution**: LikX provides:
 - Full X11 + Wayland support (GNOME, KDE, Sway)
 - 10 annotation tools with professional quality
 - OCR text extraction via Tesseract
@@ -47,8 +47,8 @@ Beyond basic capture, the editor includes annotation tools (pen, highlighter, ar
 ### Install
 
 ```bash
-git clone https://github.com/AreteDriver/Linux_SnipTool.git
-cd Linux_SnipTool/Linux_SnipTool
+git clone https://github.com/AreteDriver/LikX.git
+cd LikX/LikX
 ./setup.sh
 ```
 
@@ -85,8 +85,8 @@ python3 main.py
 ### Project Structure
 
 ```
-Linux_SnipTool/
-├── Linux_SnipTool/
+LikX/
+├── LikX/
 │   ├── main.py          # Entry point
 │   ├── src/
 │   │   ├── capture.py   # X11 + Wayland capture
@@ -138,22 +138,22 @@ Linux_SnipTool/
 ## Contributing
 
 ```bash
-cd Linux_SnipTool/Linux_SnipTool
+cd LikX/LikX
 ./setup.sh
 python3 main.py
 ```
 
-See [Linux_SnipTool/CONTRIBUTING.md](Linux_SnipTool/CONTRIBUTING.md) for guidelines.
+See [LikX/CONTRIBUTING.md](LikX/CONTRIBUTING.md) for guidelines.
 
 ---
 
 ## License
 
-MIT License — see [Linux_SnipTool/LICENSE](Linux_SnipTool/LICENSE)
+MIT License — see [LikX/LICENSE](LikX/LICENSE)
 
 ---
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/AreteDriver/Linux_SnipTool/issues)
-- **Docs**: [Linux_SnipTool/QUICK_START.md](Linux_SnipTool/QUICK_START.md)
+- **Issues**: [GitHub Issues](https://github.com/AreteDriver/LikX/issues)
+- **Docs**: [LikX/QUICK_START.md](LikX/QUICK_START.md)

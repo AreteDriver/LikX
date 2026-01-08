@@ -1,5 +1,0 @@
-# Python dependencies for Linux SnipTool
-# Most dependencies are system packages (GTK, GObject) installed via apt/dnf/pacman
-# See setup.sh for full system dependency installation
-
-pycairo>=1.20.0

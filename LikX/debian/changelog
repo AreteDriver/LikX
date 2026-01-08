@@ -1,0 +1,30 @@
+likx (3.2.0-1) unstable; urgency=medium
+
+  * Add Measure Tool (M) for pixel distance and dimension display
+  * Measure shows distance in pixels with W×H dimensions
+  * Added to toolbar, radial menu, and command palette
+  * Keyboard shortcut: M
+
+ -- AreteDriver <aretedriver@users.noreply.github.com>  Mon, 06 Jan 2026 16:00:00 +0000
+
+likx (3.1.0-1) unstable; urgency=medium
+
+  * Add Command Palette (Ctrl+Shift+P) for quick command access
+  * Add Radial Menu (right-click) for fast tool selection
+  * Professional UX improvements for power users
+
+ -- AreteDriver <aretedriver@users.noreply.github.com>  Mon, 06 Jan 2026 14:00:00 +0000
+
+likx (3.0.0-1) unstable; urgency=medium
+
+  * Rebrand from Linux SnipTool to LikX
+  * Add Snap Store packaging
+  * Add AppImage distribution
+  * Full X11 and Wayland support
+  * 10 annotation tools (pen, highlighter, arrow, shapes, text, blur, pixelate)
+  * OCR text extraction via Tesseract
+  * Pin-to-desktop mode
+  * Visual effects (shadow, border, rounded corners)
+  * Imgur cloud upload
+
+ -- AreteDriver <aretedriver@users.noreply.github.com>  Mon, 06 Jan 2026 12:00:00 +0000
