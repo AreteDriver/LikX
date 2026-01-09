@@ -2165,91 +2165,122 @@ class MainWindow:
         if not GTK_AVAILABLE:
             raise RuntimeError("GTK is not available")
 
-        # Load CSS styling
-        self._load_css()
+        # Load compact panel CSS
+        self._load_compact_css()
 
         self.window = Gtk.Window(title="LikX")
-        self.window.set_default_size(420, 480)
-        self.window.set_border_width(24)
+        self.window.set_default_size(-1, -1)  # Auto-size
+        self.window.set_border_width(8)
         self.window.set_resizable(False)
+        self.window.set_keep_above(True)  # Stay on top
         self.window.connect("destroy", self._on_quit)
 
-        # Center window on screen
-        self.window.set_position(Gtk.WindowPosition.CENTER)
+        # Position at top-right of screen
+        screen = Gdk.Screen.get_default()
+        self.window.move(screen.get_width() - 400, 50)
 
         self.hotkey_manager = HotkeyManager()
 
-        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        # Compact horizontal layout
+        main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        main_box.get_style_context().add_class("compact-panel")
         self.window.add(main_box)
 
-        # Header with icon and title
-        header_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        header_box.set_margin_bottom(16)
-        main_box.pack_start(header_box, False, False, 0)
-
-        # Title
+        # Logo/title (small)
         title = Gtk.Label()
-        title.set_markup("<span size='xx-large' weight='bold'>LikX</span>")
-        title.get_style_context().add_class("title-label")
-        header_box.pack_start(title, False, False, 0)
+        title.set_markup("<b>LikX</b>")
+        title.get_style_context().add_class("compact-title")
+        title.set_margin_end(8)
+        main_box.pack_start(title, False, False, 0)
 
-        # Subtitle/Description
-        desc = Gtk.Label(label="Capture • Annotate • Share")
-        desc.get_style_context().add_class("desc-label")
-        header_box.pack_start(desc, False, False, 0)
+        # Separator
+        sep1 = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        main_box.pack_start(sep1, False, False, 4)
 
-        # Capture buttons
-        button_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        button_box.set_margin_top(8)
-        main_box.pack_start(button_box, True, False, 0)
+        # Capture buttons (icon-only)
+        capture_buttons = [
+            ("📷", "Fullscreen (Ctrl+Shift+F)", self._on_fullscreen),
+            ("⬚", "Region (Ctrl+Shift+R)", self._on_region),
+            ("🪟", "Window (Ctrl+Shift+W)", self._on_window),
+            ("🖼️", "Open Image", self._on_open_image),
+        ]
+        for icon, tip, callback in capture_buttons:
+            btn = Gtk.Button(label=icon)
+            btn.set_tooltip_text(tip)
+            btn.get_style_context().add_class("compact-btn")
+            btn.connect("clicked", callback)
+            main_box.pack_start(btn, False, False, 0)
 
-        fullscreen_btn = self._create_big_button(
-            "📷  Capture Fullscreen",
-            "Capture your entire screen\nCtrl+Shift+F",
-            self._on_fullscreen,
-            "fullscreen",
-        )
-        button_box.pack_start(fullscreen_btn, False, False, 0)
+        # Separator
+        sep2 = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        main_box.pack_start(sep2, False, False, 4)
 
-        region_btn = self._create_big_button(
-            "⬚  Capture Region",
-            "Select and capture a screen region\nCtrl+Shift+R",
-            self._on_region,
-            "region",
-        )
-        button_box.pack_start(region_btn, False, False, 0)
-
-        window_btn = self._create_big_button(
-            "🪟  Capture Window",
-            "Capture the active window\nCtrl+Shift+W",
-            self._on_window,
-            "window",
-        )
-        button_box.pack_start(window_btn, False, False, 0)
-
-        # Spacer
-        spacer = Gtk.Box()
-        main_box.pack_start(spacer, True, True, 0)
-
-        # Bottom buttons
-        bottom_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        bottom_box.set_margin_top(16)
-        main_box.pack_start(bottom_box, False, False, 0)
-
-        settings_btn = Gtk.Button(label="⚙️ Settings")
-        settings_btn.get_style_context().add_class("action-button")
-        settings_btn.connect("clicked", self._on_settings)
-        bottom_box.pack_start(settings_btn, True, True, 0)
-
-        about_btn = Gtk.Button(label="ℹ️ About")
-        about_btn.get_style_context().add_class("action-button")
-        about_btn.connect("clicked", self._on_about)
-        bottom_box.pack_start(about_btn, True, True, 0)
+        # Utility buttons
+        util_buttons = [
+            ("📂", "History", self._on_history),
+            ("⚙️", "Settings", self._on_settings),
+        ]
+        for icon, tip, callback in util_buttons:
+            btn = Gtk.Button(label=icon)
+            btn.set_tooltip_text(tip)
+            btn.get_style_context().add_class("compact-btn-secondary")
+            btn.connect("clicked", callback)
+            main_box.pack_start(btn, False, False, 0)
 
         self.window.show_all()
 
         # Register hotkeys
         self._register_global_hotkeys()
+
+    def _load_compact_css(self) -> None:
+        """Load compact panel CSS styling."""
+        css = b"""
+        .compact-panel {
+            background: linear-gradient(180deg, #2a2a3e 0%, #1e1e2e 100%);
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .compact-title {
+            color: #a0a0c0;
+            font-size: 12px;
+            padding: 0 4px;
+        }
+        .compact-btn {
+            min-width: 36px;
+            min-height: 36px;
+            padding: 4px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(100, 100, 180, 0.15);
+            color: #d0d0e0;
+            font-size: 16px;
+        }
+        .compact-btn:hover {
+            background: rgba(100, 130, 220, 0.35);
+            color: #ffffff;
+        }
+        .compact-btn-secondary {
+            min-width: 32px;
+            min-height: 32px;
+            padding: 4px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: #909090;
+            font-size: 14px;
+        }
+        .compact-btn-secondary:hover {
+            background: rgba(100, 100, 140, 0.2);
+            color: #c0c0c0;
+        }
+        """
+        provider = Gtk.CssProvider()
+        provider.load_from_data(css)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
 
     def _load_css(self) -> None:
         """Load custom CSS styling."""
@@ -2992,19 +3023,8 @@ _MainWindow_init_original = MainWindow.__init__
 
 
 def _MainWindow_init_enhanced(self):
-    """Enhanced main window."""
+    """Enhanced main window - compact panel already has all buttons."""
     _MainWindow_init_original(self)
-
-    # Add quick actions button
-    children = self.window.get_children()[0].get_children()
-    button_box = children[2]  # The button box
-    quick_btn = self._create_big_button(
-        "⚡ Quick Actions", "Common screenshot workflows", self._on_quick_actions
-    )
-    button_box.pack_start(quick_btn, False, False, 0)
-    button_box.reorder_child(quick_btn, 3)
-
-    self.window.show_all()
 
 
 def _on_history(self, button):
@@ -3131,7 +3151,81 @@ EditorWindow._apply_grayscale = _apply_grayscale
 EditorWindow._apply_invert = _apply_invert
 
 
+def _on_open_image(self, button):
+    """Open file chooser to select and edit an existing image."""
+    dialog = Gtk.FileChooserDialog(
+        title="Open Image",
+        parent=self.window,
+        action=Gtk.FileChooserAction.OPEN,
+    )
+    dialog.add_buttons(
+        Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+        Gtk.STOCK_OPEN, Gtk.ResponseType.OK,
+    )
+
+    # Add image file filter
+    img_filter = Gtk.FileFilter()
+    img_filter.set_name("Image files")
+    img_filter.add_mime_type("image/png")
+    img_filter.add_mime_type("image/jpeg")
+    img_filter.add_mime_type("image/gif")
+    img_filter.add_mime_type("image/bmp")
+    img_filter.add_mime_type("image/webp")
+    img_filter.add_pattern("*.png")
+    img_filter.add_pattern("*.jpg")
+    img_filter.add_pattern("*.jpeg")
+    img_filter.add_pattern("*.gif")
+    img_filter.add_pattern("*.bmp")
+    img_filter.add_pattern("*.webp")
+    dialog.add_filter(img_filter)
+
+    # All files filter
+    all_filter = Gtk.FileFilter()
+    all_filter.set_name("All files")
+    all_filter.add_pattern("*")
+    dialog.add_filter(all_filter)
+
+    # Start in Pictures folder or last used directory
+    cfg = config.load_config()
+    start_dir = cfg.get("last_open_directory", str(Path.home() / "Pictures"))
+    if Path(start_dir).exists():
+        dialog.set_current_folder(start_dir)
+
+    response = dialog.run()
+    filepath = dialog.get_filename()
+    current_folder = dialog.get_current_folder()
+    dialog.destroy()
+
+    if response == Gtk.ResponseType.OK and filepath:
+        # Remember directory for next time
+        if current_folder:
+            cfg["last_open_directory"] = current_folder
+            config.save_config(cfg)
+
+        try:
+            # Load image into pixbuf
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file(filepath)
+            if pixbuf is None:
+                raise ValueError("Failed to load image")
+
+            # Create CaptureResult and open editor
+            result = CaptureResult(True, pixbuf=pixbuf, filepath=Path(filepath))
+            EditorWindow(result)
+
+        except Exception as e:
+            error_dialog = Gtk.MessageDialog(
+                transient_for=self.window,
+                message_type=Gtk.MessageType.ERROR,
+                buttons=Gtk.ButtonsType.OK,
+                text="Failed to open image",
+                secondary_text=str(e),
+            )
+            error_dialog.run()
+            error_dialog.destroy()
+
+
 # Inject enhanced methods
 MainWindow.__init__ = _MainWindow_init_enhanced
 MainWindow._on_history = _on_history
 MainWindow._on_quick_actions = _on_quick_actions
+MainWindow._on_open_image = _on_open_image

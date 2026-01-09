@@ -1,0 +1,317 @@
+/* Linux SnipTool - Futuristic Dark Theme */
+/* Inspired by cyberpunk aesthetics with glassmorphism */
+
+/* === BASE COLORS === */
+/* Background: Deep space blue-black */
+/* Accent Primary: Electric purple #8b5cf6 */
+/* Accent Secondary: Cyan blue #60a5fa */
+/* Text: Soft white #cdd6f4 */
+
+/* Main window styling */
+window {
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16162a 100%);
+}
+
+/* === TITLE SECTION === */
+.title-label {
+    font-size: 28px;
+    font-weight: 700;
+    color: #f5f5f5;
+    margin-bottom: 4px;
+}
+
+.desc-label {
+    color: rgba(166, 173, 200, 0.8);
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 20px;
+}
+
+/* === CAPTURE BUTTONS (Glass Cards) === */
+.capture-button {
+    background: linear-gradient(135deg, rgba(30, 30, 50, 0.8) 0%, rgba(20, 20, 35, 0.9) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 16px;
+    color: #e0e0e0;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 18px 24px;
+    margin: 6px 0;
+    min-height: 60px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.capture-button:hover {
+    background: linear-gradient(135deg, rgba(40, 40, 65, 0.9) 0%, rgba(30, 30, 50, 0.95) 100%);
+    border-color: rgba(139, 92, 246, 0.6);
+    box-shadow: 0 8px 30px rgba(139, 92, 246, 0.25), 0 0 20px rgba(139, 92, 246, 0.15);
+    color: #ffffff;
+}
+
+.capture-button:active {
+    box-shadow: 0 2px 10px rgba(139, 92, 246, 0.2);
+}
+
+/* Fullscreen button - Cyan glow accent */
+.capture-button.fullscreen {
+    border-left: 3px solid #60a5fa;
+}
+.capture-button.fullscreen:hover {
+    box-shadow: 0 8px 30px rgba(96, 165, 250, 0.3), 0 0 20px rgba(96, 165, 250, 0.2);
+}
+
+/* Region button - Green glow accent */
+.capture-button.region {
+    border-left: 3px solid #34d399;
+}
+.capture-button.region:hover {
+    box-shadow: 0 8px 30px rgba(52, 211, 153, 0.3), 0 0 20px rgba(52, 211, 153, 0.2);
+}
+
+/* Window button - Purple glow accent */
+.capture-button.window {
+    border-left: 3px solid #a78bfa;
+}
+.capture-button.window:hover {
+    box-shadow: 0 8px 30px rgba(167, 139, 250, 0.3), 0 0 20px rgba(167, 139, 250, 0.2);
+}
+
+/* === ACTION BUTTONS (Bottom) === */
+.action-button {
+    background: rgba(25, 25, 40, 0.7);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 10px;
+    color: #a6adc8;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 12px 20px;
+    min-height: 40px;
+}
+
+.action-button:hover {
+    background: rgba(35, 35, 55, 0.8);
+    border-color: rgba(139, 92, 246, 0.5);
+    color: #cdd6f4;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+}
+
+/* === TOOLBAR (Editor) === */
+toolbar {
+    background: linear-gradient(180deg, #1e1e2e 0%, #181825 100%);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+    padding: 6px 10px;
+}
+
+toolbar button {
+    background-color: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #a6adc8;
+    padding: 8px 12px;
+    margin: 2px;
+}
+
+toolbar button:hover {
+    background: rgba(139, 92, 246, 0.15);
+    color: #cdd6f4;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+}
+
+toolbar button:active,
+toolbar button:checked {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.35) 0%, rgba(96, 165, 250, 0.35) 100%);
+    color: #ffffff;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+}
+
+/* Tool button styling */
+.tool-button {
+    background: rgba(30, 30, 46, 0.6);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 8px;
+    color: #a6adc8;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.tool-button:hover {
+    background: rgba(40, 40, 60, 0.8);
+    border-color: rgba(139, 92, 246, 0.5);
+    color: #cdd6f4;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
+}
+
+/* Separator styling */
+toolbar separator,
+.toolbar-separator {
+    background: linear-gradient(180deg, transparent 20%, rgba(139, 92, 246, 0.3) 50%, transparent 80%);
+    margin: 6px 10px;
+    min-width: 1px;
+}
+
+/* === STATUSBAR === */
+statusbar {
+    background: linear-gradient(180deg, #181825 0%, #11111b 100%);
+    color: rgba(166, 173, 200, 0.6);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 6px 16px;
+    border-top: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+/* === SCROLLED WINDOW === */
+scrolledwindow {
+    background-color: #0a0a12;
+}
+
+/* === SPINBUTTON === */
+spinbutton {
+    background: rgba(30, 30, 46, 0.8);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
+    color: #cdd6f4;
+    padding: 6px 10px;
+}
+
+spinbutton:focus {
+    border-color: rgba(139, 92, 246, 0.6);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.25);
+}
+
+/* === DIALOGS === */
+dialog {
+    background: linear-gradient(135deg, #1a1a2e 0%, #151525 100%);
+}
+
+dialog headerbar {
+    background: linear-gradient(180deg, #1e1e2e 0%, #181825 100%);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+messagedialog {
+    background: linear-gradient(135deg, #1a1a2e 0%, #151525 100%);
+}
+
+messagedialog .message-area {
+    color: #cdd6f4;
+}
+
+/* === ENTRY FIELDS === */
+entry {
+    background: rgba(25, 25, 40, 0.8);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
+    color: #cdd6f4;
+    padding: 10px 14px;
+}
+
+entry:focus {
+    border-color: rgba(139, 92, 246, 0.7);
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.25), inset 0 0 10px rgba(139, 92, 246, 0.05);
+}
+
+/* === LABELS === */
+label {
+    color: #cdd6f4;
+}
+
+/* === CHECKBUTTONS === */
+checkbutton {
+    color: #cdd6f4;
+}
+
+checkbutton check {
+    background: rgba(30, 30, 46, 0.8);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 4px;
+}
+
+checkbutton check:hover {
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
+checkbutton check:checked {
+    background: linear-gradient(135deg, #8b5cf6 0%, #60a5fa 100%);
+    border-color: #8b5cf6;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+}
+
+/* === ABOUT DIALOG === */
+aboutdialog {
+    background: linear-gradient(135deg, #1a1a2e 0%, #151525 100%);
+}
+
+/* === NOTEBOOK (Tabs) === */
+notebook {
+    background: transparent;
+}
+
+notebook header {
+    background: rgba(20, 20, 35, 0.8);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+notebook tab {
+    background: transparent;
+    border: none;
+    color: #6c7086;
+    padding: 8px 16px;
+}
+
+notebook tab:hover {
+    color: #a6adc8;
+}
+
+notebook tab:checked {
+    color: #cdd6f4;
+    border-bottom: 2px solid #8b5cf6;
+    box-shadow: 0 2px 10px rgba(139, 92, 246, 0.3);
+}
+
+/* === COMBO BOX === */
+combobox {
+    background: rgba(30, 30, 46, 0.8);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
+    color: #cdd6f4;
+}
+
+combobox:hover {
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
+/* === FILE CHOOSER === */
+filechooser {
+    background: #1a1a2e;
+}
+
+/* === SCROLLBAR === */
+scrollbar {
+    background: transparent;
+}
+
+scrollbar slider {
+    background: rgba(139, 92, 246, 0.3);
+    border-radius: 10px;
+    min-width: 8px;
+    min-height: 8px;
+}
+
+scrollbar slider:hover {
+    background: rgba(139, 92, 246, 0.5);
+}
+
+/* === BUTTON GENERAL === */
+button {
+}
+
+/* === COLOR BUTTON === */
+colorbutton {
+    border-radius: 8px;
+    border: 2px solid rgba(139, 92, 246, 0.4);
+}
+
+colorbutton:hover {
+    border-color: rgba(139, 92, 246, 0.7);
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
+}
