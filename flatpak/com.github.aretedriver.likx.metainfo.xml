@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.github.aretedriver.likx</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>LikX</name>
+  <summary>Screenshot tool with annotation, OCR, and cloud upload</summary>
+
+  <description>
+    <p>
+      LikX is a powerful screenshot utility for Linux that combines capture,
+      annotation, OCR text extraction, and cloud upload in one streamlined workflow.
+    </p>
+    <p>Features include:</p>
+    <ul>
+      <li>Multiple capture modes: fullscreen, region selection, window capture</li>
+      <li>Rich annotation tools: pen, highlighter, arrows, shapes, text, blur, pixelate</li>
+      <li>OCR text extraction using Tesseract</li>
+      <li>Pin screenshots to desktop as floating windows</li>
+      <li>Cloud upload to Imgur</li>
+      <li>Measurement and numbering tools</li>
+      <li>Stamp and callout annotations</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">com.github.aretedriver.likx.desktop</launchable>
+
+  <url type="homepage">https://github.com/AreteDriver/LikX</url>
+  <url type="bugtracker">https://github.com/AreteDriver/LikX/issues</url>
+
+  <developer_name>AreteDriver</developer_name>
+
+  <provides>
+    <binary>likx</binary>
+  </provides>
+
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="3.0.0" date="2025-01-09">
+      <description>
+        <p>Major UI overhaul with vertical toolbar sidebar and compact floating panel.</p>
+      </description>
+    </release>
+  </releases>
+
+  <categories>
+    <category>Graphics</category>
+    <category>Utility</category>
+  </categories>
+
+  <keywords>
+    <keyword>screenshot</keyword>
+    <keyword>capture</keyword>
+    <keyword>annotation</keyword>
+    <keyword>ocr</keyword>
+    <keyword>snipping</keyword>
+  </keywords>
+</component>
