@@ -20,7 +20,7 @@ fi
 
 # Install runtime and SDK if needed
 echo "Ensuring GNOME runtime is available..."
-flatpak install -y --user flathub org.gnome.Platform//45 org.gnome.Sdk//45 2>/dev/null || true
+flatpak install -y --user flathub org.gnome.Platform//47 org.gnome.Sdk//47 2>/dev/null || true
 
 # Clean previous build
 echo "Cleaning previous build..."
