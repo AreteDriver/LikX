@@ -242,9 +242,13 @@ class TestEditorWindowClass:
         from src.ui import EditorWindow
         assert hasattr(EditorWindow, "_update_cursor")
 
-    def test_editor_window_has_create_ribbon_toolbar(self):
+    def test_editor_window_has_create_sidebar(self):
         from src.ui import EditorWindow
-        assert hasattr(EditorWindow, "_create_ribbon_toolbar")
+        assert hasattr(EditorWindow, "_create_sidebar")
+
+    def test_editor_window_has_create_context_bar(self):
+        from src.ui import EditorWindow
+        assert hasattr(EditorWindow, "_create_context_bar")
 
     def test_editor_window_has_set_tool(self):
         from src.ui import EditorWindow
@@ -506,25 +510,25 @@ class TestEditorWindowToolbarMethods:
         from src.ui import EditorWindow
         assert hasattr(EditorWindow, "_load_css")
 
-    def test_has_create_glass_panel(self):
+    def test_has_create_color_popover(self):
         from src.ui import EditorWindow
-        assert hasattr(EditorWindow, "_create_glass_panel")
+        assert hasattr(EditorWindow, "_create_color_popover")
 
-    def test_has_create_tool_panel(self):
+    def test_has_create_stamp_popover(self):
         from src.ui import EditorWindow
-        assert hasattr(EditorWindow, "_create_tool_panel")
+        assert hasattr(EditorWindow, "_create_stamp_popover")
 
-    def test_has_create_panel_sep(self):
+    def test_has_update_context_bar(self):
         from src.ui import EditorWindow
-        assert hasattr(EditorWindow, "_create_panel_sep")
+        assert hasattr(EditorWindow, "_update_context_bar")
 
-    def test_has_create_ribbon_group(self):
+    def test_has_draw_color_swatch(self):
         from src.ui import EditorWindow
-        assert hasattr(EditorWindow, "_create_ribbon_group")
+        assert hasattr(EditorWindow, "_draw_color_swatch")
 
-    def test_has_create_ribbon_sep(self):
+    def test_has_on_stamp_selected(self):
         from src.ui import EditorWindow
-        assert hasattr(EditorWindow, "_create_ribbon_sep")
+        assert hasattr(EditorWindow, "_on_stamp_selected")
 
 
 class TestEditorWindowColorMethods:
