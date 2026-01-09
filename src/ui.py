@@ -249,9 +249,17 @@ class EditorWindow:
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.window.add(main_box)
 
-        # Horizontal ribbon toolbar
-        self.ribbon = self._create_ribbon_toolbar()
-        main_box.pack_start(self.ribbon, False, False, 0)
+        # Context bar (slim, adapts to active tool)
+        self.context_bar = self._create_context_bar()
+        main_box.pack_start(self.context_bar, False, False, 0)
+
+        # Content area: sidebar + canvas
+        content_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        main_box.pack_start(content_box, True, True, 0)
+
+        # Vertical sidebar (left)
+        self.sidebar = self._create_sidebar()
+        content_box.pack_start(self.sidebar, False, False, 0)
 
         # Drawing area with scrolling
         scrolled = Gtk.ScrolledWindow()
@@ -276,7 +284,7 @@ class EditorWindow:
         )
 
         scrolled.add(self.drawing_area)
-        main_box.pack_start(scrolled, True, True, 0)
+        content_box.pack_start(scrolled, True, True, 0)
 
         # Status bar with zoom indicator
         status_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
@@ -363,63 +371,182 @@ class EditorWindow:
         else:
             self.drawing_area.get_window().set_cursor(self._arrow_cursor)
 
-    def _create_ribbon_toolbar(self) -> Gtk.Box:
-        """Create a hybrid dark/practical ribbon toolbar."""
+    def _create_sidebar(self) -> Gtk.Box:
+        """Create vertical tool sidebar."""
         css = b"""
-        /* === HYBRID DARK THEME (Aesthetic + Practical) === */
-        .hybrid-ribbon {
+        .sidebar {
             background: linear-gradient(180deg, #252536 0%, #1e1e2e 100%);
-            border-bottom: 1px solid #3d3d5c;
-            padding: 4px 6px;
-            min-height: 52px;
+            border-right: 1px solid #3d3d5c;
+            padding: 4px;
         }
-
-        /* Clean panel groups */
-        .tool-panel {
-            background: rgba(40, 40, 60, 0.5);
-            border: 1px solid rgba(80, 80, 120, 0.3);
-            border-radius: 8px;
-            padding: 4px 8px;
-            margin: 0 2px;
-        }
-
-        /* Readable group labels */
-        .panel-label {
-            font-size: 9px;
-            font-weight: 600;
-            color: #8888aa;
-            margin-top: 2px;
-        }
-
-        /* Tool buttons - clear and clickable */
-        .tool-btn {
-            min-width: 28px;
-            min-height: 28px;
-            padding: 3px;
+        .sidebar-btn {
+            min-width: 36px;
+            min-height: 36px;
+            padding: 4px;
             border: 1px solid transparent;
             border-radius: 6px;
             background: transparent;
             color: #c0c0d0;
-            font-size: 13px;
+            font-size: 14px;
         }
-        .tool-btn:hover {
+        .sidebar-btn:hover {
             background: rgba(100, 100, 180, 0.2);
             border-color: rgba(130, 130, 200, 0.4);
             color: #ffffff;
         }
-        .tool-btn:checked {
+        .sidebar-btn:checked {
             background: rgba(100, 130, 220, 0.35);
             border-color: #6688dd;
             color: #ffffff;
         }
+        .sidebar-sep {
+            background: rgba(100, 100, 140, 0.3);
+            min-height: 1px;
+            margin: 4px 2px;
+        }
+        """
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            self._load_css(css),
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
 
-        /* Action buttons (save, copy, upload) */
+        sidebar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        sidebar.get_style_context().add_class("sidebar")
+
+        self.tool_buttons = {}
+
+        # Drawing tools group
+        drawing_tools = [
+            ("⊹", ToolType.SELECT, "Select (V)"),
+            ("✎", ToolType.PEN, "Pen (P)"),
+            ("▓", ToolType.HIGHLIGHTER, "Highlighter (H)"),
+            ("—", ToolType.LINE, "Line (L)"),
+            ("→", ToolType.ARROW, "Arrow (A)"),
+            ("▭", ToolType.RECTANGLE, "Rectangle (R)"),
+            ("○", ToolType.ELLIPSE, "Ellipse (E)"),
+            ("A", ToolType.TEXT, "Text (T)"),
+            ("💬", ToolType.CALLOUT, "Callout (K)"),
+        ]
+        for icon, tool, tip in drawing_tools:
+            btn = Gtk.ToggleButton(label=icon)
+            btn.set_tooltip_text(tip)
+            btn.get_style_context().add_class("sidebar-btn")
+            btn.connect("toggled", self._on_tool_toggled, tool)
+            self.tool_buttons[tool] = btn
+            sidebar.pack_start(btn, False, False, 0)
+
+        # Separator
+        sep1 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        sep1.get_style_context().add_class("sidebar-sep")
+        sidebar.pack_start(sep1, False, False, 2)
+
+        # Privacy tools
+        privacy_tools = [
+            ("▦", ToolType.BLUR, "Blur (B)"),
+            ("▤", ToolType.PIXELATE, "Pixelate (X)"),
+        ]
+        for icon, tool, tip in privacy_tools:
+            btn = Gtk.ToggleButton(label=icon)
+            btn.set_tooltip_text(tip)
+            btn.get_style_context().add_class("sidebar-btn")
+            btn.connect("toggled", self._on_tool_toggled, tool)
+            self.tool_buttons[tool] = btn
+            sidebar.pack_start(btn, False, False, 0)
+
+        # Separator
+        sep2 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        sep2.get_style_context().add_class("sidebar-sep")
+        sidebar.pack_start(sep2, False, False, 2)
+
+        # Utility tools
+        utility_tools = [
+            ("✓", ToolType.STAMP, "Stamp (S)"),
+            ("📏", ToolType.MEASURE, "Measure (M)"),
+            ("①", ToolType.NUMBER, "Number (N)"),
+            ("💧", ToolType.COLORPICKER, "Color Picker (I)"),
+        ]
+        for icon, tool, tip in utility_tools:
+            btn = Gtk.ToggleButton(label=icon)
+            btn.set_tooltip_text(tip)
+            btn.get_style_context().add_class("sidebar-btn")
+            btn.connect("toggled", self._on_tool_toggled, tool)
+            self.tool_buttons[tool] = btn
+            sidebar.pack_start(btn, False, False, 0)
+
+        # Separator
+        sep3 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        sep3.get_style_context().add_class("sidebar-sep")
+        sidebar.pack_start(sep3, False, False, 2)
+
+        # View/edit tools
+        view_tools = [
+            ("✂", ToolType.CROP, "Crop (C)"),
+            ("🔍", ToolType.ZOOM, "Zoom (Z)"),
+            ("✕", ToolType.ERASER, "Eraser"),
+        ]
+        for icon, tool, tip in view_tools:
+            btn = Gtk.ToggleButton(label=icon)
+            btn.set_tooltip_text(tip)
+            btn.get_style_context().add_class("sidebar-btn")
+            btn.connect("toggled", self._on_tool_toggled, tool)
+            self.tool_buttons[tool] = btn
+            sidebar.pack_start(btn, False, False, 0)
+
+        # Default to pen tool
+        self.tool_buttons[ToolType.PEN].set_active(True)
+
+        return sidebar
+
+    def _create_context_bar(self) -> Gtk.Box:
+        """Create context-sensitive toolbar that adapts to active tool."""
+        css = b"""
+        .context-bar {
+            background: linear-gradient(180deg, #252536 0%, #1e1e2e 100%);
+            border-bottom: 1px solid #3d3d5c;
+            padding: 4px 8px;
+            min-height: 36px;
+        }
+        .context-group {
+            padding: 0 4px;
+        }
+        .ctx-btn {
+            min-width: 28px;
+            min-height: 28px;
+            padding: 2px 6px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            background: transparent;
+            color: #c0c0d0;
+            font-size: 12px;
+        }
+        .ctx-btn:hover {
+            background: rgba(100, 100, 180, 0.2);
+            border-color: rgba(130, 130, 200, 0.4);
+        }
+        .ctx-btn:checked {
+            background: rgba(100, 130, 220, 0.35);
+            border-color: #6688dd;
+        }
+        .ctx-spin {
+            background: rgba(35, 35, 50, 0.9);
+            border: 1px solid rgba(80, 80, 120, 0.5);
+            border-radius: 4px;
+            color: #d0d0e0;
+            padding: 2px 4px;
+            min-width: 50px;
+        }
+        .ctx-label {
+            color: #8888aa;
+            font-size: 11px;
+            margin-right: 4px;
+        }
         .action-btn {
             min-width: 28px;
             min-height: 28px;
-            padding: 3px 6px;
+            padding: 2px 6px;
             border: 1px solid rgba(100, 180, 100, 0.4);
-            border-radius: 6px;
+            border-radius: 4px;
             background: rgba(80, 160, 80, 0.15);
             color: #90d090;
             font-size: 13px;
@@ -429,46 +556,11 @@ class EditorWindow:
             border-color: rgba(100, 200, 100, 0.6);
             color: #ffffff;
         }
-
-        /* Color swatches - clear circles */
-        .color-swatch {
-            min-width: 16px;
-            min-height: 16px;
-            border-radius: 8px;
-            border: 1px solid rgba(60, 60, 80, 0.8);
-        }
-        .color-swatch:hover {
-            border-color: #8888cc;
-            border-width: 2px;
-        }
-
-        /* Vertical separator */
-        .panel-sep {
-            background: rgba(100, 100, 140, 0.3);
-            min-width: 1px;
-            margin: 4px 4px;
-        }
-
-        /* Size spinner - readable */
-        .size-spin {
-            background: rgba(35, 35, 50, 0.9);
-            border: 1px solid rgba(80, 80, 120, 0.5);
-            border-radius: 4px;
-            color: #d0d0e0;
-            padding: 2px 4px;
-            min-width: 45px;
-        }
-        .size-spin:focus {
-            border-color: #7788cc;
-        }
-
-        /* Color picker button */
-        .color-picker {
-            border-radius: 6px;
-            border: 2px solid rgba(80, 80, 120, 0.5);
-        }
-        .color-picker:hover {
-            border-color: #8888cc;
+        .stamp-popover-btn {
+            min-width: 32px;
+            min-height: 32px;
+            padding: 2px;
+            font-size: 16px;
         }
         """
         Gtk.StyleContext.add_provider_for_screen(
@@ -477,241 +569,124 @@ class EditorWindow:
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
 
-        ribbon = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
-        ribbon.get_style_context().add_class("hybrid-ribbon")
+        bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        bar.get_style_context().add_class("context-bar")
 
-        # === TOOLS GROUP ===
-        tools_group = self._create_tool_panel("Tools")
-        tools_grid = Gtk.Grid(row_spacing=1, column_spacing=1)
-        self.tool_buttons = {}
-        # Clear icons with text tooltips
-        tool_icons = [
-            ("⊹", ToolType.SELECT, "Select (V) - Move/resize", 0, 0),
-            ("✎", ToolType.PEN, "Pen (P)", 1, 0),
-            ("—", ToolType.LINE, "Line (L)", 2, 0),
-            ("▭", ToolType.RECTANGLE, "Rectangle (R)", 3, 0),
-            ("A", ToolType.TEXT, "Text (T)", 4, 0),
-            ("▓", ToolType.HIGHLIGHTER, "Highlighter (H)", 0, 1),
-            ("→", ToolType.ARROW, "Arrow (A)", 1, 1),
-            ("○", ToolType.ELLIPSE, "Ellipse (E)", 2, 1),
-            ("✕", ToolType.ERASER, "Eraser", 3, 1),
-            ("💬", ToolType.CALLOUT, "Callout (K)", 4, 1),
-            ("📏", ToolType.MEASURE, "Measure (M)", 0, 2),
-            ("①", ToolType.NUMBER, "Number Marker (N)", 1, 2),
-            ("💧", ToolType.COLORPICKER, "Color Picker (I)", 2, 2),
-            ("✓", ToolType.STAMP, "Stamp (S)", 3, 2),
-            ("✂", ToolType.CROP, "Crop (C) - Shift for 1:1", 4, 2),
-            ("🔍", ToolType.ZOOM, "Zoom (Z) - Scroll to zoom", 0, 3),
-        ]
-        for icon, tool, tip, col, row in tool_icons:
-            btn = Gtk.ToggleButton(label=icon)
-            btn.set_tooltip_text(tip)
-            btn.get_style_context().add_class("tool-btn")
-            btn.connect("toggled", self._on_tool_toggled, tool)
-            self.tool_buttons[tool] = btn
-            tools_grid.attach(btn, col, row, 1, 1)
-        self.tool_buttons[ToolType.PEN].set_active(True)
-        tools_group.pack_start(tools_grid, False, False, 0)
-        ribbon.pack_start(tools_group, False, False, 0)
-        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
-
-        # === PRIVACY GROUP ===
-        priv_group = self._create_tool_panel("Privacy")
-        priv_grid = Gtk.Grid(row_spacing=1, column_spacing=1)
-        for icon, tool, tip, col in [
-            ("▦", ToolType.BLUR, "Blur (B)", 0),
-            ("▤", ToolType.PIXELATE, "Pixelate (X)", 1),
-        ]:
-            btn = Gtk.ToggleButton(label=icon)
-            btn.set_tooltip_text(tip)
-            btn.get_style_context().add_class("tool-btn")
-            btn.connect("toggled", self._on_tool_toggled, tool)
-            self.tool_buttons[tool] = btn
-            priv_grid.attach(btn, col, 0, 1, 1)
-        priv_group.pack_start(priv_grid, False, False, 0)
-        ribbon.pack_start(priv_group, False, False, 0)
-        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
-
-        # === STAMPS GROUP ===
-        stamps_group = self._create_tool_panel("Stamps")
-        stamps_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        self.stamp_buttons = {}
-        # Two rows of stamps for better organization
-        stamp_rows = [
-            ["✓", "✗", "⚠", "❓", "⭐", "❤", "👍", "👎"],  # Common
-            ["➡", "⬆", "⬇", "⬅", "●", "■", "▲", "ℹ"],  # Arrows & shapes
-        ]
-        for row_stamps in stamp_rows:
-            row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
-            for stamp in row_stamps:
-                btn = Gtk.ToggleButton(label=stamp)
-                btn.set_tooltip_text(f"Stamp: {stamp}")
-                btn.get_style_context().add_class("stamp-btn")
-                btn.connect("toggled", self._on_stamp_toggled, stamp)
-                self.stamp_buttons[stamp] = btn
-                row_box.pack_start(btn, False, False, 0)
-            stamps_box.pack_start(row_box, False, False, 0)
-        self.stamp_buttons["✓"].set_active(True)
-        stamps_group.pack_start(stamps_box, False, False, 0)
-        ribbon.pack_start(stamps_group, False, False, 0)
-        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
-
-        # === ARROW STYLES GROUP ===
-        arrow_group = self._create_tool_panel("Arrow Style")
-        arrow_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
-        self.arrow_style_buttons = {}
-        arrow_styles = [
-            ("→", ArrowStyle.OPEN, "Open arrowhead"),
-            ("▶", ArrowStyle.FILLED, "Filled arrowhead"),
-            ("⟷", ArrowStyle.DOUBLE, "Double arrowhead"),
-        ]
-        for label, style, tooltip in arrow_styles:
-            btn = Gtk.ToggleButton(label=label)
-            btn.set_tooltip_text(tooltip)
-            btn.get_style_context().add_class("arrow-style-btn")
-            btn.connect("toggled", self._on_arrow_style_toggled, style)
-            self.arrow_style_buttons[style] = btn
-            arrow_box.pack_start(btn, False, False, 0)
-        self.arrow_style_buttons[ArrowStyle.OPEN].set_active(True)
-        arrow_group.pack_start(arrow_box, False, False, 0)
-        ribbon.pack_start(arrow_group, False, False, 0)
-        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
-
-        # === FONT FORMAT GROUP ===
-        font_group = self._create_tool_panel("Text Style")
-        font_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-
-        # Bold button
-        self.bold_btn = Gtk.ToggleButton(label="B")
-        self.bold_btn.set_tooltip_text("Bold (for text tool)")
-        self.bold_btn.get_style_context().add_class("font-style-btn")
-        self.bold_btn.connect("toggled", self._on_bold_toggled)
-        font_box.pack_start(self.bold_btn, False, False, 0)
-
-        # Italic button
-        self.italic_btn = Gtk.ToggleButton(label="I")
-        self.italic_btn.set_tooltip_text("Italic (for text tool)")
-        self.italic_btn.get_style_context().add_class("font-style-btn")
-        self.italic_btn.connect("toggled", self._on_italic_toggled)
-        font_box.pack_start(self.italic_btn, False, False, 0)
-
-        # Font family dropdown
-        self.font_combo = Gtk.ComboBoxText()
-        fonts = ["Sans", "Serif", "Monospace", "Ubuntu", "DejaVu Sans"]
-        for font in fonts:
-            self.font_combo.append_text(font)
-        self.font_combo.set_active(0)
-        self.font_combo.set_tooltip_text("Font family")
-        self.font_combo.connect("changed", self._on_font_family_changed)
-        font_box.pack_start(self.font_combo, False, False, 0)
-
-        font_group.pack_start(font_box, False, False, 0)
-        ribbon.pack_start(font_group, False, False, 0)
-        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
-
-        # === SIZE GROUP ===
-        size_group = self._create_tool_panel("Size")
+        # === SIZE GROUP (most tools use this) ===
+        self.ctx_size_box = Gtk.Box(spacing=4)
+        self.ctx_size_box.get_style_context().add_class("context-group")
+        size_label = Gtk.Label(label="Size:")
+        size_label.get_style_context().add_class("ctx-label")
+        self.ctx_size_box.pack_start(size_label, False, False, 0)
         self.size_spin = Gtk.SpinButton()
         self.size_spin.set_range(1, 50)
         self.size_spin.set_value(3)
         self.size_spin.set_increments(1, 5)
-        self.size_spin.set_tooltip_text("Brush size")
-        self.size_spin.get_style_context().add_class("size-spin")
+        self.size_spin.get_style_context().add_class("ctx-spin")
         self.size_spin.connect("value-changed", self._on_size_changed)
-        size_group.pack_start(self.size_spin, False, False, 0)
-        ribbon.pack_start(size_group, False, False, 0)
-        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
+        self.ctx_size_box.pack_start(self.size_spin, False, False, 0)
+        bar.pack_start(self.ctx_size_box, False, False, 0)
 
-        # === COLORS GROUP (Standard 20-color palette) ===
-        colors_group = self._create_tool_panel("Colors")
-        colors_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
-        # Standard practical palette - 20 colors
-        palette = [
-            # Row 1: Dark shades
-            (0, 0, 0),
-            (0.4, 0.4, 0.4),
-            (0.5, 0, 0),
-            (0.5, 0.25, 0),
-            (0.5, 0.5, 0),
-            (0, 0.4, 0),
-            (0, 0.4, 0.4),
-            (0, 0, 0.5),
-            (0.3, 0, 0.5),
-            (0.5, 0, 0.3),
-            # Row 2: Bright shades
-            (1, 1, 1),
-            (0.75, 0.75, 0.75),
-            (1, 0, 0),
-            (1, 0.5, 0),
-            (1, 1, 0),
-            (0, 0.8, 0),
-            (0, 0.8, 0.8),
-            (0, 0, 1),
-            (0.6, 0.3, 1),
-            (1, 0.4, 0.7),
-        ]
-        color_grid = Gtk.Grid(row_spacing=2, column_spacing=2)
-        for i, (r, g, b) in enumerate(palette):
-            btn = Gtk.Button()
-            btn.get_style_context().add_class("color-swatch")
-            da = Gtk.DrawingArea()
-            da.set_size_request(16, 16)
-            da.connect(
-                "draw", lambda w, cr, r=r, g=g, b=b: self._draw_color_dot(cr, r, g, b)
-            )
-            btn.add(da)
-            btn.set_tooltip_text(f"RGB({int(r * 255)},{int(g * 255)},{int(b * 255)})")
-            btn.connect(
-                "clicked", lambda b, r=r, g=g, bl=b: self._set_color_rgb(r, g, bl)
-            )
-            color_grid.attach(btn, i % 10, i // 10, 1, 1)
-        colors_box.pack_start(color_grid, False, False, 0)
-        # Custom color picker
+        # === COLOR GROUP ===
+        self.ctx_color_box = Gtk.Box(spacing=4)
+        self.ctx_color_box.get_style_context().add_class("context-group")
+        color_label = Gtk.Label(label="Color:")
+        color_label.get_style_context().add_class("ctx-label")
+        self.ctx_color_box.pack_start(color_label, False, False, 0)
         self.color_btn = Gtk.ColorButton()
-        self.color_btn.set_rgba(Gdk.RGBA(1, 0, 0, 1))  # Default red
-        self.color_btn.set_tooltip_text("Custom color")
-        self.color_btn.get_style_context().add_class("color-picker")
+        self.color_btn.set_rgba(Gdk.RGBA(1, 0, 0, 1))
+        self.color_btn.set_tooltip_text("Pick color")
         self.color_btn.connect("color-set", self._on_color_chosen)
-        colors_box.pack_start(self.color_btn, False, False, 4)
+        self.ctx_color_box.pack_start(self.color_btn, False, False, 0)
+        # Quick color palette button
+        self.palette_btn = Gtk.Button(label="▾")
+        self.palette_btn.set_tooltip_text("Color palette")
+        self.palette_btn.get_style_context().add_class("ctx-btn")
+        self._create_color_popover()
+        self.palette_btn.connect("clicked", lambda b: self.color_popover.show_all())
+        self.ctx_color_box.pack_start(self.palette_btn, False, False, 0)
+        bar.pack_start(self.ctx_color_box, False, False, 0)
 
-        # Recent colors row
-        recent_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
-        recent_label = Gtk.Label(label="Recent:")
-        recent_label.get_style_context().add_class("panel-label")
-        recent_box.pack_start(recent_label, False, False, 2)
-        self.recent_colors_box = Gtk.Box(spacing=2)
-        recent_box.pack_start(self.recent_colors_box, False, False, 0)
-        colors_box.pack_start(recent_box, False, False, 2)
+        # === ARROW STYLE GROUP ===
+        self.ctx_arrow_box = Gtk.Box(spacing=2)
+        self.ctx_arrow_box.get_style_context().add_class("context-group")
+        self.arrow_style_buttons = {}
+        for label, style, tip in [
+            ("→", ArrowStyle.OPEN, "Open"),
+            ("▶", ArrowStyle.FILLED, "Filled"),
+            ("⟷", ArrowStyle.DOUBLE, "Double"),
+        ]:
+            btn = Gtk.ToggleButton(label=label)
+            btn.set_tooltip_text(tip)
+            btn.get_style_context().add_class("ctx-btn")
+            btn.connect("toggled", self._on_arrow_style_toggled, style)
+            self.arrow_style_buttons[style] = btn
+            self.ctx_arrow_box.pack_start(btn, False, False, 0)
+        self.arrow_style_buttons[ArrowStyle.OPEN].set_active(True)
+        bar.pack_start(self.ctx_arrow_box, False, False, 0)
 
-        colors_group.pack_start(colors_box, False, False, 0)
-        ribbon.pack_start(colors_group, False, False, 0)
-        ribbon.pack_start(self._create_panel_sep(), False, False, 0)
+        # === TEXT STYLE GROUP ===
+        self.ctx_text_box = Gtk.Box(spacing=4)
+        self.ctx_text_box.get_style_context().add_class("context-group")
+        self.font_combo = Gtk.ComboBoxText()
+        for font in ["Sans", "Serif", "Monospace", "Ubuntu", "DejaVu Sans"]:
+            self.font_combo.append_text(font)
+        self.font_combo.set_active(0)
+        self.font_combo.connect("changed", self._on_font_family_changed)
+        self.ctx_text_box.pack_start(self.font_combo, False, False, 0)
+        self.bold_btn = Gtk.ToggleButton(label="B")
+        self.bold_btn.set_tooltip_text("Bold")
+        self.bold_btn.get_style_context().add_class("ctx-btn")
+        self.bold_btn.connect("toggled", self._on_bold_toggled)
+        self.ctx_text_box.pack_start(self.bold_btn, False, False, 0)
+        self.italic_btn = Gtk.ToggleButton(label="I")
+        self.italic_btn.set_tooltip_text("Italic")
+        self.italic_btn.get_style_context().add_class("ctx-btn")
+        self.italic_btn.connect("toggled", self._on_italic_toggled)
+        self.ctx_text_box.pack_start(self.italic_btn, False, False, 0)
+        bar.pack_start(self.ctx_text_box, False, False, 0)
 
-        # === EDIT GROUP ===
-        edit_group = self._create_tool_panel("Edit")
-        edit_box = Gtk.Box(spacing=2)
+        # === STAMP SELECTOR GROUP ===
+        self.ctx_stamp_box = Gtk.Box(spacing=2)
+        self.ctx_stamp_box.get_style_context().add_class("context-group")
+        self.stamp_buttons = {}
+        self._create_stamp_popover()
+        self.stamp_selector_btn = Gtk.Button(label="✓ ▾")
+        self.stamp_selector_btn.set_tooltip_text("Select stamp")
+        self.stamp_selector_btn.get_style_context().add_class("ctx-btn")
+        self.stamp_selector_btn.connect(
+            "clicked", lambda b: self.stamp_popover.show_all()
+        )
+        self.ctx_stamp_box.pack_start(self.stamp_selector_btn, False, False, 0)
+        bar.pack_start(self.ctx_stamp_box, False, False, 0)
+
+        # Spacer
+        bar.pack_start(Gtk.Box(), True, True, 0)
+
+        # === EDIT GROUP (always visible) ===
+        edit_box = Gtk.Box(spacing=4)
         for icon, cb, tip in [
             ("↶", self._undo, "Undo (Ctrl+Z)"),
             ("↷", self._redo, "Redo (Ctrl+Y)"),
-            ("✕", self._clear, "Clear All"),
         ]:
             btn = Gtk.Button(label=icon)
             btn.set_tooltip_text(tip)
-            btn.get_style_context().add_class("tool-btn")
+            btn.get_style_context().add_class("ctx-btn")
             btn.connect("clicked", lambda b, c=cb: c())
             edit_box.pack_start(btn, False, False, 0)
-        edit_group.pack_start(edit_box, False, False, 0)
-        ribbon.pack_start(edit_group, False, False, 0)
+        bar.pack_start(edit_box, False, False, 0)
 
-        # Spacer
-        ribbon.pack_start(Gtk.Box(), True, True, 0)
+        # Separator
+        sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        sep.set_margin_start(4)
+        sep.set_margin_end(4)
+        bar.pack_start(sep, False, False, 0)
 
-        # === OUTPUT GROUP ===
-        out_group = self._create_tool_panel("Output")
-        out_box = Gtk.Box(spacing=3)
+        # === OUTPUT GROUP (always visible) ===
+        out_box = Gtk.Box(spacing=4)
         for icon, cb, tip in [
-            ("📋", self._copy_to_clipboard, "Copy"),
             ("💾", self._save, "Save"),
+            ("📋", self._copy_to_clipboard, "Copy"),
             ("☁", self._upload, "Upload"),
         ]:
             btn = Gtk.Button(label=icon)
@@ -719,51 +694,130 @@ class EditorWindow:
             btn.get_style_context().add_class("action-btn")
             btn.connect("clicked", lambda b, c=cb: c())
             out_box.pack_start(btn, False, False, 0)
-        out_group.pack_start(out_box, False, False, 0)
-        ribbon.pack_start(out_group, False, False, 0)
+        bar.pack_start(out_box, False, False, 0)
 
-        return ribbon
+        return bar
+
+    def _create_color_popover(self) -> None:
+        """Create color palette popover."""
+        self.color_popover = Gtk.Popover()
+        self.color_popover.set_relative_to(self.palette_btn)
+
+        pop_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        pop_box.set_margin_start(8)
+        pop_box.set_margin_end(8)
+        pop_box.set_margin_top(8)
+        pop_box.set_margin_bottom(8)
+
+        # 20-color palette grid (10x2)
+        palette = [
+            (0, 0, 0), (0.4, 0.4, 0.4), (0.5, 0, 0), (0.5, 0.25, 0), (0.5, 0.5, 0),
+            (0, 0.4, 0), (0, 0.4, 0.4), (0, 0, 0.5), (0.3, 0, 0.5), (0.5, 0, 0.3),
+            (1, 1, 1), (0.75, 0.75, 0.75), (1, 0, 0), (1, 0.5, 0), (1, 1, 0),
+            (0, 0.8, 0), (0, 0.8, 0.8), (0, 0, 1), (0.6, 0.3, 1), (1, 0.4, 0.7),
+        ]
+        color_grid = Gtk.Grid(row_spacing=2, column_spacing=2)
+        for i, (r, g, b) in enumerate(palette):
+            btn = Gtk.Button()
+            da = Gtk.DrawingArea()
+            da.set_size_request(20, 20)
+            da.connect(
+                "draw",
+                lambda w, cr, r=r, g=g, b=b: self._draw_color_swatch(cr, r, g, b),
+            )
+            btn.add(da)
+            btn.set_tooltip_text(f"RGB({int(r*255)},{int(g*255)},{int(b*255)})")
+            btn.connect(
+                "clicked",
+                lambda b, r=r, g=g, bl=b: (
+                    self._set_color_rgb(r, g, bl),
+                    self.color_popover.popdown(),
+                ),
+            )
+            color_grid.attach(btn, i % 10, i // 10, 1, 1)
+        pop_box.pack_start(color_grid, False, False, 0)
+
+        # Recent colors
+        recent_label = Gtk.Label(label="Recent:")
+        recent_label.get_style_context().add_class("ctx-label")
+        pop_box.pack_start(recent_label, False, False, 4)
+        self.recent_colors_box = Gtk.Box(spacing=2)
+        pop_box.pack_start(self.recent_colors_box, False, False, 0)
+
+        self.color_popover.add(pop_box)
+
+    def _draw_color_swatch(self, cr, r: float, g: float, b: float) -> bool:
+        """Draw a simple color swatch."""
+        cr.set_source_rgb(r, g, b)
+        cr.rectangle(0, 0, 20, 20)
+        cr.fill()
+        return True
+
+    def _create_stamp_popover(self) -> None:
+        """Create stamp selector popover."""
+        self.stamp_popover = Gtk.Popover()
+        self.stamp_popover.set_relative_to(self.ctx_stamp_box)
+
+        pop_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        pop_box.set_margin_start(8)
+        pop_box.set_margin_end(8)
+        pop_box.set_margin_top(8)
+        pop_box.set_margin_bottom(8)
+
+        stamp_rows = [
+            ["✓", "✗", "⚠", "❓", "⭐", "❤", "👍", "👎"],
+            ["➡", "⬆", "⬇", "⬅", "●", "■", "▲", "ℹ"],
+        ]
+        for row_stamps in stamp_rows:
+            row_box = Gtk.Box(spacing=2)
+            for stamp in row_stamps:
+                btn = Gtk.Button(label=stamp)
+                btn.set_tooltip_text(f"Stamp: {stamp}")
+                btn.get_style_context().add_class("stamp-popover-btn")
+                btn.connect("clicked", self._on_stamp_selected, stamp)
+                self.stamp_buttons[stamp] = btn
+                row_box.pack_start(btn, False, False, 0)
+            pop_box.pack_start(row_box, False, False, 0)
+
+        self.stamp_popover.add(pop_box)
+        self.current_stamp = "✓"
+        self.editor_state.set_stamp(self.current_stamp)
+
+    def _on_stamp_selected(self, button: Gtk.Button, stamp: str) -> None:
+        """Handle stamp selection from popover."""
+        self.current_stamp = stamp
+        self.editor_state.set_stamp(stamp)
+        self.stamp_selector_btn.set_label(f"{stamp} ▾")
+        self.stamp_popover.popdown()
+
+    def _update_context_bar(self) -> None:
+        """Update context bar visibility based on current tool."""
+        tool = self.editor_state.current_tool
+
+        # Tools that use size
+        size_tools = {
+            ToolType.PEN, ToolType.HIGHLIGHTER, ToolType.LINE, ToolType.ARROW,
+            ToolType.RECTANGLE, ToolType.ELLIPSE, ToolType.BLUR, ToolType.PIXELATE,
+            ToolType.ERASER,
+        }
+        # Tools that use color
+        color_tools = {
+            ToolType.PEN, ToolType.HIGHLIGHTER, ToolType.LINE, ToolType.ARROW,
+            ToolType.RECTANGLE, ToolType.ELLIPSE, ToolType.TEXT, ToolType.CALLOUT,
+            ToolType.NUMBER,
+        }
+
+        self.ctx_size_box.set_visible(tool in size_tools)
+        self.ctx_color_box.set_visible(tool in color_tools)
+        self.ctx_arrow_box.set_visible(tool == ToolType.ARROW)
+        self.ctx_text_box.set_visible(tool in {ToolType.TEXT, ToolType.CALLOUT})
+        self.ctx_stamp_box.set_visible(tool == ToolType.STAMP)
 
     def _load_css(self, css: bytes) -> Gtk.CssProvider:
         """Load CSS into a provider."""
         provider = Gtk.CssProvider()
         provider.load_from_data(css)
         return provider
-
-    def _create_glass_panel(self, label: str) -> Gtk.Box:
-        """Create a futuristic glass panel group with label."""
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        box.get_style_context().add_class("glass-panel")
-        lbl = Gtk.Label(label=label)
-        lbl.get_style_context().add_class("glass-label")
-        box.pack_end(lbl, False, False, 0)
-        return box
-
-    def _create_tool_panel(self, label: str) -> Gtk.Box:
-        """Create a hybrid tool panel group with readable label."""
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        box.get_style_context().add_class("tool-panel")
-        lbl = Gtk.Label(label=label)
-        lbl.get_style_context().add_class("panel-label")
-        box.pack_end(lbl, False, False, 0)
-        return box
-
-    def _create_panel_sep(self) -> Gtk.Separator:
-        """Create panel separator for hybrid theme."""
-        sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
-        sep.set_margin_start(4)
-        sep.set_margin_end(4)
-        return sep
-
-    def _create_ribbon_group(self, label: str) -> Gtk.Box:
-        """Create a ribbon group with label (legacy)."""
-        return self._create_glass_panel(label)
-
-    def _create_ribbon_sep(self) -> Gtk.Separator:
-        """Create ribbon separator."""
-        sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
-        sep.get_style_context().add_class("neo-sep")
-        return sep
 
     def _draw_color_dot(self, cr, r: float, g: float, b: float) -> bool:
         """Draw a color dot (legacy)."""
@@ -893,6 +947,7 @@ class EditorWindow:
         """Set the current drawing tool."""
         self.editor_state.set_tool(tool)
         self._update_cursor()
+        self._update_context_bar()
         if hasattr(self, "statusbar"):
             self.statusbar.push(self.statusbar_context, f"Tool: {tool.value}")
 
@@ -2695,36 +2750,29 @@ def _EditorWindow_init_enhanced(self, result):
     self.ocr_engine = OCREngine()
     self.history_manager = HistoryManager()
 
-    # Find the spacer in the toolbar to insert before it
-    toolbar_children = self.ribbon.get_children()
-    spacer_index = len(toolbar_children) - 2  # Before Clear button
-
-    # Add separator
-    sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
-    sep.get_style_context().add_class("toolbar-separator")
-    self.ribbon.pack_start(sep, False, False, 0)
-    self.ribbon.reorder_child(sep, spacer_index)
+    # Add feature buttons to sidebar (at bottom)
+    feature_sep = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+    feature_sep.get_style_context().add_class("sidebar-sep")
+    self.sidebar.pack_start(feature_sep, False, False, 2)
 
     # === OCR Button ===
     ocr_btn = Gtk.Button(label="OCR")
     ocr_btn.set_tooltip_text("Extract text from image (Tesseract)")
-    ocr_btn.get_style_context().add_class("tool-button")
+    ocr_btn.get_style_context().add_class("sidebar-btn")
     ocr_btn.connect("clicked", lambda b: self._extract_text())
-    self.ribbon.pack_start(ocr_btn, False, False, 0)
-    self.ribbon.reorder_child(ocr_btn, spacer_index + 1)
+    self.sidebar.pack_start(ocr_btn, False, False, 0)
 
     # === Pin Button ===
     pin_btn = Gtk.Button(label="📌")
     pin_btn.set_tooltip_text("Pin to desktop (always on top)")
-    pin_btn.get_style_context().add_class("tool-button")
+    pin_btn.get_style_context().add_class("sidebar-btn")
     pin_btn.connect("clicked", lambda b: self._pin_to_desktop())
-    self.ribbon.pack_start(pin_btn, False, False, 0)
-    self.ribbon.reorder_child(pin_btn, spacer_index + 2)
+    self.sidebar.pack_start(pin_btn, False, False, 0)
 
     # === Effects Popover Button ===
-    effects_btn = Gtk.Button(label="FX ▾")
+    effects_btn = Gtk.Button(label="FX")
     effects_btn.set_tooltip_text("Image Effects")
-    effects_btn.get_style_context().add_class("tool-button")
+    effects_btn.get_style_context().add_class("sidebar-btn")
 
     effects_popover = Gtk.Popover()
     effects_popover.set_relative_to(effects_btn)
@@ -2753,8 +2801,7 @@ def _EditorWindow_init_enhanced(self, result):
 
     effects_popover.add(effects_grid)
     effects_btn.connect("clicked", lambda b: effects_popover.show_all())
-    self.ribbon.pack_start(effects_btn, False, False, 0)
-    self.ribbon.reorder_child(effects_btn, spacer_index + 3)
+    self.sidebar.pack_start(effects_btn, False, False, 0)
 
     self.window.show_all()
 
