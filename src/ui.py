@@ -15,7 +15,7 @@ try:
 except (ImportError, ValueError):
     GTK_AVAILABLE = False
 
-from . import capture
+from . import capture as capture_module
 from . import config
 from .capture import CaptureMode, CaptureResult, capture, save_capture
 from .i18n import _
@@ -70,7 +70,7 @@ class RegionSelector:
         self.scale_factor = 1  # Will be set after window is realized
 
         # Get monitor information for boundaries and quick-select
-        self.monitors = capture.get_monitors()
+        self.monitors = capture_module.get_monitors()
 
         self.window = Gtk.Window(type=Gtk.WindowType.POPUP)
         self.window.set_app_paintable(True)
@@ -2458,7 +2458,7 @@ class MainWindow:
 
     def _on_fullscreen(self, button: Optional[Gtk.Button] = None) -> None:
         """Handle fullscreen capture button click."""
-        monitors = capture.get_monitors()
+        monitors = capture_module.get_monitors()
 
         # If multiple monitors, show selector dialog
         if len(monitors) > 1:
@@ -2539,7 +2539,7 @@ class MainWindow:
 
     def _capture_monitor(self, monitor: object) -> bool:
         """Capture a specific monitor."""
-        result = capture.capture_monitor(monitor)
+        result = capture_module.capture_monitor(monitor)
         if result.success:
             cfg = config.load_config()
             if cfg.get("editor_enabled", True):
