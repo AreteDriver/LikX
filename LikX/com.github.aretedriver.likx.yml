@@ -1,0 +1,77 @@
+app-id: com.github.aretedriver.likx
+runtime: org.gnome.Platform
+runtime-version: '47'
+sdk: org.gnome.Sdk
+command: likx
+
+finish-args:
+  # Display access
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  # File access for opening/saving images
+  - --filesystem=home
+  - --filesystem=xdg-pictures
+  # Network for cloud upload
+  - --share=network
+  # For screenshots and window capture
+  - --talk-name=org.gnome.Shell.Screenshot
+  - --talk-name=org.freedesktop.portal.Screenshot
+  # Notifications
+  - --talk-name=org.freedesktop.Notifications
+  # Clipboard
+  - --socket=session-bus
+
+modules:
+  # Tesseract OCR
+  - name: tesseract
+    buildsystem: autotools
+    sources:
+      - type: archive
+        url: https://github.com/tesseract-ocr/tesseract/archive/refs/tags/5.3.3.tar.gz
+        sha256: dc4329f85f41191b2d813b71b528ba6047745813474e583ccce8795ff2ff5681
+    modules:
+      - name: leptonica
+        buildsystem: autotools
+        sources:
+          - type: archive
+            url: https://github.com/DanBloomberg/leptonica/releases/download/1.84.1/leptonica-1.84.1.tar.gz
+            sha256: 2b3e1254b1cca381e77c819b59ca99774ff43530209b9aeb511e1d46588a64f6
+
+  # Tesseract English language data
+  - name: tesseract-eng
+    buildsystem: simple
+    build-commands:
+      - install -Dm644 eng.traineddata /app/share/tessdata/eng.traineddata
+    sources:
+      - type: file
+        url: https://github.com/tesseract-ocr/tessdata_best/raw/main/eng.traineddata
+        sha256: 8280aed0782fe27257a68ea10fe7ef324ca0f8d85bd2fd145d1c2b560bcb66ba
+
+  # Main application
+  - name: likx
+    buildsystem: simple
+    build-commands:
+      # Install Python files
+      - install -Dm755 main.py /app/lib/likx/main.py
+      - mkdir -p /app/lib/likx/src
+      - install -Dm644 src/*.py /app/lib/likx/src/
+      - mkdir -p /app/lib/likx/resources
+      - cp -r resources/* /app/lib/likx/resources/
+      # Create launcher
+      - |
+        cat > /app/bin/likx << 'EOF'
+        #!/bin/bash
+        export TESSDATA_PREFIX=/app/share/tessdata
+        cd /app/lib/likx && exec python3 main.py "$@"
+        EOF
+      - chmod +x /app/bin/likx
+      # Desktop entry
+      - install -Dm644 flatpak/com.github.aretedriver.likx.desktop /app/share/applications/com.github.aretedriver.likx.desktop
+      # Icons
+      - install -Dm644 resources/icons/likx.svg /app/share/icons/hicolor/scalable/apps/com.github.aretedriver.likx.svg
+      # Metainfo
+      - install -Dm644 flatpak/com.github.aretedriver.likx.metainfo.xml /app/share/metainfo/com.github.aretedriver.likx.metainfo.xml
+    sources:
+      - type: dir
+        path: .

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=LikX
+Comment=Screenshot tool with annotation, OCR, and cloud upload
+Exec=likx
+Icon=com.github.aretedriver.likx
+Terminal=false
+Type=Application
+Categories=Graphics;Utility;
+Keywords=screenshot;capture;snip;annotation;ocr;
+StartupNotify=true

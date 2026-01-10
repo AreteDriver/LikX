@@ -76,3 +76,9 @@ venv.bak/
 config.json
 *.deb
 build-deb/
+
+# Flatpak
+.flatpak-builder/
+build-dir/
+repo/
+*.flatpak
