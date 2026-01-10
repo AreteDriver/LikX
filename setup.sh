@@ -67,14 +67,14 @@ install_dependencies() {
             
             # X11 specific
             if [ "$DISPLAY_SERVER" = "x11" ] || [ "$DISPLAY_SERVER" = "unknown" ]; then
-                sudo apt-get install -y xdotool xclip
+                sudo apt-get install -y xdotool xclip ffmpeg
             fi
-            
+
             # Wayland specific
             if [ "$DISPLAY_SERVER" = "wayland" ] || [ "$DISPLAY_SERVER" = "unknown" ]; then
-                sudo apt-get install -y gnome-screenshot
-                # Try to install grim if available (for wlroots)
-                sudo apt-get install -y grim 2>/dev/null || true
+                sudo apt-get install -y gnome-screenshot ffmpeg
+                # Try to install grim and wf-recorder if available (for wlroots)
+                sudo apt-get install -y grim wf-recorder 2>/dev/null || true
             fi
             ;;
             
@@ -92,14 +92,14 @@ install_dependencies() {
                 curl
             
             if [ "$DISPLAY_SERVER" = "x11" ] || [ "$DISPLAY_SERVER" = "unknown" ]; then
-                sudo $PKG_MANAGER install -y xdotool xclip
+                sudo $PKG_MANAGER install -y xdotool xclip ffmpeg
             fi
-            
+
             if [ "$DISPLAY_SERVER" = "wayland" ] || [ "$DISPLAY_SERVER" = "unknown" ]; then
-                sudo $PKG_MANAGER install -y gnome-screenshot grim
+                sudo $PKG_MANAGER install -y gnome-screenshot grim ffmpeg wf-recorder || true
             fi
             ;;
-            
+
         pacman)
             echo "Installing dependencies using pacman..."
             
@@ -114,14 +114,14 @@ install_dependencies() {
                 curl
             
             if [ "$DISPLAY_SERVER" = "x11" ] || [ "$DISPLAY_SERVER" = "unknown" ]; then
-                sudo pacman -S --noconfirm xdotool xclip
+                sudo pacman -S --noconfirm xdotool xclip ffmpeg
             fi
-            
+
             if [ "$DISPLAY_SERVER" = "wayland" ] || [ "$DISPLAY_SERVER" = "unknown" ]; then
-                sudo pacman -S --noconfirm gnome-screenshot grim
+                sudo pacman -S --noconfirm gnome-screenshot grim ffmpeg wf-recorder
             fi
             ;;
-            
+
         zypper)
             echo "Installing dependencies using zypper..."
             
@@ -137,11 +137,11 @@ install_dependencies() {
                 curl
             
             if [ "$DISPLAY_SERVER" = "x11" ] || [ "$DISPLAY_SERVER" = "unknown" ]; then
-                sudo zypper install -y xdotool xclip
+                sudo zypper install -y xdotool xclip ffmpeg
             fi
-            
+
             if [ "$DISPLAY_SERVER" = "wayland" ] || [ "$DISPLAY_SERVER" = "unknown" ]; then
-                sudo zypper install -y gnome-screenshot
+                sudo zypper install -y gnome-screenshot ffmpeg wf-recorder || true
             fi
             ;;
             
@@ -185,6 +185,12 @@ install_python_deps() {
     # Install pycairo if needed
     if ! python3 -c "import cairo" 2>/dev/null; then
         $PIP_CMD install --user pycairo
+    fi
+
+    # Install numpy and opencv for scroll capture
+    if ! python3 -c "import cv2" 2>/dev/null; then
+        echo "Installing OpenCV for scroll capture..."
+        $PIP_CMD install --user numpy opencv-python-headless
     fi
 }
 
@@ -295,6 +301,8 @@ main() {
     echo "  Ctrl+Shift+F - Fullscreen capture"
     echo "  Ctrl+Shift+R - Region capture"
     echo "  Ctrl+Shift+W - Window capture"
+    echo "  Ctrl+Alt+G   - Record GIF"
+    echo "  Ctrl+Alt+S   - Scroll Capture"
     echo
     echo "Display server: $DISPLAY_SERVER"
     
@@ -303,6 +311,7 @@ main() {
         echo "Note: Running on Wayland. Some features require:"
         echo "  - gnome-screenshot (for window capture)"
         echo "  - grim (for wlroots compositors)"
+        echo "  - wf-recorder (for GIF recording on wlroots)"
     fi
     
     echo

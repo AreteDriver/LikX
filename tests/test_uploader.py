@@ -270,6 +270,210 @@ class TestCopyUrlToClipboard:
         assert result is False
 
 
+class TestUnifiedUpload:
+    """Test unified upload() method routing."""
+
+    @patch("src.uploader.config.load_config")
+    @patch("src.uploader.subprocess.run")
+    def test_upload_routes_to_imgur(self, mock_run, mock_config):
+        mock_config.return_value = {"upload_service": "imgur"}
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout=json.dumps({
+                "success": True,
+                "data": {"link": "https://i.imgur.com/abc.png"}
+            })
+        )
+
+        uploader = Uploader()
+        with patch("builtins.open", mock_open(read_data=b"data")):
+            success, url, error = uploader.upload(Path("/path/to/image.png"))
+
+        assert success is True
+        assert "imgur" in url
+
+    @patch("src.uploader.config.load_config")
+    def test_upload_disabled(self, mock_config):
+        mock_config.return_value = {"upload_service": "none"}
+
+        uploader = Uploader()
+        success, url, error = uploader.upload(Path("/path/to/image.png"))
+
+        assert success is False
+        assert "disabled" in error.lower()
+
+    @patch("src.uploader.config.load_config")
+    def test_upload_unknown_service(self, mock_config):
+        mock_config.return_value = {"upload_service": "unknown_provider"}
+
+        uploader = Uploader()
+        success, url, error = uploader.upload(Path("/path/to/image.png"))
+
+        assert success is False
+        assert "unknown" in error.lower()
+
+
+class TestUploadToS3:
+    """Test S3 upload functionality."""
+
+    @patch("src.uploader.config.load_config")
+    @patch("src.uploader.subprocess.run")
+    def test_upload_success(self, mock_run, mock_config):
+        mock_config.return_value = {
+            "s3_bucket": "my-bucket",
+            "s3_region": "us-west-2",
+            "s3_public": True
+        }
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+        uploader = Uploader()
+        success, url, error = uploader.upload_to_s3(Path("/path/to/image.png"))
+
+        assert success is True
+        assert "my-bucket" in url
+        assert "us-west-2" in url
+        assert "image.png" in url
+
+    @patch("src.uploader.config.load_config")
+    def test_upload_no_bucket_configured(self, mock_config):
+        mock_config.return_value = {"s3_bucket": "", "s3_region": "us-east-1"}
+
+        uploader = Uploader()
+        success, url, error = uploader.upload_to_s3(Path("/path/to/image.png"))
+
+        assert success is False
+        assert "bucket" in error.lower()
+
+    @patch("src.uploader.config.load_config")
+    @patch("src.uploader.subprocess.run")
+    def test_upload_aws_cli_not_found(self, mock_run, mock_config):
+        mock_config.return_value = {
+            "s3_bucket": "my-bucket",
+            "s3_region": "us-east-1",
+            "s3_public": True
+        }
+        mock_run.side_effect = FileNotFoundError()
+
+        uploader = Uploader()
+        success, url, error = uploader.upload_to_s3(Path("/path/to/image.png"))
+
+        assert success is False
+        assert "aws" in error.lower()
+
+    @patch("src.uploader.config.load_config")
+    @patch("src.uploader.subprocess.run")
+    def test_upload_failure(self, mock_run, mock_config):
+        mock_config.return_value = {
+            "s3_bucket": "my-bucket",
+            "s3_region": "us-east-1",
+            "s3_public": True
+        }
+        mock_run.return_value = MagicMock(
+            returncode=1,
+            stdout="",
+            stderr="Access Denied"
+        )
+
+        uploader = Uploader()
+        success, url, error = uploader.upload_to_s3(Path("/path/to/image.png"))
+
+        assert success is False
+        assert "Access Denied" in error
+
+
+class TestUploadToDropbox:
+    """Test Dropbox upload functionality."""
+
+    @patch("src.uploader.config.load_config")
+    def test_upload_no_token(self, mock_config):
+        mock_config.return_value = {"dropbox_token": ""}
+
+        uploader = Uploader()
+        success, url, error = uploader.upload_to_dropbox(Path("/path/to/image.png"))
+
+        assert success is False
+        assert "token" in error.lower()
+
+    @patch("src.uploader.config.load_config")
+    @patch("src.uploader.subprocess.run")
+    def test_upload_success_with_share_link(self, mock_run, mock_config):
+        mock_config.return_value = {"dropbox_token": "sl.test-token"}
+
+        # First call: upload, Second call: create share link
+        mock_run.side_effect = [
+            MagicMock(returncode=0, stdout=json.dumps({"path_display": "/Screenshots/image.png"})),
+            MagicMock(returncode=0, stdout=json.dumps({"url": "https://www.dropbox.com/s/abc/image.png?dl=0"}))
+        ]
+
+        uploader = Uploader()
+        success, url, error = uploader.upload_to_dropbox(Path("/path/to/image.png"))
+
+        assert success is True
+        assert "dropbox" in url.lower()
+        assert "dl=1" in url  # Should be direct download link
+
+    @patch("src.uploader.config.load_config")
+    @patch("src.uploader.subprocess.run")
+    def test_upload_curl_not_found(self, mock_run, mock_config):
+        mock_config.return_value = {"dropbox_token": "sl.test-token"}
+        mock_run.side_effect = FileNotFoundError()
+
+        uploader = Uploader()
+        success, url, error = uploader.upload_to_dropbox(Path("/path/to/image.png"))
+
+        assert success is False
+        assert "curl" in error.lower()
+
+
+class TestUploadToGdrive:
+    """Test Google Drive upload functionality."""
+
+    @patch("src.uploader.config.load_config")
+    @patch("src.uploader.subprocess.run")
+    def test_upload_with_gdrive_success(self, mock_run, mock_config):
+        mock_config.return_value = {"gdrive_folder_id": ""}
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout="Uploaded image.png with id abc123xyz"
+        )
+
+        uploader = Uploader()
+        success, url, error = uploader.upload_to_gdrive(Path("/path/to/image.png"))
+
+        assert success is True
+        assert "abc123xyz" in url or "Google Drive" in url
+
+    @patch("src.uploader.config.load_config")
+    @patch("src.uploader.subprocess.run")
+    def test_upload_gdrive_not_found_tries_rclone(self, mock_run, mock_config):
+        mock_config.return_value = {"gdrive_folder_id": "", "gdrive_rclone_remote": "gdrive"}
+
+        # First call: gdrive not found, Second call: rclone succeeds
+        mock_run.side_effect = [
+            FileNotFoundError(),  # gdrive not found
+            MagicMock(returncode=0, stdout=""),  # rclone copy
+            MagicMock(returncode=0, stdout="https://drive.google.com/file/d/xyz")  # rclone link
+        ]
+
+        uploader = Uploader()
+        success, url, error = uploader.upload_to_gdrive(Path("/path/to/image.png"))
+
+        assert success is True
+
+    @patch("src.uploader.config.load_config")
+    @patch("src.uploader.subprocess.run")
+    def test_upload_all_tools_not_found(self, mock_run, mock_config):
+        mock_config.return_value = {"gdrive_folder_id": "", "gdrive_rclone_remote": "gdrive"}
+
+        mock_run.side_effect = FileNotFoundError()
+
+        uploader = Uploader()
+        success, url, error = uploader.upload_to_gdrive(Path("/path/to/image.png"))
+
+        assert success is False
+        assert "gdrive" in error.lower() or "rclone" in error.lower()
+
+
 class TestUploaderEdgeCases:
     """Test edge cases and error handling."""
 

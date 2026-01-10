@@ -11,7 +11,7 @@ try:
 
     gi.require_version("Gdk", "3.0")
     gi.require_version("GdkPixbuf", "2.0")
-    from gi.repository import GdkPixbuf
+    from gi.repository import Gdk, GdkPixbuf
 
     GTK_AVAILABLE = True
 except (ImportError, ValueError):

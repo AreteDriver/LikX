@@ -30,6 +30,10 @@ from .hotkeys import HotkeyManager
 from .ocr import OCREngine
 from .pinned import PinnedWindow
 from .history import HistoryManager
+from .recorder import GifRecorder, RecordingState
+from .recording_overlay import RecordingOverlay
+from .scroll_capture import ScrollCaptureManager, ScrollCaptureResult
+from .scroll_overlay import ScrollCaptureOverlay
 from .effects import (
     add_shadow,
     add_border,
@@ -1126,7 +1130,7 @@ class EditorWindow:
         self.statusbar.push(self.statusbar_context, "Uploading...")
 
         # Upload
-        success, url, error = self.uploader.upload_to_imgur(temp_file)
+        success, url, error = self.uploader.upload(temp_file)
 
         # Cleanup
         if temp_file.exists():
@@ -2202,6 +2206,8 @@ class MainWindow:
             ("📷", "Fullscreen (Ctrl+Shift+F)", self._on_fullscreen),
             ("⬚", "Region (Ctrl+Shift+R)", self._on_region),
             ("🪟", "Window (Ctrl+Shift+W)", self._on_window),
+            ("🎬", "Record GIF (Ctrl+Alt+G)", self._on_record_gif),
+            ("📜", "Scroll Capture (Ctrl+Alt+S)", self._on_scroll_capture),
             ("🖼️", "Open Image", self._on_open_image),
         ]
         for icon, tip, callback in capture_buttons:
@@ -2355,6 +2361,16 @@ class MainWindow:
             self._on_window,
             f"python3 {script_path} --window --no-edit",
         )
+        self.hotkey_manager.register_hotkey(
+            cfg.get("hotkey_record_gif", "<Control><Alt>G"),
+            self._on_record_gif,
+            f"python3 {script_path} --record-gif",
+        )
+        self.hotkey_manager.register_hotkey(
+            cfg.get("hotkey_scroll_capture", "<Control><Alt>S"),
+            self._on_scroll_capture,
+            f"python3 {script_path} --scroll-capture",
+        )
 
     def _on_fullscreen(self, button: Optional[Gtk.Button] = None) -> None:
         """Handle fullscreen capture button click."""
@@ -2426,6 +2442,205 @@ class MainWindow:
             show_notification("Capture Failed", result.error, icon="dialog-error")
         self.window.deiconify()
         return False
+
+    def _on_record_gif(self, button: Optional[Gtk.Button] = None) -> None:
+        """Handle GIF recording button click."""
+        self.recorder = GifRecorder()
+        available, error = self.recorder.is_available()
+
+        if not available:
+            show_notification("Recording Unavailable", error, icon="dialog-error")
+            return
+
+        self.window.iconify()
+        GLib.timeout_add(300, self._start_gif_region_selection)
+
+    def _start_gif_region_selection(self) -> bool:
+        """Start region selection for GIF recording."""
+        try:
+            RegionSelector(self._on_gif_region_selected)
+        except Exception as e:
+            show_notification("Region Selection Failed", str(e), icon="dialog-error")
+            self.window.deiconify()
+        return False
+
+    def _on_gif_region_selected(self, x: int, y: int, width: int, height: int) -> None:
+        """Handle region selection for GIF recording."""
+        success, error = self.recorder.start_recording(
+            x, y, width, height, on_state_change=self._on_recording_state_change
+        )
+
+        if not success:
+            show_notification("Recording Failed", error, icon="dialog-error")
+            self.window.deiconify()
+            return
+
+        # Show recording overlay
+        self.recording_overlay = RecordingOverlay(
+            on_stop=self._on_recording_stop, region=(x, y, width, height)
+        )
+
+    def _on_recording_state_change(self, state: RecordingState) -> None:
+        """Handle recording state changes."""
+        if state == RecordingState.ENCODING:
+            show_notification(
+                "Processing", "Encoding GIF...", icon="emblem-synchronizing"
+            )
+
+    def _on_recording_stop(self) -> None:
+        """Handle recording stop."""
+        result = self.recorder.stop_recording()
+
+        if result.success:
+            cfg = config.load_config()
+            if cfg.get("show_notification", True):
+                show_notification(
+                    "GIF Saved",
+                    f"Saved to {result.filepath}\nDuration: {result.duration:.1f}s",
+                    icon="video-x-generic",
+                )
+
+            # Add to history
+            history = HistoryManager()
+            history.add(result.filepath, mode="gif")
+        else:
+            show_notification("Recording Failed", result.error, icon="dialog-error")
+
+        self.window.deiconify()
+        self.recorder = None
+        self.recording_overlay = None
+
+    def _on_scroll_capture(self, button: Optional[Gtk.Button] = None) -> None:
+        """Handle scroll capture button click."""
+        self.scroll_manager = ScrollCaptureManager()
+        available, error = self.scroll_manager.is_available()
+
+        if not available:
+            show_notification("Scroll Capture Unavailable", error, icon="dialog-error")
+            return
+
+        self.window.iconify()
+        GLib.timeout_add(300, self._start_scroll_region_selection)
+
+    def _start_scroll_region_selection(self) -> bool:
+        """Start region selection for scroll capture."""
+        try:
+            RegionSelector(self._on_scroll_region_selected)
+        except Exception as e:
+            show_notification(
+                "Region Selection Failed", str(e), icon="dialog-error"
+            )
+            self.window.deiconify()
+        return False
+
+    def _on_scroll_region_selected(
+        self, x: int, y: int, width: int, height: int
+    ) -> None:
+        """Handle region selection for scroll capture."""
+        success, error = self.scroll_manager.start_capture(
+            x,
+            y,
+            width,
+            height,
+            on_progress=self._on_scroll_progress,
+            on_complete=self._on_scroll_complete,
+        )
+
+        if not success:
+            show_notification("Scroll Capture Failed", error, icon="dialog-error")
+            self.window.deiconify()
+            return
+
+        # Show overlay
+        self.scroll_overlay = ScrollCaptureOverlay(
+            on_stop=self._on_scroll_stop, region=(x, y, width, height)
+        )
+
+        # Start capture loop
+        self._scroll_capture_loop()
+
+    def _scroll_capture_loop(self) -> None:
+        """Main capture loop - captures frame, scrolls, repeats."""
+        cfg = config.load_config()
+        delay_ms = cfg.get("scroll_delay_ms", 300)
+
+        # Capture current frame
+        should_continue, error = self.scroll_manager.capture_frame()
+
+        if error:
+            show_notification("Capture Error", error, icon="dialog-error")
+            self._finish_scroll_capture()
+            return
+
+        if not should_continue:
+            # End of content or stopped
+            self._finish_scroll_capture()
+            return
+
+        # Scroll down
+        self.scroll_manager.scroll_down()
+
+        # Schedule next capture after delay
+        GLib.timeout_add(delay_ms, self._scroll_capture_next)
+
+    def _scroll_capture_next(self) -> bool:
+        """Continue capture loop (called by GLib.timeout_add)."""
+        self._scroll_capture_loop()
+        return False  # Don't repeat
+
+    def _on_scroll_progress(self, frame_count: int, estimated_height: int) -> None:
+        """Handle scroll capture progress updates."""
+        if hasattr(self, "scroll_overlay") and self.scroll_overlay:
+            self.scroll_overlay.update_progress(frame_count, estimated_height)
+
+    def _on_scroll_stop(self) -> None:
+        """Handle scroll capture stop request."""
+        self.scroll_manager.stop_capture()
+
+    def _finish_scroll_capture(self) -> None:
+        """Finish scroll capture and show result."""
+        # Destroy overlay
+        if hasattr(self, "scroll_overlay") and self.scroll_overlay:
+            self.scroll_overlay.destroy()
+            self.scroll_overlay = None
+
+        # Get stitched result
+        result = self.scroll_manager.finish_capture()
+
+        if result.success:
+            cfg = config.load_config()
+            if cfg.get("show_notification", True):
+                show_notification(
+                    "Scroll Capture Complete",
+                    f"Captured {result.frame_count} frames\n"
+                    f"Total height: {result.total_height}px",
+                    icon="image-x-generic",
+                )
+
+            # Create CaptureResult for editor
+            from .capture import CaptureResult
+
+            capture_result = CaptureResult(True, pixbuf=result.pixbuf)
+
+            if cfg.get("editor_enabled", True):
+                EditorWindow(capture_result)
+            else:
+                from .capture import save_capture
+
+                saved = save_capture(capture_result)
+                if saved.success:
+                    show_screenshot_saved(str(saved.filepath))
+        else:
+            show_notification(
+                "Scroll Capture Failed", result.error, icon="dialog-error"
+            )
+
+        self.window.deiconify()
+        self.scroll_manager = None
+
+    def _on_scroll_complete(self, result: ScrollCaptureResult) -> None:
+        """Handle scroll capture completion callback."""
+        pass  # Handled by _finish_scroll_capture
 
     def _on_settings(self, button: Gtk.Button) -> None:
         """Handle settings button click."""
@@ -2600,7 +2815,9 @@ class SettingsDialog:
             "<b>Global Hotkeys:</b>\n\n"
             + f"Fullscreen: {self.cfg.get('hotkey_fullscreen', 'Ctrl+Shift+F')}\n"
             + f"Region: {self.cfg.get('hotkey_region', 'Ctrl+Shift+R')}\n"
-            + f"Window: {self.cfg.get('hotkey_window', 'Ctrl+Shift+W')}\n\n"
+            + f"Window: {self.cfg.get('hotkey_window', 'Ctrl+Shift+W')}\n"
+            + f"Record GIF: {self.cfg.get('hotkey_record_gif', 'Ctrl+Alt+G')}\n"
+            + f"Scroll Capture: {self.cfg.get('hotkey_scroll_capture', 'Ctrl+Alt+S')}\n\n"
             + "<i>(Hotkeys work on GNOME desktop)</i>"
         )
         box.pack_start(hotkey_label, False, False, 0)
@@ -2617,10 +2834,15 @@ class SettingsDialog:
         service_label = Gtk.Label(label="Upload service:", xalign=0)
         service_label.set_size_request(150, -1)
         self.service_combo = Gtk.ComboBoxText()
-        for service in ["none", "imgur"]:
+        services = ["none", "imgur", "fileio", "s3", "dropbox", "gdrive"]
+        for service in services:
             self.service_combo.append_text(service)
         current_service = self.cfg.get("upload_service", "imgur")
-        self.service_combo.set_active(["none", "imgur"].index(current_service))
+        if current_service in services:
+            self.service_combo.set_active(services.index(current_service))
+        else:
+            self.service_combo.set_active(1)  # Default to imgur
+        self.service_combo.connect("changed", self._on_upload_service_changed)
         service_box.pack_start(service_label, False, False, 0)
         service_box.pack_start(self.service_combo, False, False, 0)
         box.pack_start(service_box, False, False, 0)
@@ -2633,18 +2855,141 @@ class SettingsDialog:
         self.auto_upload_check.set_active(self.cfg.get("auto_upload", False))
         box.pack_start(self.auto_upload_check, False, False, 0)
 
-        # Info
-        info_label = Gtk.Label(xalign=0)
-        info_label.set_markup(
-            "<b>About Upload Services:</b>\n\n"
-            + "• <b>Imgur</b>: Free anonymous image hosting\n"
-            + "  URL is copied to clipboard automatically\n\n"
-            + "<i>Requires: curl</i>"
+        box.pack_start(Gtk.Separator(), False, False, 5)
+
+        # S3 settings frame
+        self.s3_frame = Gtk.Frame(label="S3 Settings")
+        s3_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        s3_box.set_border_width(5)
+
+        s3_bucket_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        s3_bucket_label = Gtk.Label(label="Bucket:", xalign=0)
+        s3_bucket_label.set_size_request(100, -1)
+        self.s3_bucket_entry = Gtk.Entry()
+        self.s3_bucket_entry.set_text(self.cfg.get("s3_bucket", ""))
+        self.s3_bucket_entry.set_placeholder_text("my-screenshots-bucket")
+        s3_bucket_box.pack_start(s3_bucket_label, False, False, 0)
+        s3_bucket_box.pack_start(self.s3_bucket_entry, True, True, 0)
+        s3_box.pack_start(s3_bucket_box, False, False, 0)
+
+        s3_region_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        s3_region_label = Gtk.Label(label="Region:", xalign=0)
+        s3_region_label.set_size_request(100, -1)
+        self.s3_region_entry = Gtk.Entry()
+        self.s3_region_entry.set_text(self.cfg.get("s3_region", "us-east-1"))
+        s3_region_box.pack_start(s3_region_label, False, False, 0)
+        s3_region_box.pack_start(self.s3_region_entry, True, True, 0)
+        s3_box.pack_start(s3_region_box, False, False, 0)
+
+        self.s3_public_check = Gtk.CheckButton(label="Make uploaded files public")
+        self.s3_public_check.set_active(self.cfg.get("s3_public", True))
+        s3_box.pack_start(self.s3_public_check, False, False, 0)
+
+        self.s3_frame.add(s3_box)
+        box.pack_start(self.s3_frame, False, False, 0)
+
+        # Dropbox settings frame
+        self.dropbox_frame = Gtk.Frame(label="Dropbox Settings")
+        dropbox_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        dropbox_box.set_border_width(5)
+
+        dropbox_token_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        dropbox_token_label = Gtk.Label(label="Access Token:", xalign=0)
+        dropbox_token_label.set_size_request(100, -1)
+        self.dropbox_token_entry = Gtk.Entry()
+        self.dropbox_token_entry.set_text(self.cfg.get("dropbox_token", ""))
+        self.dropbox_token_entry.set_visibility(False)  # Hide token
+        self.dropbox_token_entry.set_placeholder_text("sl.xxxxx...")
+        dropbox_token_box.pack_start(dropbox_token_label, False, False, 0)
+        dropbox_token_box.pack_start(self.dropbox_token_entry, True, True, 0)
+        dropbox_box.pack_start(dropbox_token_box, False, False, 0)
+
+        dropbox_help = Gtk.Label(xalign=0)
+        dropbox_help.set_markup(
+            '<small><a href="https://www.dropbox.com/developers/apps">'
+            "Get token from Dropbox Developer Console</a></small>"
         )
-        info_label.set_line_wrap(True)
-        box.pack_start(info_label, False, False, 0)
+        dropbox_box.pack_start(dropbox_help, False, False, 0)
+
+        self.dropbox_frame.add(dropbox_box)
+        box.pack_start(self.dropbox_frame, False, False, 0)
+
+        # Google Drive settings frame
+        self.gdrive_frame = Gtk.Frame(label="Google Drive Settings")
+        gdrive_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        gdrive_box.set_border_width(5)
+
+        gdrive_folder_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        gdrive_folder_label = Gtk.Label(label="Folder ID:", xalign=0)
+        gdrive_folder_label.set_size_request(100, -1)
+        self.gdrive_folder_entry = Gtk.Entry()
+        self.gdrive_folder_entry.set_text(self.cfg.get("gdrive_folder_id", ""))
+        self.gdrive_folder_entry.set_placeholder_text("(optional)")
+        gdrive_folder_box.pack_start(gdrive_folder_label, False, False, 0)
+        gdrive_folder_box.pack_start(self.gdrive_folder_entry, True, True, 0)
+        gdrive_box.pack_start(gdrive_folder_box, False, False, 0)
+
+        gdrive_help = Gtk.Label(xalign=0)
+        gdrive_help.set_markup(
+            "<small>Requires: <b>gdrive</b> CLI or <b>rclone</b></small>"
+        )
+        gdrive_box.pack_start(gdrive_help, False, False, 0)
+
+        self.gdrive_frame.add(gdrive_box)
+        box.pack_start(self.gdrive_frame, False, False, 0)
+
+        # Info
+        self.upload_info_label = Gtk.Label(xalign=0)
+        self.upload_info_label.set_line_wrap(True)
+        box.pack_start(self.upload_info_label, False, False, 0)
+
+        # Update visibility based on current service
+        self._update_upload_settings_visibility()
 
         return box
+
+    def _on_upload_service_changed(self, combo: Gtk.ComboBoxText) -> None:
+        """Update visibility of provider-specific settings."""
+        self._update_upload_settings_visibility()
+
+    def _update_upload_settings_visibility(self) -> None:
+        """Show/hide provider-specific settings based on selected service."""
+        service = self.service_combo.get_active_text() or "imgur"
+
+        self.s3_frame.set_visible(service == "s3")
+        self.dropbox_frame.set_visible(service == "dropbox")
+        self.gdrive_frame.set_visible(service == "gdrive")
+
+        # Update info text
+        info_texts = {
+            "none": "<i>Upload disabled</i>",
+            "imgur": (
+                "<b>Imgur</b>: Free anonymous image hosting\n"
+                "URL is copied to clipboard automatically\n"
+                "<i>Requires: curl</i>"
+            ),
+            "fileio": (
+                "<b>file.io</b>: Temporary file sharing\n"
+                "Files are deleted after first download\n"
+                "<i>Requires: curl</i>"
+            ),
+            "s3": (
+                "<b>Amazon S3</b>: Cloud storage\n"
+                "Configure AWS CLI with credentials first\n"
+                "<i>Requires: aws-cli</i>"
+            ),
+            "dropbox": (
+                "<b>Dropbox</b>: Cloud storage with sharing\n"
+                "Create an app and generate access token\n"
+                "<i>Requires: curl</i>"
+            ),
+            "gdrive": (
+                "<b>Google Drive</b>: Cloud storage\n"
+                "Configure gdrive or rclone first\n"
+                "<i>Requires: gdrive or rclone</i>"
+            ),
+        }
+        self.upload_info_label.set_markup(info_texts.get(service, ""))
 
     def _create_editor_settings(self) -> Gtk.Box:
         """Create editor settings tab."""
@@ -2740,6 +3085,14 @@ class SettingsDialog:
         self.cfg["include_cursor"] = self.cursor_check.get_active()
         self.cfg["upload_service"] = self.service_combo.get_active_text() or "imgur"
         self.cfg["auto_upload"] = self.auto_upload_check.get_active()
+        # S3 settings
+        self.cfg["s3_bucket"] = self.s3_bucket_entry.get_text().strip()
+        self.cfg["s3_region"] = self.s3_region_entry.get_text().strip() or "us-east-1"
+        self.cfg["s3_public"] = self.s3_public_check.get_active()
+        # Dropbox settings
+        self.cfg["dropbox_token"] = self.dropbox_token_entry.get_text().strip()
+        # Google Drive settings
+        self.cfg["gdrive_folder_id"] = self.gdrive_folder_entry.get_text().strip()
         # Editor settings
         self.cfg["grid_size"] = int(self.grid_size_scale.get_value())
         self.cfg["snap_to_grid"] = self.snap_grid_check.get_active()

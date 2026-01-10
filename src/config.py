@@ -19,11 +19,35 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "delay_seconds": 0,
     "editor_enabled": True,
     "theme": "system",
-    "upload_service": "imgur",  # imgur, fileio, none
+    "upload_service": "imgur",  # imgur, fileio, s3, dropbox, gdrive, none
     "auto_upload": False,
+    # S3 settings
+    "s3_bucket": "",
+    "s3_region": "us-east-1",
+    "s3_public": True,  # Make uploaded files public
+    # Dropbox settings
+    "dropbox_token": "",  # Access token from https://www.dropbox.com/developers/apps
+    # Google Drive settings
+    "gdrive_folder_id": "",  # Optional folder ID to upload to
+    "gdrive_rclone_remote": "gdrive",  # rclone remote name if using rclone
     # Editor settings
     "grid_size": 20,  # Grid snap size in pixels (5-100)
     "snap_to_grid": False,  # Whether grid snap is enabled by default
+    # GIF recording settings
+    "gif_fps": 15,  # Frames per second (10-30)
+    "gif_quality": "medium",  # low, medium, high
+    "gif_max_duration": 60,  # Safety limit in seconds
+    "gif_colors": 256,  # Color palette size (128-256)
+    "gif_scale_factor": 1.0,  # Downscale factor (0.5-1.0)
+    "hotkey_record_gif": "<Control><Alt>G",
+    # Scroll capture settings
+    "scroll_delay_ms": 300,  # Delay between scroll+capture cycles
+    "scroll_max_frames": 50,  # Safety limit
+    "scroll_overlap_search": 150,  # Max pixels to search for overlap
+    "scroll_ignore_top": 0.15,  # Ignore top 15% (fixed headers)
+    "scroll_ignore_bottom": 0.15,  # Ignore bottom 15% (fixed footers)
+    "scroll_confidence": 0.7,  # Template matching confidence threshold
+    "hotkey_scroll_capture": "<Control><Alt>S",
 }
 
 # Configuration file path
