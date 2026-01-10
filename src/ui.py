@@ -15,8 +15,10 @@ try:
 except (ImportError, ValueError):
     GTK_AVAILABLE = False
 
+from . import capture
 from . import config
 from .capture import CaptureMode, CaptureResult, capture, save_capture
+from .i18n import _
 from .editor import EditorState, ToolType, Color, ArrowStyle, render_elements
 from .notification import (
     show_notification,
@@ -263,7 +265,7 @@ class RegionSelector:
             cr.set_font_size(12)
             info = f"{monitor.width}x{monitor.height}"
             if monitor.is_primary:
-                info += " (Primary)"
+                info += " " + _("(Primary)")
             cr.set_source_rgba(1, 1, 1, 0.8)
             cr.move_to(label_x, label_y + 18)
             cr.show_text(info)
@@ -661,7 +663,7 @@ class EditorWindow:
         # === SIZE GROUP (most tools use this) ===
         self.ctx_size_box = Gtk.Box(spacing=4)
         self.ctx_size_box.get_style_context().add_class("context-group")
-        size_label = Gtk.Label(label="Size:")
+        size_label = Gtk.Label(label=_("Size:"))
         size_label.get_style_context().add_class("ctx-label")
         self.ctx_size_box.pack_start(size_label, False, False, 0)
         self.size_spin = Gtk.SpinButton()
@@ -676,17 +678,17 @@ class EditorWindow:
         # === COLOR GROUP ===
         self.ctx_color_box = Gtk.Box(spacing=4)
         self.ctx_color_box.get_style_context().add_class("context-group")
-        color_label = Gtk.Label(label="Color:")
+        color_label = Gtk.Label(label=_("Color:"))
         color_label.get_style_context().add_class("ctx-label")
         self.ctx_color_box.pack_start(color_label, False, False, 0)
         self.color_btn = Gtk.ColorButton()
         self.color_btn.set_rgba(Gdk.RGBA(1, 0, 0, 1))
-        self.color_btn.set_tooltip_text("Pick color")
+        self.color_btn.set_tooltip_text(_("Pick color"))
         self.color_btn.connect("color-set", self._on_color_chosen)
         self.ctx_color_box.pack_start(self.color_btn, False, False, 0)
         # Quick color palette button
         self.palette_btn = Gtk.Button(label="▾")
-        self.palette_btn.set_tooltip_text("Color palette")
+        self.palette_btn.set_tooltip_text(_("Color palette"))
         self.palette_btn.get_style_context().add_class("ctx-btn")
         self._create_color_popover()
         self.palette_btn.connect("clicked", lambda b: self.color_popover.show_all())
@@ -721,12 +723,12 @@ class EditorWindow:
         self.font_combo.connect("changed", self._on_font_family_changed)
         self.ctx_text_box.pack_start(self.font_combo, False, False, 0)
         self.bold_btn = Gtk.ToggleButton(label="B")
-        self.bold_btn.set_tooltip_text("Bold")
+        self.bold_btn.set_tooltip_text(_("Bold"))
         self.bold_btn.get_style_context().add_class("ctx-btn")
         self.bold_btn.connect("toggled", self._on_bold_toggled)
         self.ctx_text_box.pack_start(self.bold_btn, False, False, 0)
         self.italic_btn = Gtk.ToggleButton(label="I")
-        self.italic_btn.set_tooltip_text("Italic")
+        self.italic_btn.set_tooltip_text(_("Italic"))
         self.italic_btn.get_style_context().add_class("ctx-btn")
         self.italic_btn.connect("toggled", self._on_italic_toggled)
         self.ctx_text_box.pack_start(self.italic_btn, False, False, 0)
@@ -738,7 +740,7 @@ class EditorWindow:
         self.stamp_buttons = {}
         self._create_stamp_popover()
         self.stamp_selector_btn = Gtk.Button(label="✓ ▾")
-        self.stamp_selector_btn.set_tooltip_text("Select stamp")
+        self.stamp_selector_btn.set_tooltip_text(_("Select stamp"))
         self.stamp_selector_btn.get_style_context().add_class("ctx-btn")
         self.stamp_selector_btn.connect(
             "clicked", lambda b: self.stamp_popover.show_all()
@@ -824,7 +826,7 @@ class EditorWindow:
         pop_box.pack_start(color_grid, False, False, 0)
 
         # Recent colors
-        recent_label = Gtk.Label(label="Recent:")
+        recent_label = Gtk.Label(label=_("Recent:"))
         recent_label.get_style_context().add_class("ctx-label")
         pop_box.pack_start(recent_label, False, False, 4)
         self.recent_colors_box = Gtk.Box(spacing=2)
@@ -1833,7 +1835,7 @@ class EditorWindow:
         content.set_spacing(10)
         content.set_border_width(10)
 
-        label = Gtk.Label(label="Enter text:")
+        label = Gtk.Label(label=_("Enter text:"))
         content.pack_start(label, False, False, 0)
 
         entry = Gtk.Entry()
@@ -1869,7 +1871,7 @@ class EditorWindow:
         content.set_spacing(10)
         content.set_border_width(10)
 
-        label = Gtk.Label(label="Enter callout text:")
+        label = Gtk.Label(label=_("Enter callout text:"))
         content.pack_start(label, False, False, 0)
 
         # Text view for multiline input
@@ -2481,7 +2483,7 @@ class MainWindow:
         content.set_border_width(15)
         content.set_spacing(10)
 
-        label = Gtk.Label(label="Select which monitor to capture:")
+        label = Gtk.Label(label=_("Select which monitor to capture:"))
         label.set_xalign(0)
         content.pack_start(label, False, False, 0)
 
@@ -2489,7 +2491,7 @@ class MainWindow:
         button_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
 
         # "All Monitors" option
-        all_btn = Gtk.Button(label="All Monitors (combined)")
+        all_btn = Gtk.Button(label=_("All Monitors (combined)"))
         all_btn.connect("clicked", self._on_monitor_selected, dialog, None)
         button_box.pack_start(all_btn, False, False, 0)
 
@@ -2498,7 +2500,7 @@ class MainWindow:
 
         # Individual monitor buttons
         for monitor in monitors:
-            primary = " (Primary)" if monitor.is_primary else ""
+            primary = " " + _("(Primary)") if monitor.is_primary else ""
             btn_label = f"{monitor.index + 1}: {monitor.name} - {monitor.width}x{monitor.height}{primary}"
             btn = Gtk.Button(label=btn_label)
             btn.connect("clicked", self._on_monitor_selected, dialog, monitor)
@@ -2547,7 +2549,7 @@ class MainWindow:
                 if filepath.success and cfg.get("show_notification", True):
                     show_screenshot_saved(str(filepath.filepath))
         else:
-            show_notification("Capture Failed", result.error, icon="dialog-error")
+            show_notification(_("Capture Failed"), result.error, icon="dialog-error")
         self.window.deiconify()
         return False
 
@@ -2563,7 +2565,7 @@ class MainWindow:
                 if filepath.success and cfg.get("show_notification", True):
                     show_screenshot_saved(str(filepath.filepath))
         else:
-            show_notification("Capture Failed", result.error, icon="dialog-error")
+            show_notification(_("Capture Failed"), result.error, icon="dialog-error")
         self.window.deiconify()
         return False
 
@@ -2577,7 +2579,7 @@ class MainWindow:
         try:
             RegionSelector(self._on_region_selected)
         except Exception as e:
-            show_notification("Region Selection Failed", str(e), icon="dialog-error")
+            show_notification(_("Region Selection Failed"), str(e), icon="dialog-error")
             self.window.deiconify()
         return False
 
@@ -2593,7 +2595,7 @@ class MainWindow:
                 if filepath.success and cfg.get("show_notification", True):
                     show_screenshot_saved(str(filepath.filepath))
         else:
-            show_notification("Capture Failed", result.error, icon="dialog-error")
+            show_notification(_("Capture Failed"), result.error, icon="dialog-error")
         self.window.deiconify()
 
     def _on_window(self, button: Optional[Gtk.Button] = None) -> None:
@@ -2613,7 +2615,7 @@ class MainWindow:
                 if filepath.success and cfg.get("show_notification", True):
                     show_screenshot_saved(str(filepath.filepath))
         else:
-            show_notification("Capture Failed", result.error, icon="dialog-error")
+            show_notification(_("Capture Failed"), result.error, icon="dialog-error")
         self.window.deiconify()
         return False
 
@@ -2623,7 +2625,7 @@ class MainWindow:
         available, error = self.recorder.is_available()
 
         if not available:
-            show_notification("Recording Unavailable", error, icon="dialog-error")
+            show_notification(_("Recording Unavailable"), error, icon="dialog-error")
             return
 
         self.window.iconify()
@@ -2634,7 +2636,7 @@ class MainWindow:
         try:
             RegionSelector(self._on_gif_region_selected)
         except Exception as e:
-            show_notification("Region Selection Failed", str(e), icon="dialog-error")
+            show_notification(_("Region Selection Failed"), str(e), icon="dialog-error")
             self.window.deiconify()
         return False
 
@@ -2645,7 +2647,7 @@ class MainWindow:
         )
 
         if not success:
-            show_notification("Recording Failed", error, icon="dialog-error")
+            show_notification(_("Recording Failed"), error, icon="dialog-error")
             self.window.deiconify()
             return
 
@@ -2658,7 +2660,7 @@ class MainWindow:
         """Handle recording state changes."""
         if state == RecordingState.ENCODING:
             show_notification(
-                "Processing", "Encoding GIF...", icon="emblem-synchronizing"
+                _("Processing"), _("Encoding GIF..."), icon="emblem-synchronizing"
             )
 
     def _on_recording_stop(self) -> None:
@@ -2669,8 +2671,8 @@ class MainWindow:
             cfg = config.load_config()
             if cfg.get("show_notification", True):
                 show_notification(
-                    "GIF Saved",
-                    f"Saved to {result.filepath}\nDuration: {result.duration:.1f}s",
+                    _("GIF Saved"),
+                    _("Saved to") + f" {result.filepath}\n" + _("Duration:") + f" {result.duration:.1f}s",
                     icon="video-x-generic",
                 )
 
@@ -2678,7 +2680,7 @@ class MainWindow:
             history = HistoryManager()
             history.add(result.filepath, mode="gif")
         else:
-            show_notification("Recording Failed", result.error, icon="dialog-error")
+            show_notification(_("Recording Failed"), result.error, icon="dialog-error")
 
         self.window.deiconify()
         self.recorder = None
@@ -2690,7 +2692,7 @@ class MainWindow:
         available, error = self.scroll_manager.is_available()
 
         if not available:
-            show_notification("Scroll Capture Unavailable", error, icon="dialog-error")
+            show_notification(_("Scroll Capture Unavailable"), error, icon="dialog-error")
             return
 
         self.window.iconify()
@@ -2721,7 +2723,7 @@ class MainWindow:
         )
 
         if not success:
-            show_notification("Scroll Capture Failed", error, icon="dialog-error")
+            show_notification(_("Scroll Capture Failed"), error, icon="dialog-error")
             self.window.deiconify()
             return
 
@@ -2742,7 +2744,7 @@ class MainWindow:
         should_continue, error = self.scroll_manager.capture_frame()
 
         if error:
-            show_notification("Capture Error", error, icon="dialog-error")
+            show_notification(_("Capture Error"), error, icon="dialog-error")
             self._finish_scroll_capture()
             return
 
@@ -2969,17 +2971,17 @@ class SettingsDialog:
 
     def __init__(self, parent: Gtk.Window):
         self.dialog = Gtk.Dialog(
-            title="Settings", parent=parent, flags=Gtk.DialogFlags.MODAL
+            title=_("Settings"), parent=parent, flags=Gtk.DialogFlags.MODAL
         )
         self.dialog.add_buttons(
             Gtk.STOCK_CANCEL,
             Gtk.ResponseType.CANCEL,
-            "Reset to Defaults",
+            _("Reset to Defaults"),
             Gtk.ResponseType.REJECT,
             Gtk.STOCK_OK,
             Gtk.ResponseType.OK,
         )
-        self.dialog.set_default_size(500, 400)
+        self.dialog.set_default_size(500, 450)
 
         content = self.dialog.get_content_area()
         content.set_border_width(10)
@@ -2993,23 +2995,27 @@ class SettingsDialog:
 
         # General settings tab
         general_box = self._create_general_settings()
-        notebook.append_page(general_box, Gtk.Label(label="General"))
+        notebook.append_page(general_box, Gtk.Label(label=_("General")))
 
         # Capture settings tab
         capture_box = self._create_capture_settings()
-        notebook.append_page(capture_box, Gtk.Label(label="Capture"))
+        notebook.append_page(capture_box, Gtk.Label(label=_("Capture")))
 
         # Upload settings tab
         upload_box = self._create_upload_settings()
-        notebook.append_page(upload_box, Gtk.Label(label="Upload"))
+        notebook.append_page(upload_box, Gtk.Label(label=_("Upload")))
 
         # Editor settings tab
         editor_box = self._create_editor_settings()
-        notebook.append_page(editor_box, Gtk.Label(label="Editor"))
+        notebook.append_page(editor_box, Gtk.Label(label=_("Editor")))
 
         # Hotkeys settings tab
         hotkey_box = self._create_hotkey_settings()
-        notebook.append_page(hotkey_box, Gtk.Label(label="Hotkeys"))
+        notebook.append_page(hotkey_box, Gtk.Label(label=_("Hotkeys")))
+
+        # Language settings tab
+        language_box = self._create_language_settings()
+        notebook.append_page(language_box, Gtk.Label(label=_("Language")))
 
         self.dialog.show_all()
 
@@ -3028,11 +3034,11 @@ class SettingsDialog:
 
         # Save directory
         dir_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        dir_label = Gtk.Label(label="Save directory:", xalign=0)
+        dir_label = Gtk.Label(label=_("Save directory:"), xalign=0)
         dir_label.set_size_request(150, -1)
         self.dir_entry = Gtk.Entry()
         self.dir_entry.set_text(str(self.cfg.get("save_directory", "")))
-        dir_button = Gtk.Button(label="Browse...")
+        dir_button = Gtk.Button(label=_("Browse..."))
         dir_button.connect("clicked", self._browse_directory)
         dir_box.pack_start(dir_label, False, False, 0)
         dir_box.pack_start(self.dir_entry, True, True, 0)
@@ -3041,7 +3047,7 @@ class SettingsDialog:
 
         # Default format
         format_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        format_label = Gtk.Label(label="Default format:", xalign=0)
+        format_label = Gtk.Label(label=_("Default format:"), xalign=0)
         format_label.set_size_request(150, -1)
         self.format_combo = Gtk.ComboBoxText()
         for fmt in ["png", "jpg", "bmp", "gif"]:
@@ -3056,20 +3062,20 @@ class SettingsDialog:
 
         # Checkboxes
         self.auto_save_check = Gtk.CheckButton(
-            label="Auto-save screenshots (skip editor)"
+            label=_("Auto-save screenshots (skip editor)")
         )
         self.auto_save_check.set_active(self.cfg.get("auto_save", False))
         box.pack_start(self.auto_save_check, False, False, 0)
 
-        self.clipboard_check = Gtk.CheckButton(label="Copy to clipboard automatically")
+        self.clipboard_check = Gtk.CheckButton(label=_("Copy to clipboard automatically"))
         self.clipboard_check.set_active(self.cfg.get("copy_to_clipboard", True))
         box.pack_start(self.clipboard_check, False, False, 0)
 
-        self.notification_check = Gtk.CheckButton(label="Show desktop notifications")
+        self.notification_check = Gtk.CheckButton(label=_("Show desktop notifications"))
         self.notification_check.set_active(self.cfg.get("show_notification", True))
         box.pack_start(self.notification_check, False, False, 0)
 
-        self.editor_check = Gtk.CheckButton(label="Open editor after capture")
+        self.editor_check = Gtk.CheckButton(label=_("Open editor after capture"))
         self.editor_check.set_active(self.cfg.get("editor_enabled", True))
         box.pack_start(self.editor_check, False, False, 0)
 
@@ -3082,7 +3088,7 @@ class SettingsDialog:
 
         # Delay
         delay_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        delay_label = Gtk.Label(label="Capture delay (seconds):", xalign=0)
+        delay_label = Gtk.Label(label=_("Capture delay (seconds):"), xalign=0)
         delay_label.set_size_request(200, -1)
         self.delay_spin = Gtk.SpinButton()
         self.delay_spin.set_range(0, 10)
@@ -3094,7 +3100,7 @@ class SettingsDialog:
 
         box.pack_start(Gtk.Separator(), False, False, 5)
 
-        self.cursor_check = Gtk.CheckButton(label="Include mouse cursor in screenshots")
+        self.cursor_check = Gtk.CheckButton(label=_("Include mouse cursor in screenshots"))
         self.cursor_check.set_active(self.cfg.get("include_cursor", False))
         box.pack_start(self.cursor_check, False, False, 0)
 
@@ -3107,7 +3113,7 @@ class SettingsDialog:
 
         # Upload service
         service_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        service_label = Gtk.Label(label="Upload service:", xalign=0)
+        service_label = Gtk.Label(label=_("Upload service:"), xalign=0)
         service_label.set_size_request(150, -1)
         self.service_combo = Gtk.ComboBoxText()
         services = ["none", "imgur", "fileio", "s3", "dropbox", "gdrive"]
@@ -3126,7 +3132,7 @@ class SettingsDialog:
         box.pack_start(Gtk.Separator(), False, False, 5)
 
         self.auto_upload_check = Gtk.CheckButton(
-            label="Automatically upload after save"
+            label=_("Automatically upload after save")
         )
         self.auto_upload_check.set_active(self.cfg.get("auto_upload", False))
         box.pack_start(self.auto_upload_check, False, False, 0)
@@ -3134,12 +3140,12 @@ class SettingsDialog:
         box.pack_start(Gtk.Separator(), False, False, 5)
 
         # S3 settings frame
-        self.s3_frame = Gtk.Frame(label="S3 Settings")
+        self.s3_frame = Gtk.Frame(label=_("S3 Settings"))
         s3_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
         s3_box.set_border_width(5)
 
         s3_bucket_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        s3_bucket_label = Gtk.Label(label="Bucket:", xalign=0)
+        s3_bucket_label = Gtk.Label(label=_("Bucket:"), xalign=0)
         s3_bucket_label.set_size_request(100, -1)
         self.s3_bucket_entry = Gtk.Entry()
         self.s3_bucket_entry.set_text(self.cfg.get("s3_bucket", ""))
@@ -3149,7 +3155,7 @@ class SettingsDialog:
         s3_box.pack_start(s3_bucket_box, False, False, 0)
 
         s3_region_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        s3_region_label = Gtk.Label(label="Region:", xalign=0)
+        s3_region_label = Gtk.Label(label=_("Region:"), xalign=0)
         s3_region_label.set_size_request(100, -1)
         self.s3_region_entry = Gtk.Entry()
         self.s3_region_entry.set_text(self.cfg.get("s3_region", "us-east-1"))
@@ -3157,7 +3163,7 @@ class SettingsDialog:
         s3_region_box.pack_start(self.s3_region_entry, True, True, 0)
         s3_box.pack_start(s3_region_box, False, False, 0)
 
-        self.s3_public_check = Gtk.CheckButton(label="Make uploaded files public")
+        self.s3_public_check = Gtk.CheckButton(label=_("Make uploaded files public"))
         self.s3_public_check.set_active(self.cfg.get("s3_public", True))
         s3_box.pack_start(self.s3_public_check, False, False, 0)
 
@@ -3165,12 +3171,12 @@ class SettingsDialog:
         box.pack_start(self.s3_frame, False, False, 0)
 
         # Dropbox settings frame
-        self.dropbox_frame = Gtk.Frame(label="Dropbox Settings")
+        self.dropbox_frame = Gtk.Frame(label=_("Dropbox Settings"))
         dropbox_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
         dropbox_box.set_border_width(5)
 
         dropbox_token_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        dropbox_token_label = Gtk.Label(label="Access Token:", xalign=0)
+        dropbox_token_label = Gtk.Label(label=_("Access Token:"), xalign=0)
         dropbox_token_label.set_size_request(100, -1)
         self.dropbox_token_entry = Gtk.Entry()
         self.dropbox_token_entry.set_text(self.cfg.get("dropbox_token", ""))
@@ -3183,7 +3189,7 @@ class SettingsDialog:
         dropbox_help = Gtk.Label(xalign=0)
         dropbox_help.set_markup(
             '<small><a href="https://www.dropbox.com/developers/apps">'
-            "Get token from Dropbox Developer Console</a></small>"
+            + _("Get token from Dropbox Developer Console") + "</a></small>"
         )
         dropbox_box.pack_start(dropbox_help, False, False, 0)
 
@@ -3191,12 +3197,12 @@ class SettingsDialog:
         box.pack_start(self.dropbox_frame, False, False, 0)
 
         # Google Drive settings frame
-        self.gdrive_frame = Gtk.Frame(label="Google Drive Settings")
+        self.gdrive_frame = Gtk.Frame(label=_("Google Drive Settings"))
         gdrive_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
         gdrive_box.set_border_width(5)
 
         gdrive_folder_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        gdrive_folder_label = Gtk.Label(label="Folder ID:", xalign=0)
+        gdrive_folder_label = Gtk.Label(label=_("Folder ID:"), xalign=0)
         gdrive_folder_label.set_size_request(100, -1)
         self.gdrive_folder_entry = Gtk.Entry()
         self.gdrive_folder_entry.set_text(self.cfg.get("gdrive_folder_id", ""))
@@ -3274,12 +3280,12 @@ class SettingsDialog:
 
         # Grid settings header
         grid_header = Gtk.Label(xalign=0)
-        grid_header.set_markup("<b>Grid Settings</b>")
+        grid_header.set_markup(_("<b>Grid Settings</b>"))
         box.pack_start(grid_header, False, False, 0)
 
         # Grid size slider
         size_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        size_label = Gtk.Label(label="Grid size (pixels):", xalign=0)
+        size_label = Gtk.Label(label=_("Grid size (pixels):"), xalign=0)
         size_label.set_size_request(150, -1)
 
         # Value label that updates with slider
@@ -3302,7 +3308,7 @@ class SettingsDialog:
 
         # Snap to grid default checkbox
         self.snap_grid_check = Gtk.CheckButton(
-            label="Enable grid snap by default (Ctrl+' to toggle)"
+            label=_("Enable grid snap by default (Ctrl+' to toggle)")
         )
         self.snap_grid_check.set_active(self.cfg.get("snap_to_grid", False))
         box.pack_start(self.snap_grid_check, False, False, 0)
@@ -3312,11 +3318,11 @@ class SettingsDialog:
         # Grid info
         info_label = Gtk.Label(xalign=0)
         info_label.set_markup(
-            "<b>Keyboard Shortcuts:</b>\n\n"
-            + "• <b>Ctrl+'</b>: Toggle grid snap on/off\n"
-            + "• <b>Arrow keys</b>: Nudge 1px (or snap to grid)\n"
-            + "• <b>Shift+Arrow</b>: Nudge 10px\n\n"
-            + "<i>Grid snap helps align elements precisely.</i>"
+            _("<b>Keyboard Shortcuts:</b>") + "\n\n"
+            + _("• <b>Ctrl+'</b>: Toggle grid snap on/off") + "\n"
+            + _("• <b>Arrow keys</b>: Nudge 1px (or snap to grid)") + "\n"
+            + _("• <b>Shift+Arrow</b>: Nudge 10px") + "\n\n"
+            + _("<i>Grid snap helps align elements precisely.</i>")
         )
         info_label.set_line_wrap(True)
         box.pack_start(info_label, False, False, 0)
@@ -3336,8 +3342,8 @@ class SettingsDialog:
         # Header
         header = Gtk.Label(xalign=0)
         header.set_markup(
-            "<b>Global Keyboard Shortcuts</b>\n"
-            "<small>Click a field, then press your desired key combination</small>"
+            _("<b>Global Keyboard Shortcuts</b>") + "\n"
+            + _("<small>Click a field, then press your desired key combination</small>")
         )
         box.pack_start(header, False, False, 0)
 
@@ -3350,11 +3356,11 @@ class SettingsDialog:
 
         # Hotkey definitions: (config_key, label, default)
         hotkeys = [
-            ("hotkey_fullscreen", "Fullscreen Capture:", "<Control><Shift>F"),
-            ("hotkey_region", "Region Capture:", "<Control><Shift>R"),
-            ("hotkey_window", "Window Capture:", "<Control><Shift>W"),
-            ("hotkey_record_gif", "Record GIF:", "<Control><Alt>G"),
-            ("hotkey_scroll_capture", "Scroll Capture:", "<Control><Alt>S"),
+            ("hotkey_fullscreen", _("Fullscreen Capture:"), "<Control><Shift>F"),
+            ("hotkey_region", _("Region Capture:"), "<Control><Shift>R"),
+            ("hotkey_window", _("Window Capture:"), "<Control><Shift>W"),
+            ("hotkey_record_gif", _("Record GIF:"), "<Control><Alt>G"),
+            ("hotkey_scroll_capture", _("Scroll Capture:"), "<Control><Alt>S"),
         ]
 
         self.hotkey_entries = {}
@@ -3369,7 +3375,7 @@ class SettingsDialog:
             grid.attach(entry, 1, row, 1, 1)
 
             # Reset button for this hotkey
-            reset_btn = Gtk.Button(label="Reset")
+            reset_btn = Gtk.Button(label=_("Reset"))
             reset_btn.set_tooltip_text(f"Reset to default: {self._format_hotkey(default)}")
             reset_btn.connect("clicked", self._on_reset_hotkey, key, default)
             grid.attach(reset_btn, 2, row, 1, 1)
@@ -3381,11 +3387,11 @@ class SettingsDialog:
         # Info section
         info_label = Gtk.Label(xalign=0)
         info_label.set_markup(
-            "<b>Notes:</b>\n\n"
-            "• Hotkeys require at least one modifier (Ctrl, Alt, Shift, Super)\n"
-            "• Press Escape to cancel while setting a hotkey\n"
-            "• Hotkeys work globally on GNOME desktop\n"
-            "• Restart LikX after changing hotkeys for them to take effect"
+            _("<b>Notes:</b>") + "\n\n"
+            + _("• Hotkeys require at least one modifier (Ctrl, Alt, Shift, Super)") + "\n"
+            + _("• Press Escape to cancel while setting a hotkey") + "\n"
+            + _("• Hotkeys work globally on GNOME desktop") + "\n"
+            + _("• Restart LikX after changing hotkeys for them to take effect")
         )
         info_label.set_line_wrap(True)
         box.pack_start(info_label, False, False, 0)
@@ -3401,6 +3407,65 @@ class SettingsDialog:
         display = display.replace("<Super>", "Super+")
         return display
 
+    def _create_language_settings(self) -> Gtk.Box:
+        """Create language settings tab."""
+        from .i18n import get_available_languages
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        box.set_border_width(10)
+
+        # Header
+        header = Gtk.Label(xalign=0)
+        header.set_markup(_("<b>Language Settings</b>"))
+        box.pack_start(header, False, False, 0)
+
+        box.pack_start(Gtk.Separator(), False, False, 5)
+
+        # Language selection
+        lang_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        lang_label = Gtk.Label(label=_("Interface language:"), xalign=0)
+        lang_label.set_size_request(150, -1)
+
+        self.language_combo = Gtk.ComboBoxText()
+
+        # Add system default option
+        self.language_combo.append("system", _("System Default"))
+
+        # Add available languages
+        languages = get_available_languages()
+        for code, name in languages:
+            self.language_combo.append(code, name)
+
+        # Set current language
+        current_lang = self.cfg.get("language", "system")
+        self.language_combo.set_active_id(current_lang)
+
+        lang_box.pack_start(lang_label, False, False, 0)
+        lang_box.pack_start(self.language_combo, False, False, 0)
+        box.pack_start(lang_box, False, False, 0)
+
+        box.pack_start(Gtk.Separator(), False, False, 10)
+
+        # Info
+        info_label = Gtk.Label(xalign=0)
+        info_label.set_markup(
+            _("<b>Note:</b> Restart LikX after changing the language\n"
+              "for the changes to take full effect.")
+        )
+        info_label.set_line_wrap(True)
+        box.pack_start(info_label, False, False, 0)
+
+        # Help contribute
+        contribute_label = Gtk.Label(xalign=0)
+        contribute_label.set_markup(
+            _("\n<b>Help translate LikX!</b>\n"
+              "Translation files are in the <tt>locale/</tt> directory.")
+        )
+        contribute_label.set_line_wrap(True)
+        box.pack_start(contribute_label, False, False, 0)
+
+        return box
+
     def _on_reset_hotkey(
         self, button: Gtk.Button, key: str, default: str
     ) -> None:
@@ -3411,7 +3476,7 @@ class SettingsDialog:
     def _browse_directory(self, button: Gtk.Button) -> None:
         """Browse for save directory."""
         dialog = Gtk.FileChooserDialog(
-            title="Select Save Directory",
+            title=_("Select Save Directory"),
             parent=self.dialog,
             action=Gtk.FileChooserAction.SELECT_FOLDER,
         )
@@ -3457,18 +3522,20 @@ class SettingsDialog:
             hotkey = entry.get_hotkey()
             if hotkey:
                 self.cfg[key] = hotkey
+        # Language settings
+        self.cfg["language"] = self.language_combo.get_active_id() or "system"
 
         if config.save_config(self.cfg):
             show_notification(
-                "Settings Saved",
-                "Your preferences have been saved.\n"
-                "Restart LikX to apply hotkey changes."
+                _("Settings Saved"),
+                _("Your preferences have been saved.") + "\n"
+                + _("Restart LikX to apply hotkey changes.")
             )
 
     def _reset_to_defaults(self) -> None:
         """Reset settings to defaults."""
         if config.reset_config():
-            show_notification("Settings Reset", "All settings reset to defaults")
+            show_notification(_("Settings Reset"), _("All settings reset to defaults"))
 
 
 def run_app() -> None:
@@ -3505,22 +3572,22 @@ def _EditorWindow_init_enhanced(self, result):
     self.sidebar.pack_start(feature_sep, False, False, 2)
 
     # === OCR Button ===
-    ocr_btn = Gtk.Button(label="OCR")
-    ocr_btn.set_tooltip_text("Extract text from image (Tesseract)")
+    ocr_btn = Gtk.Button(label=_("OCR"))
+    ocr_btn.set_tooltip_text(_("Extract text from image (Tesseract)"))
     ocr_btn.get_style_context().add_class("sidebar-btn")
     ocr_btn.connect("clicked", lambda b: self._extract_text())
     self.sidebar.pack_start(ocr_btn, False, False, 0)
 
     # === Pin Button ===
     pin_btn = Gtk.Button(label="📌")
-    pin_btn.set_tooltip_text("Pin to desktop (always on top)")
+    pin_btn.set_tooltip_text(_("Pin to desktop (always on top)"))
     pin_btn.get_style_context().add_class("sidebar-btn")
     pin_btn.connect("clicked", lambda b: self._pin_to_desktop())
     self.sidebar.pack_start(pin_btn, False, False, 0)
 
     # === Effects Popover Button ===
     effects_btn = Gtk.Button(label="FX")
-    effects_btn.set_tooltip_text("Image Effects")
+    effects_btn.set_tooltip_text(_("Image Effects"))
     effects_btn.get_style_context().add_class("sidebar-btn")
 
     effects_popover = Gtk.Popover()
@@ -3532,13 +3599,13 @@ def _EditorWindow_init_enhanced(self, result):
     effects_grid.set_margin_bottom(8)
 
     effects_items = [
-        ("✨ Drop Shadow", self._apply_shadow),
-        ("🖼 Add Border", self._apply_border),
-        ("🎨 Background", self._apply_background),
-        ("◐ Round Corners", self._apply_round_corners),
-        ("☀ Adjust Brightness/Contrast", self._show_adjust_dialog),
-        ("🔲 Grayscale", self._apply_grayscale),
-        ("🔄 Invert Colors", self._apply_invert),
+        ("✨ " + _("Drop Shadow"), self._apply_shadow),
+        ("🖼 " + _("Add Border"), self._apply_border),
+        ("🎨 " + _("Background"), self._apply_background),
+        ("◐ " + _("Round Corners"), self._apply_round_corners),
+        ("☀ " + _("Adjust Brightness/Contrast"), self._show_adjust_dialog),
+        ("🔲 " + _("Grayscale"), self._apply_grayscale),
+        ("🔄 " + _("Invert Colors"), self._apply_invert),
     ]
     for label, callback in effects_items:
         row = Gtk.Button(label=label)
@@ -3658,7 +3725,7 @@ def _pin_to_desktop(self):
 
     except Exception as e:
         self.statusbar.push(self.statusbar_context, f"Pin failed: {e}")
-        show_notification("Pin Failed", str(e), icon="dialog-error")
+        show_notification(_("Pin Failed"), str(e), icon="dialog-error")
 
 
 def _apply_shadow(self):
@@ -3757,7 +3824,7 @@ def _on_history(self, button):
     try:
         subprocess.Popen(["xdg-open", str(folder)])
     except Exception as e:
-        show_notification("Error", f"Could not open folder: {e}", icon="dialog-error")
+        show_notification(_("Error"), _("Could not open folder:") + f" {e}", icon="dialog-error")
 
 
 def _on_quick_actions(self, button):
@@ -3802,7 +3869,7 @@ def _show_adjust_dialog(self):
 
     # Brightness slider
     brightness_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-    brightness_label = Gtk.Label(label="Brightness:")
+    brightness_label = Gtk.Label(label=_("Brightness:"))
     brightness_label.set_size_request(100, -1)
     brightness_label.set_xalign(0)
     brightness_scale = Gtk.Scale.new_with_range(
@@ -3816,7 +3883,7 @@ def _show_adjust_dialog(self):
 
     # Contrast slider
     contrast_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-    contrast_label = Gtk.Label(label="Contrast:")
+    contrast_label = Gtk.Label(label=_("Contrast:"))
     contrast_label.set_size_request(100, -1)
     contrast_label.set_xalign(0)
     contrast_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, -100, 100, 5)

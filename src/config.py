@@ -48,6 +48,8 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "scroll_ignore_bottom": 0.15,  # Ignore bottom 15% (fixed footers)
     "scroll_confidence": 0.7,  # Template matching confidence threshold
     "hotkey_scroll_capture": "<Control><Alt>S",
+    # Language settings
+    "language": "system",  # "system" or language code like "en", "es", "fr"
 }
 
 # Configuration file path

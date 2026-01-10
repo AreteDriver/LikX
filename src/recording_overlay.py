@@ -14,6 +14,7 @@ except (ImportError, ValueError):
     GTK_AVAILABLE = False
 
 from . import config
+from .i18n import _
 
 
 class RecordingOverlay:
@@ -69,7 +70,7 @@ class RecordingOverlay:
         self.window.add(hbox)
 
         # Recording indicator (pulsing red dot)
-        self.indicator = Gtk.Label(label="REC")
+        self.indicator = Gtk.Label(label=_("REC"))
         self.indicator.get_style_context().add_class("recording-indicator")
         hbox.pack_start(self.indicator, False, False, 0)
 
@@ -79,7 +80,7 @@ class RecordingOverlay:
         hbox.pack_start(self.timer_label, False, False, 0)
 
         # Stop button
-        stop_btn = Gtk.Button(label="Stop")
+        stop_btn = Gtk.Button(label=_("Stop"))
         stop_btn.get_style_context().add_class("recording-stop")
         stop_btn.connect("clicked", self._on_stop_clicked)
         hbox.pack_start(stop_btn, False, False, 0)
