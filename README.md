@@ -3,6 +3,7 @@
 **Screenshot capture and annotation tool for Linux**
 
 [![CI](https://github.com/AreteDriver/LikX/actions/workflows/ci.yml/badge.svg)](https://github.com/AreteDriver/LikX/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/AreteDriver/LikX)](https://github.com/AreteDriver/LikX/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.8+](https://img.shields.io/badge/Python-3.8+-green.svg)](https://python.org)
 [![GTK: 3.0](https://img.shields.io/badge/GTK-3.0-orange.svg)](https://www.gtk.org/)
@@ -32,7 +33,7 @@
 - **Cloud upload**: Imgur, Amazon S3, Dropbox, Google Drive
 - **History browser**: Visual thumbnail browser for all captures
 - **Customizable hotkeys**: Configure all keyboard shortcuts
-- **Multi-language**: Interface available in English, Spanish, and more
+- **Multi-language**: 8 languages (English, Spanish, French, German, Portuguese, Italian, Russian, Japanese)
 
 ---
 
@@ -52,8 +53,8 @@ chmod +x LikX-*.AppImage
 
 ### Debian/Ubuntu (.deb)
 ```bash
-wget https://github.com/AreteDriver/LikX/releases/latest/download/likx_3.1.0_all.deb
-sudo dpkg -i likx_3.1.0_all.deb
+wget https://github.com/AreteDriver/LikX/releases/latest/download/likx_amd64.deb
+sudo dpkg -i likx_amd64.deb
 sudo apt-get install -f  # Fix dependencies
 ```
 
@@ -147,7 +148,7 @@ likx --window           # Capture window
 
 **Wayland:** gnome-screenshot (GNOME), spectacle (KDE), grim (Sway)
 
-**GIF Recording:** ffmpeg (X11), wf-recorder (Wayland)
+**GIF Recording:** ffmpeg (X11), wf-recorder (Wayland), gifsicle (optional, for optimization)
 
 **Scrolling Capture:** opencv-python-headless (pip), xdotool (X11), ydotool or wtype (Wayland)
 
@@ -176,9 +177,15 @@ LikX/
 │   ├── recording_overlay.py # GIF recording UI
 │   ├── scroll_capture.py    # Scrolling screenshots
 │   └── scroll_overlay.py    # Scroll capture UI
-├── locale/                  # Translation files
+├── locale/                  # Translation files (8 languages)
 │   ├── likx.pot             # Translation template
-│   └── es/LC_MESSAGES/      # Spanish translation
+│   ├── es/LC_MESSAGES/      # Spanish
+│   ├── fr/LC_MESSAGES/      # French
+│   ├── de/LC_MESSAGES/      # German
+│   ├── pt/LC_MESSAGES/      # Portuguese
+│   ├── it/LC_MESSAGES/      # Italian
+│   ├── ru/LC_MESSAGES/      # Russian
+│   └── ja/LC_MESSAGES/      # Japanese
 ├── snap/                    # Snap packaging
 ├── AppDir/                  # AppImage packaging
 └── debian/                  # Debian packaging
