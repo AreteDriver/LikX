@@ -149,6 +149,7 @@ cd snap && snapcraft
 - Translation function: `from src.i18n import _`
 - Template file: `locale/likx.pot`
 - Translations: `locale/<lang>/LC_MESSAGES/likx.po`
+- Available: en, es, fr, de, pt, it, ru, ja (8 languages)
 - Extract strings: `./scripts/extract_strings.sh`
 - Compile: `msgfmt locale/<lang>/LC_MESSAGES/likx.po -o locale/<lang>/LC_MESSAGES/likx.mo`
 
