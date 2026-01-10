@@ -24,6 +24,13 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     # Editor settings
     "grid_size": 20,  # Grid snap size in pixels (5-100)
     "snap_to_grid": False,  # Whether grid snap is enabled by default
+    # GIF recording settings
+    "gif_fps": 15,  # Frames per second (10-30)
+    "gif_quality": "medium",  # low, medium, high
+    "gif_max_duration": 60,  # Safety limit in seconds
+    "gif_colors": 256,  # Color palette size (128-256)
+    "gif_scale_factor": 1.0,  # Downscale factor (0.5-1.0)
+    "hotkey_record_gif": "<Control><Alt>G",
 }
 
 # Configuration file path
