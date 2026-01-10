@@ -37,8 +37,11 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "gif_fps": 15,  # Frames per second (10-30)
     "gif_quality": "medium",  # low, medium, high
     "gif_max_duration": 60,  # Safety limit in seconds
-    "gif_colors": 256,  # Color palette size (128-256)
-    "gif_scale_factor": 1.0,  # Downscale factor (0.5-1.0)
+    "gif_colors": 256,  # Color palette size (64-256)
+    "gif_scale_factor": 1.0,  # Downscale factor (0.25-1.0)
+    "gif_dither": "bayer",  # none, bayer, floyd_steinberg, sierra2
+    "gif_loop": 0,  # Loop count: 0=infinite, 1=once, 2+=specific count
+    "gif_optimize": True,  # Use gifsicle optimization if available
     "hotkey_record_gif": "<Control><Alt>G",
     # Scroll capture settings
     "scroll_delay_ms": 300,  # Delay between scroll+capture cycles

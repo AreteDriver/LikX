@@ -3001,6 +3001,10 @@ class SettingsDialog:
         capture_box = self._create_capture_settings()
         notebook.append_page(capture_box, Gtk.Label(label=_("Capture")))
 
+        # GIF settings tab
+        gif_box = self._create_gif_settings()
+        notebook.append_page(gif_box, Gtk.Label(label=_("GIF")))
+
         # Upload settings tab
         upload_box = self._create_upload_settings()
         notebook.append_page(upload_box, Gtk.Label(label=_("Upload")))
@@ -3103,6 +3107,118 @@ class SettingsDialog:
         self.cursor_check = Gtk.CheckButton(label=_("Include mouse cursor in screenshots"))
         self.cursor_check.set_active(self.cfg.get("include_cursor", False))
         box.pack_start(self.cursor_check, False, False, 0)
+
+        return box
+
+    def _create_gif_settings(self) -> Gtk.Box:
+        """Create GIF recording settings tab."""
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        box.set_border_width(10)
+
+        # Quality preset
+        quality_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        quality_label = Gtk.Label(label=_("Quality preset:"), xalign=0)
+        quality_label.set_size_request(150, -1)
+        self.gif_quality_combo = Gtk.ComboBoxText()
+        qualities = [("low", _("Low (smaller file)")),
+                     ("medium", _("Medium (balanced)")),
+                     ("high", _("High (best quality)"))]
+        for qid, qname in qualities:
+            self.gif_quality_combo.append(qid, qname)
+        self.gif_quality_combo.set_active_id(self.cfg.get("gif_quality", "medium"))
+        quality_box.pack_start(quality_label, False, False, 0)
+        quality_box.pack_start(self.gif_quality_combo, False, False, 0)
+        box.pack_start(quality_box, False, False, 0)
+
+        # FPS
+        fps_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        fps_label = Gtk.Label(label=_("Frame rate (FPS):"), xalign=0)
+        fps_label.set_size_request(150, -1)
+        self.gif_fps_spin = Gtk.SpinButton()
+        self.gif_fps_spin.set_range(5, 30)
+        self.gif_fps_spin.set_value(self.cfg.get("gif_fps", 15))
+        self.gif_fps_spin.set_increments(1, 5)
+        fps_box.pack_start(fps_label, False, False, 0)
+        fps_box.pack_start(self.gif_fps_spin, False, False, 0)
+        box.pack_start(fps_box, False, False, 0)
+
+        # Colors
+        colors_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        colors_label = Gtk.Label(label=_("Color palette size:"), xalign=0)
+        colors_label.set_size_request(150, -1)
+        self.gif_colors_combo = Gtk.ComboBoxText()
+        for c in ["64", "128", "192", "256"]:
+            self.gif_colors_combo.append(c, c + _(" colors"))
+        self.gif_colors_combo.set_active_id(str(self.cfg.get("gif_colors", 256)))
+        colors_box.pack_start(colors_label, False, False, 0)
+        colors_box.pack_start(self.gif_colors_combo, False, False, 0)
+        box.pack_start(colors_box, False, False, 0)
+
+        # Scale factor
+        scale_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        scale_label = Gtk.Label(label=_("Scale factor:"), xalign=0)
+        scale_label.set_size_request(150, -1)
+        self.gif_scale_combo = Gtk.ComboBoxText()
+        scales = [("1.0", "100%"), ("0.75", "75%"), ("0.5", "50%"), ("0.25", "25%")]
+        for sid, sname in scales:
+            self.gif_scale_combo.append(sid, sname)
+        self.gif_scale_combo.set_active_id(str(self.cfg.get("gif_scale_factor", 1.0)))
+        scale_box.pack_start(scale_label, False, False, 0)
+        scale_box.pack_start(self.gif_scale_combo, False, False, 0)
+        box.pack_start(scale_box, False, False, 0)
+
+        box.pack_start(Gtk.Separator(), False, False, 5)
+
+        # Dithering algorithm
+        dither_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        dither_label = Gtk.Label(label=_("Dithering:"), xalign=0)
+        dither_label.set_size_request(150, -1)
+        self.gif_dither_combo = Gtk.ComboBoxText()
+        dithers = [("none", _("None (sharp, may band)")),
+                   ("bayer", _("Bayer (ordered, fast)")),
+                   ("floyd_steinberg", _("Floyd-Steinberg (smooth)")),
+                   ("sierra2", _("Sierra (quality)"))]
+        for did, dname in dithers:
+            self.gif_dither_combo.append(did, dname)
+        self.gif_dither_combo.set_active_id(self.cfg.get("gif_dither", "bayer"))
+        dither_box.pack_start(dither_label, False, False, 0)
+        dither_box.pack_start(self.gif_dither_combo, False, False, 0)
+        box.pack_start(dither_box, False, False, 0)
+
+        # Loop count
+        loop_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        loop_label = Gtk.Label(label=_("Loop:"), xalign=0)
+        loop_label.set_size_request(150, -1)
+        self.gif_loop_combo = Gtk.ComboBoxText()
+        loops = [("0", _("Infinite")), ("1", _("Play once")),
+                 ("2", _("2 times")), ("3", _("3 times"))]
+        for lid, lname in loops:
+            self.gif_loop_combo.append(lid, lname)
+        self.gif_loop_combo.set_active_id(str(self.cfg.get("gif_loop", 0)))
+        loop_box.pack_start(loop_label, False, False, 0)
+        loop_box.pack_start(self.gif_loop_combo, False, False, 0)
+        box.pack_start(loop_box, False, False, 0)
+
+        box.pack_start(Gtk.Separator(), False, False, 5)
+
+        # Optimization checkbox
+        self.gif_optimize_check = Gtk.CheckButton(
+            label=_("Optimize with gifsicle (smaller file size)")
+        )
+        self.gif_optimize_check.set_active(self.cfg.get("gif_optimize", True))
+        box.pack_start(self.gif_optimize_check, False, False, 0)
+
+        # Max duration
+        duration_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        duration_label = Gtk.Label(label=_("Max duration (seconds):"), xalign=0)
+        duration_label.set_size_request(150, -1)
+        self.gif_max_duration_spin = Gtk.SpinButton()
+        self.gif_max_duration_spin.set_range(5, 300)
+        self.gif_max_duration_spin.set_value(self.cfg.get("gif_max_duration", 60))
+        self.gif_max_duration_spin.set_increments(5, 30)
+        duration_box.pack_start(duration_label, False, False, 0)
+        duration_box.pack_start(self.gif_max_duration_spin, False, False, 0)
+        box.pack_start(duration_box, False, False, 0)
 
         return box
 
@@ -3517,6 +3633,15 @@ class SettingsDialog:
         # Editor settings
         self.cfg["grid_size"] = int(self.grid_size_scale.get_value())
         self.cfg["snap_to_grid"] = self.snap_grid_check.get_active()
+        # GIF settings
+        self.cfg["gif_quality"] = self.gif_quality_combo.get_active_id() or "medium"
+        self.cfg["gif_fps"] = int(self.gif_fps_spin.get_value())
+        self.cfg["gif_colors"] = int(self.gif_colors_combo.get_active_id() or "256")
+        self.cfg["gif_scale_factor"] = float(self.gif_scale_combo.get_active_id() or "1.0")
+        self.cfg["gif_dither"] = self.gif_dither_combo.get_active_id() or "bayer"
+        self.cfg["gif_loop"] = int(self.gif_loop_combo.get_active_id() or "0")
+        self.cfg["gif_optimize"] = self.gif_optimize_check.get_active()
+        self.cfg["gif_max_duration"] = int(self.gif_max_duration_spin.get_value())
         # Hotkey settings
         for key, entry in self.hotkey_entries.items():
             hotkey = entry.get_hotkey()

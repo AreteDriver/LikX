@@ -285,3 +285,139 @@ class TestConfigIntegration:
 
         cfg = config.load_config()
         assert "gif_max_duration" in cfg
+
+    def test_uses_config_dither(self):
+        """Test that config has dither setting."""
+        from src import config
+
+        cfg = config.load_config()
+        assert "gif_dither" in cfg
+        assert cfg["gif_dither"] in ["none", "bayer", "floyd_steinberg", "sierra2", "sierra2_4a"]
+
+    def test_uses_config_loop(self):
+        """Test that config has loop setting."""
+        from src import config
+
+        cfg = config.load_config()
+        assert "gif_loop" in cfg
+        assert isinstance(cfg["gif_loop"], int)
+        assert cfg["gif_loop"] >= 0
+
+    def test_uses_config_optimize(self):
+        """Test that config has optimize setting."""
+        from src import config
+
+        cfg = config.load_config()
+        assert "gif_optimize" in cfg
+        assert isinstance(cfg["gif_optimize"], bool)
+
+    def test_uses_config_colors(self):
+        """Test that config has colors setting."""
+        from src import config
+
+        cfg = config.load_config()
+        assert "gif_colors" in cfg
+        assert cfg["gif_colors"] in [64, 128, 192, 256]
+
+    def test_uses_config_scale_factor(self):
+        """Test that config has scale_factor setting."""
+        from src import config
+
+        cfg = config.load_config()
+        assert "gif_scale_factor" in cfg
+        assert 0.25 <= cfg["gif_scale_factor"] <= 1.0
+
+
+class TestGifsicleCheck:
+    """Test gifsicle availability check."""
+
+    def test_check_gifsicle_method_exists(self):
+        """Test that _check_gifsicle method exists."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        assert hasattr(recorder, "_check_gifsicle")
+        assert callable(recorder._check_gifsicle)
+
+    def test_gifsicle_available_attribute(self):
+        """Test that gifsicle_available attribute exists."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        assert hasattr(recorder, "gifsicle_available")
+        assert isinstance(recorder.gifsicle_available, bool)
+
+    def test_check_gifsicle_available(self):
+        """Test gifsicle check when available."""
+        from src.recorder import GifRecorder
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            recorder = GifRecorder()
+            result = recorder._check_gifsicle()
+            assert result is True
+
+    def test_check_gifsicle_not_available(self):
+        """Test gifsicle check when not available."""
+        from src.recorder import GifRecorder
+
+        with patch("subprocess.run", side_effect=FileNotFoundError):
+            recorder = GifRecorder()
+            result = recorder._check_gifsicle()
+            assert result is False
+
+
+class TestDitherOptions:
+    """Test dither options helper method."""
+
+    def test_get_dither_options_method_exists(self):
+        """Test that _get_dither_options method exists."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        assert hasattr(recorder, "_get_dither_options")
+        assert callable(recorder._get_dither_options)
+
+    def test_get_dither_none(self):
+        """Test dither option: none."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        result = recorder._get_dither_options("none")
+        assert "dither=none" in result
+
+    def test_get_dither_bayer(self):
+        """Test dither option: bayer."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        result = recorder._get_dither_options("bayer")
+        assert "dither=bayer" in result
+
+    def test_get_dither_floyd_steinberg(self):
+        """Test dither option: floyd_steinberg."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        result = recorder._get_dither_options("floyd_steinberg")
+        assert "dither=floyd_steinberg" in result
+
+    def test_get_dither_unknown_defaults_to_bayer(self):
+        """Test that unknown dither defaults to bayer."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        result = recorder._get_dither_options("unknown_dither")
+        assert "dither=bayer" in result
+
+
+class TestOptimizeGif:
+    """Test GIF optimization method."""
+
+    def test_optimize_gif_method_exists(self):
+        """Test that _optimize_gif method exists."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        assert hasattr(recorder, "_optimize_gif")
+        assert callable(recorder._optimize_gif)
