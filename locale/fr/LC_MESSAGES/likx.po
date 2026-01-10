@@ -1,0 +1,510 @@
+# French translation for LikX
+# Copyright (C) 2026 LikX Contributors
+# This file is distributed under the same license as the LikX package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: LikX 3.23.0\n"
+"Report-Msgid-Bugs-To: https://github.com/AreteDriver/LikX/issues\n"
+"POT-Creation-Date: 2026-01-10 10:16-0800\n"
+"PO-Revision-Date: 2026-01-10 12:00-0800\n"
+"Last-Translator: LikX Team\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Pen Tool"
+msgstr "Outil Stylo"
+
+msgid "Highlighter"
+msgstr "Surligneur"
+
+msgid "Arrow Tool"
+msgstr "Outil Flèche"
+
+msgid "Text Tool"
+msgstr "Outil Texte"
+
+msgid "Blur Tool"
+msgstr "Outil Flou"
+
+msgid "Pixelate Tool"
+msgstr "Outil Pixélisation"
+
+msgid "Rectangle"
+msgstr "Rectangle"
+
+msgid "Ellipse"
+msgstr "Ellipse"
+
+msgid "Line Tool"
+msgstr "Outil Ligne"
+
+msgid "Crop Tool"
+msgstr "Outil Recadrage"
+
+msgid "Eraser"
+msgstr "Gomme"
+
+msgid "Number Marker"
+msgstr "Marqueur Numérique"
+
+msgid "Measure Tool"
+msgstr "Outil de Mesure"
+
+msgid "Color Picker"
+msgstr "Pipette"
+
+msgid "Stamp Tool"
+msgstr "Outil Tampon"
+
+msgid "Zoom Tool"
+msgstr "Outil Zoom"
+
+msgid "Callout Tool"
+msgstr "Outil Bulle"
+
+msgid "Zoom In"
+msgstr "Zoom Avant"
+
+msgid "Zoom Out"
+msgstr "Zoom Arrière"
+
+msgid "Reset Zoom"
+msgstr "Réinitialiser le Zoom"
+
+msgid "Save"
+msgstr "Enregistrer"
+
+msgid "Copy to Clipboard"
+msgstr "Copier dans le Presse-papiers"
+
+msgid "Upload to Cloud"
+msgstr "Téléverser vers le Cloud"
+
+msgid "Undo"
+msgstr "Annuler"
+
+msgid "Redo"
+msgstr "Rétablir"
+
+msgid "Clear All Annotations"
+msgstr "Effacer Toutes les Annotations"
+
+msgid "Add Shadow"
+msgstr "Ajouter une Ombre"
+
+msgid "Add Border"
+msgstr "Ajouter une Bordure"
+
+msgid "Round Corners"
+msgstr "Coins Arrondis"
+
+msgid "OCR - Extract Text"
+msgstr "OCR - Extraire le Texte"
+
+msgid "Pin to Desktop"
+msgstr "Épingler sur le Bureau"
+
+msgid "Screenshot Saved"
+msgstr "Capture d'Écran Enregistrée"
+
+msgid "Saved to"
+msgstr "Enregistré dans"
+
+msgid "Screenshot Copied"
+msgstr "Capture d'Écran Copiée"
+
+msgid "Screenshot copied to clipboard"
+msgstr "Capture d'écran copiée dans le presse-papiers"
+
+msgid "Upload Successful"
+msgstr "Téléversement Réussi"
+
+msgid "URL copied to clipboard:"
+msgstr "URL copiée dans le presse-papiers :"
+
+msgid "Upload Failed"
+msgstr "Échec du Téléversement"
+
+msgid "REC"
+msgstr "ENR"
+
+msgid "Stop"
+msgstr "Arrêter"
+
+msgid "Frames:"
+msgstr "Images :"
+
+msgid "Height:"
+msgstr "Hauteur :"
+
+msgid "(Primary)"
+msgstr "(Principal)"
+
+msgid "Size:"
+msgstr "Taille :"
+
+msgid "Color:"
+msgstr "Couleur :"
+
+msgid "Pick color"
+msgstr "Choisir la couleur"
+
+msgid "Color palette"
+msgstr "Palette de couleurs"
+
+msgid "Bold"
+msgstr "Gras"
+
+msgid "Italic"
+msgstr "Italique"
+
+msgid "Select stamp"
+msgstr "Sélectionner un tampon"
+
+msgid "Recent:"
+msgstr "Récent :"
+
+msgid "Enter text:"
+msgstr "Entrer le texte :"
+
+msgid "Enter callout text:"
+msgstr "Entrer le texte de la bulle :"
+
+msgid "Select which monitor to capture:"
+msgstr "Sélectionner l'écran à capturer :"
+
+msgid "All Monitors (combined)"
+msgstr "Tous les Écrans (combinés)"
+
+msgid "Capture Failed"
+msgstr "Échec de la Capture"
+
+msgid "Region Selection Failed"
+msgstr "Échec de la Sélection de Région"
+
+msgid "Recording Unavailable"
+msgstr "Enregistrement Non Disponible"
+
+msgid "Recording Failed"
+msgstr "Échec de l'Enregistrement"
+
+msgid "Processing"
+msgstr "Traitement"
+
+msgid "Encoding GIF..."
+msgstr "Encodage du GIF..."
+
+msgid "GIF Saved"
+msgstr "GIF Enregistré"
+
+msgid "Duration:"
+msgstr "Durée :"
+
+msgid "Scroll Capture Unavailable"
+msgstr "Capture par Défilement Non Disponible"
+
+msgid "Scroll Capture Failed"
+msgstr "Échec de la Capture par Défilement"
+
+msgid "Capture Error"
+msgstr "Erreur de Capture"
+
+msgid "Settings"
+msgstr "Paramètres"
+
+msgid "Reset to Defaults"
+msgstr "Réinitialiser par Défaut"
+
+msgid "General"
+msgstr "Général"
+
+msgid "Capture"
+msgstr "Capture"
+
+msgid "GIF"
+msgstr "GIF"
+
+msgid "Upload"
+msgstr "Téléversement"
+
+msgid "Editor"
+msgstr "Éditeur"
+
+msgid "Hotkeys"
+msgstr "Raccourcis"
+
+msgid "Language"
+msgstr "Langue"
+
+msgid "Save directory:"
+msgstr "Dossier de sauvegarde :"
+
+msgid "Browse..."
+msgstr "Parcourir..."
+
+msgid "Default format:"
+msgstr "Format par défaut :"
+
+msgid "Auto-save screenshots (skip editor)"
+msgstr "Enregistrer automatiquement (ignorer l'éditeur)"
+
+msgid "Copy to clipboard automatically"
+msgstr "Copier automatiquement dans le presse-papiers"
+
+msgid "Show desktop notifications"
+msgstr "Afficher les notifications"
+
+msgid "Open editor after capture"
+msgstr "Ouvrir l'éditeur après la capture"
+
+msgid "Capture delay (seconds):"
+msgstr "Délai de capture (secondes) :"
+
+msgid "Include mouse cursor in screenshots"
+msgstr "Inclure le curseur de souris"
+
+msgid "Quality preset:"
+msgstr "Préréglage de qualité :"
+
+msgid "Low (smaller file)"
+msgstr "Bas (fichier plus petit)"
+
+msgid "Medium (balanced)"
+msgstr "Moyen (équilibré)"
+
+msgid "High (best quality)"
+msgstr "Élevé (meilleure qualité)"
+
+msgid "Frame rate (FPS):"
+msgstr "Fréquence d'images (FPS) :"
+
+msgid "Color palette size:"
+msgstr "Taille de la palette :"
+
+msgid " colors"
+msgstr " couleurs"
+
+msgid "Scale factor:"
+msgstr "Facteur d'échelle :"
+
+msgid "Dithering:"
+msgstr "Tramage :"
+
+msgid "None (sharp, may band)"
+msgstr "Aucun (net, peut présenter des bandes)"
+
+msgid "Bayer (ordered, fast)"
+msgstr "Bayer (ordonné, rapide)"
+
+msgid "Floyd-Steinberg (smooth)"
+msgstr "Floyd-Steinberg (lisse)"
+
+msgid "Sierra (quality)"
+msgstr "Sierra (qualité)"
+
+msgid "Loop:"
+msgstr "Boucle :"
+
+msgid "Infinite"
+msgstr "Infinie"
+
+msgid "Play once"
+msgstr "Jouer une fois"
+
+msgid "2 times"
+msgstr "2 fois"
+
+msgid "3 times"
+msgstr "3 fois"
+
+msgid "Optimize with gifsicle (smaller file size)"
+msgstr "Optimiser avec gifsicle (taille réduite)"
+
+msgid "Max duration (seconds):"
+msgstr "Durée max (secondes) :"
+
+msgid "Upload service:"
+msgstr "Service de téléversement :"
+
+msgid "Automatically upload after save"
+msgstr "Téléverser automatiquement après la sauvegarde"
+
+msgid "S3 Settings"
+msgstr "Paramètres S3"
+
+msgid "Bucket:"
+msgstr "Bucket :"
+
+msgid "Region:"
+msgstr "Région :"
+
+msgid "Make uploaded files public"
+msgstr "Rendre les fichiers publics"
+
+msgid "Dropbox Settings"
+msgstr "Paramètres Dropbox"
+
+msgid "Access Token:"
+msgstr "Jeton d'Accès :"
+
+msgid "Get token from Dropbox Developer Console"
+msgstr "Obtenir le jeton depuis la Console Développeur Dropbox"
+
+msgid "Google Drive Settings"
+msgstr "Paramètres Google Drive"
+
+msgid "Folder ID:"
+msgstr "ID du Dossier :"
+
+msgid "<b>Grid Settings</b>"
+msgstr "<b>Paramètres de Grille</b>"
+
+msgid "Grid size (pixels):"
+msgstr "Taille de la grille (pixels) :"
+
+msgid "Enable grid snap by default (Ctrl+' to toggle)"
+msgstr "Activer l'accrochage à la grille par défaut (Ctrl+' pour basculer)"
+
+msgid "<b>Keyboard Shortcuts:</b>"
+msgstr "<b>Raccourcis Clavier :</b>"
+
+msgid "• <b>Ctrl+'</b>: Toggle grid snap on/off"
+msgstr "• <b>Ctrl+'</b> : Activer/désactiver l'accrochage"
+
+msgid "• <b>Arrow keys</b>: Nudge 1px (or snap to grid)"
+msgstr "• <b>Touches fléchées</b> : Déplacer de 1px (ou accrocher)"
+
+msgid "• <b>Shift+Arrow</b>: Nudge 10px"
+msgstr "• <b>Maj+Flèche</b> : Déplacer de 10px"
+
+msgid "<i>Grid snap helps align elements precisely.</i>"
+msgstr "<i>L'accrochage aide à aligner précisément les éléments.</i>"
+
+msgid "<b>Global Keyboard Shortcuts</b>"
+msgstr "<b>Raccourcis Clavier Globaux</b>"
+
+msgid "<small>Click a field, then press your desired key combination</small>"
+msgstr "<small>Cliquez sur un champ, puis appuyez sur la combinaison souhaitée</small>"
+
+msgid "Fullscreen Capture:"
+msgstr "Capture Plein Écran :"
+
+msgid "Region Capture:"
+msgstr "Capture de Région :"
+
+msgid "Window Capture:"
+msgstr "Capture de Fenêtre :"
+
+msgid "Record GIF:"
+msgstr "Enregistrer GIF :"
+
+msgid "Scroll Capture:"
+msgstr "Capture par Défilement :"
+
+msgid "Reset"
+msgstr "Réinitialiser"
+
+msgid "<b>Notes:</b>"
+msgstr "<b>Notes :</b>"
+
+msgid "• Hotkeys require at least one modifier (Ctrl, Alt, Shift, Super)"
+msgstr "• Les raccourcis nécessitent un modificateur (Ctrl, Alt, Maj, Super)"
+
+msgid "• Press Escape to cancel while setting a hotkey"
+msgstr "• Appuyez sur Échap pour annuler"
+
+msgid "• Hotkeys work globally on GNOME desktop"
+msgstr "• Les raccourcis fonctionnent globalement sur GNOME"
+
+msgid "• Restart LikX after changing hotkeys for them to take effect"
+msgstr "• Redémarrez LikX après modification des raccourcis"
+
+msgid "<b>Language Settings</b>"
+msgstr "<b>Paramètres de Langue</b>"
+
+msgid "Interface language:"
+msgstr "Langue de l'interface :"
+
+msgid "System Default"
+msgstr "Système par Défaut"
+
+msgid ""
+"<b>Note:</b> Restart LikX after changing the language\n"
+"for the changes to take full effect."
+msgstr ""
+"<b>Note :</b> Redémarrez LikX après avoir changé la langue\n"
+"pour que les modifications prennent effet."
+
+msgid ""
+"\n"
+"<b>Help translate LikX!</b>\n"
+"Translation files are in the <tt>locale/</tt> directory."
+msgstr ""
+"\n"
+"<b>Aidez à traduire LikX !</b>\n"
+"Les fichiers de traduction sont dans le dossier <tt>locale/</tt>."
+
+msgid "Select Save Directory"
+msgstr "Sélectionner le Dossier de Sauvegarde"
+
+msgid "Settings Saved"
+msgstr "Paramètres Enregistrés"
+
+msgid "Your preferences have been saved."
+msgstr "Vos préférences ont été enregistrées."
+
+msgid "Restart LikX to apply hotkey changes."
+msgstr "Redémarrez LikX pour appliquer les raccourcis."
+
+msgid "Settings Reset"
+msgstr "Paramètres Réinitialisés"
+
+msgid "All settings reset to defaults"
+msgstr "Tous les paramètres réinitialisés par défaut"
+
+msgid "OCR"
+msgstr "OCR"
+
+msgid "Extract text from image (Tesseract)"
+msgstr "Extraire le texte de l'image (Tesseract)"
+
+msgid "Pin to desktop (always on top)"
+msgstr "Épingler sur le bureau (toujours visible)"
+
+msgid "Image Effects"
+msgstr "Effets d'Image"
+
+msgid "Drop Shadow"
+msgstr "Ombre Portée"
+
+msgid "Background"
+msgstr "Arrière-plan"
+
+msgid "Adjust Brightness/Contrast"
+msgstr "Régler Luminosité/Contraste"
+
+msgid "Grayscale"
+msgstr "Niveaux de Gris"
+
+msgid "Invert Colors"
+msgstr "Inverser les Couleurs"
+
+msgid "Pin Failed"
+msgstr "Échec de l'Épinglage"
+
+msgid "Error"
+msgstr "Erreur"
+
+msgid "Could not open folder:"
+msgstr "Impossible d'ouvrir le dossier :"
+
+msgid "Brightness:"
+msgstr "Luminosité :"
+
+msgid "Contrast:"
+msgstr "Contraste :"
