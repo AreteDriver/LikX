@@ -353,3 +353,220 @@ class TestHistoryWindowAvailability:
         assert hasattr(HistoryWindow, "__init__")
         assert hasattr(HistoryWindow, "_create_toolbar")
         assert hasattr(HistoryWindow, "_load_history")
+
+    def test_history_window_has_event_handlers(self):
+        from src.history import HistoryWindow
+        assert hasattr(HistoryWindow, "_on_item_activated")
+        assert hasattr(HistoryWindow, "_on_delete")
+        assert hasattr(HistoryWindow, "_on_clear_all")
+        assert hasattr(HistoryWindow, "_on_open_folder")
+
+
+class TestHistoryManagerSaveLoad:
+    """Test HistoryManager save/load cycle."""
+
+    @patch("src.history.config.get_config_dir")
+    @patch("src.history.config.ensure_config_dir")
+    def test_save_creates_file(self, mock_ensure, mock_config_dir):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_config_dir.return_value = Path(tmpdir)
+
+            fake_file = Path(tmpdir) / "test.png"
+            fake_file.touch()
+
+            from src.history import HistoryManager
+            manager = HistoryManager()
+            manager.add(fake_file, "fullscreen")
+
+            history_file = Path(tmpdir) / "history.json"
+            assert history_file.exists()
+
+    @patch("src.history.config.get_config_dir")
+    @patch("src.history.config.ensure_config_dir")
+    def test_save_valid_json(self, mock_ensure, mock_config_dir):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_config_dir.return_value = Path(tmpdir)
+
+            fake_file = Path(tmpdir) / "test.png"
+            fake_file.touch()
+
+            from src.history import HistoryManager
+            manager = HistoryManager()
+            manager.add(fake_file, "region")
+
+            history_file = Path(tmpdir) / "history.json"
+            with open(history_file) as f:
+                data = json.load(f)
+
+            assert isinstance(data, list)
+            assert len(data) == 1
+            assert data[0]["mode"] == "region"
+
+    @patch("src.history.config.get_config_dir")
+    def test_load_with_missing_mode_key(self, mock_config_dir):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_config_dir.return_value = Path(tmpdir)
+
+            # Create a file for the history entry
+            test_file = Path(tmpdir) / "test.png"
+            test_file.touch()
+
+            # Create history with missing mode key
+            history_file = Path(tmpdir) / "history.json"
+            history_data = [
+                {
+                    "filepath": str(test_file),
+                    "timestamp": "2024-01-15T10:30:00"
+                    # mode is missing
+                }
+            ]
+            history_file.write_text(json.dumps(history_data))
+
+            from src.history import HistoryManager
+            manager = HistoryManager()
+
+            # Should load with default mode
+            assert len(manager.entries) == 1
+            assert manager.entries[0].mode == "unknown"
+
+
+class TestHistoryEntryRoundTrip:
+    """Test HistoryEntry serialization round trip."""
+
+    def test_to_dict_from_dict_roundtrip(self):
+        from src.history import HistoryEntry
+
+        original = HistoryEntry(
+            Path("/path/to/image.png"),
+            datetime(2024, 3, 15, 14, 30, 45),
+            "window"
+        )
+
+        # Round trip
+        data = original.to_dict()
+        restored = HistoryEntry.from_dict(data)
+
+        assert restored.filepath == original.filepath
+        assert restored.timestamp == original.timestamp
+        assert restored.mode == original.mode
+
+
+class TestHistoryManagerModes:
+    """Test different capture modes in history."""
+
+    @patch("src.history.config.get_config_dir")
+    @patch("src.history.config.ensure_config_dir")
+    def test_add_fullscreen_mode(self, mock_ensure, mock_config_dir):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_config_dir.return_value = Path(tmpdir)
+
+            fake_file = Path(tmpdir) / "test.png"
+            fake_file.touch()
+
+            from src.history import HistoryManager
+            manager = HistoryManager()
+            manager.add(fake_file, "fullscreen")
+
+            assert manager.entries[0].mode == "fullscreen"
+
+    @patch("src.history.config.get_config_dir")
+    @patch("src.history.config.ensure_config_dir")
+    def test_add_region_mode(self, mock_ensure, mock_config_dir):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_config_dir.return_value = Path(tmpdir)
+
+            fake_file = Path(tmpdir) / "test.png"
+            fake_file.touch()
+
+            from src.history import HistoryManager
+            manager = HistoryManager()
+            manager.add(fake_file, "region")
+
+            assert manager.entries[0].mode == "region"
+
+    @patch("src.history.config.get_config_dir")
+    @patch("src.history.config.ensure_config_dir")
+    def test_add_window_mode(self, mock_ensure, mock_config_dir):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_config_dir.return_value = Path(tmpdir)
+
+            fake_file = Path(tmpdir) / "test.png"
+            fake_file.touch()
+
+            from src.history import HistoryManager
+            manager = HistoryManager()
+            manager.add(fake_file, "window")
+
+            assert manager.entries[0].mode == "window"
+
+    @patch("src.history.config.get_config_dir")
+    @patch("src.history.config.ensure_config_dir")
+    def test_add_gif_mode(self, mock_ensure, mock_config_dir):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_config_dir.return_value = Path(tmpdir)
+
+            fake_file = Path(tmpdir) / "test.gif"
+            fake_file.touch()
+
+            from src.history import HistoryManager
+            manager = HistoryManager()
+            manager.add(fake_file, "gif")
+
+            assert manager.entries[0].mode == "gif"
+
+    @patch("src.history.config.get_config_dir")
+    @patch("src.history.config.ensure_config_dir")
+    def test_add_scroll_mode(self, mock_ensure, mock_config_dir):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_config_dir.return_value = Path(tmpdir)
+
+            fake_file = Path(tmpdir) / "test.png"
+            fake_file.touch()
+
+            from src.history import HistoryManager
+            manager = HistoryManager()
+            manager.add(fake_file, "scroll")
+
+            assert manager.entries[0].mode == "scroll"
+
+
+class TestHistoryManagerIOErrors:
+    """Test HistoryManager IO error handling."""
+
+    @patch("src.history.config.get_config_dir")
+    @patch("src.history.config.ensure_config_dir")
+    def test_save_handles_io_error(self, mock_ensure, mock_config_dir):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_config_dir.return_value = Path(tmpdir)
+
+            from src.history import HistoryManager
+            manager = HistoryManager()
+
+            # Make the history file path a directory to cause IOError
+            history_file = Path(tmpdir) / "history.json"
+            history_file.mkdir()
+
+            # Should not raise, just silently fail
+            manager.save()
+
+    @patch("src.history.config.get_config_dir")
+    def test_load_handles_key_error(self, mock_config_dir):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_config_dir.return_value = Path(tmpdir)
+
+            # Create history with missing required key
+            history_file = Path(tmpdir) / "history.json"
+            history_data = [
+                {
+                    # Missing filepath key
+                    "timestamp": "2024-01-15T10:30:00",
+                    "mode": "fullscreen"
+                }
+            ]
+            history_file.write_text(json.dumps(history_data))
+
+            from src.history import HistoryManager
+            manager = HistoryManager()
+
+            # Should handle gracefully
+            assert manager.entries == []

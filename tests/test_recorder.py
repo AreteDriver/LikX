@@ -421,3 +421,136 @@ class TestOptimizeGif:
         recorder = GifRecorder()
         assert hasattr(recorder, "_optimize_gif")
         assert callable(recorder._optimize_gif)
+
+    def test_optimize_gif_returns_bool(self):
+        """Test that _optimize_gif returns boolean."""
+        from src.recorder import GifRecorder
+        from pathlib import Path
+
+        recorder = GifRecorder()
+        recorder.gifsicle_available = False
+
+        # Should return False when gifsicle not available
+        result = recorder._optimize_gif(Path("/nonexistent.gif"))
+        assert result is False
+
+    def test_optimize_gif_with_gifsicle_not_available(self):
+        """Test optimization when gifsicle is not available."""
+        from src.recorder import GifRecorder
+        from pathlib import Path
+
+        recorder = GifRecorder()
+        recorder.gifsicle_available = False
+
+        result = recorder._optimize_gif(Path("/tmp/test.gif"))
+        assert result is False
+
+
+class TestDitherOptionsSierra:
+    """Test sierra dither options."""
+
+    def test_get_dither_sierra2(self):
+        """Test dither option: sierra2."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        result = recorder._get_dither_options("sierra2")
+        assert "dither=sierra2" in result
+
+    def test_get_dither_sierra2_4a(self):
+        """Test dither option: sierra2_4a."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        result = recorder._get_dither_options("sierra2_4a")
+        assert "dither=sierra2_4a" in result
+
+
+class TestRecorderTempFiles:
+    """Test temp file handling."""
+
+    def test_temp_video_attribute(self):
+        """Test temp_video attribute exists."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        assert hasattr(recorder, "temp_video")
+        assert recorder.temp_video is None
+
+
+class TestRecorderWaylandSupport:
+    """Test Wayland support detection."""
+
+    def test_display_server_attribute(self):
+        """Test display_server attribute exists."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        assert hasattr(recorder, "display_server")
+
+    def test_wf_recorder_availability_check(self):
+        """Test wf-recorder availability is checked."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        assert hasattr(recorder, "wf_recorder_available")
+        assert isinstance(recorder.wf_recorder_available, bool)
+
+
+class TestRecordingResultAttributes:
+    """Test RecordingResult dataclass attributes."""
+
+    def test_recording_result_with_duration(self):
+        """Test RecordingResult with duration."""
+        from src.recorder import RecordingResult
+        from pathlib import Path
+
+        result = RecordingResult(
+            success=True,
+            filepath=Path("/tmp/test.gif"),
+            duration=5.0
+        )
+        assert result.duration == 5.0
+
+    def test_recording_result_defaults(self):
+        """Test RecordingResult default values."""
+        from src.recorder import RecordingResult
+
+        result = RecordingResult(success=False)
+        assert result.filepath is None
+        assert result.error is None
+        assert result.duration == 0.0
+
+
+class TestRecorderStateCallbacks:
+    """Test state change callbacks."""
+
+    def test_on_state_change_callback(self):
+        """Test _on_state_change callback can be set."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        callback = MagicMock()
+        recorder._on_state_change = callback
+
+        assert recorder._on_state_change is callback
+
+
+class TestRecorderConfigValues:
+    """Test config value usage."""
+
+    def test_config_gif_dither_values(self):
+        """Test valid dither config values."""
+        from src import config
+
+        cfg = config.load_config()
+        valid_dithers = ["none", "bayer", "floyd_steinberg", "sierra2", "sierra2_4a"]
+        assert cfg["gif_dither"] in valid_dithers
+
+    def test_config_gif_loop_zero_is_infinite(self):
+        """Test that loop=0 means infinite."""
+        from src import config
+
+        cfg = config.load_config()
+        # 0 = infinite loop in GIF spec
+        assert cfg["gif_loop"] >= 0

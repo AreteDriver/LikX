@@ -284,3 +284,63 @@ class TestEffectsEdgeCases:
 
         result = round_corners(mock_pixbuf, radius=100)
         assert result == mock_pixbuf
+
+
+class TestEffectsModuleLevel:
+    """Test module-level properties."""
+
+    def test_module_has_gtk_available(self):
+        """Test module has GTK_AVAILABLE flag."""
+        from src import effects
+        assert hasattr(effects, "GTK_AVAILABLE")
+        assert isinstance(effects.GTK_AVAILABLE, bool)
+
+    def test_all_functions_defined(self):
+        """Test all expected functions are defined."""
+        from src import effects
+        assert hasattr(effects, "add_shadow")
+        assert hasattr(effects, "add_border")
+        assert hasattr(effects, "add_background")
+        assert hasattr(effects, "round_corners")
+        assert hasattr(effects, "adjust_brightness_contrast")
+        assert hasattr(effects, "invert_colors")
+        assert hasattr(effects, "grayscale")
+
+
+class TestEffectsSierraAndSierra2Dither:
+    """Test sierra dither options."""
+
+    def test_add_shadow_callable(self):
+        """Test add_shadow is callable."""
+        from src.effects import add_shadow
+        assert callable(add_shadow)
+
+    def test_add_border_callable(self):
+        """Test add_border is callable."""
+        from src.effects import add_border
+        assert callable(add_border)
+
+    def test_add_background_callable(self):
+        """Test add_background is callable."""
+        from src.effects import add_background
+        assert callable(add_background)
+
+    def test_round_corners_callable(self):
+        """Test round_corners is callable."""
+        from src.effects import round_corners
+        assert callable(round_corners)
+
+    def test_adjust_brightness_contrast_callable(self):
+        """Test adjust_brightness_contrast is callable."""
+        from src.effects import adjust_brightness_contrast
+        assert callable(adjust_brightness_contrast)
+
+    def test_invert_colors_callable(self):
+        """Test invert_colors is callable."""
+        from src.effects import invert_colors
+        assert callable(invert_colors)
+
+    def test_grayscale_callable(self):
+        """Test grayscale is callable."""
+        from src.effects import grayscale
+        assert callable(grayscale)
