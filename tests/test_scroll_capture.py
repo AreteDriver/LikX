@@ -73,8 +73,17 @@ class TestScrollCaptureManagerInit:
 
         manager = ScrollCaptureManager()
         assert hasattr(manager, "xdotool_available")
+        assert hasattr(manager, "ydotool_available")
+        assert hasattr(manager, "wtype_available")
         # OpenCV is module-level constant
         assert isinstance(OPENCV_AVAILABLE, bool)
+
+    def test_init_detects_display_server(self):
+        """Test that init detects display server."""
+        from src.scroll_capture import ScrollCaptureManager
+
+        manager = ScrollCaptureManager()
+        assert hasattr(manager, "display_server")
 
 
 class TestIsAvailable:
@@ -100,6 +109,79 @@ class TestIsAvailable:
             assert isinstance(error, str)
         else:
             assert error is None
+
+    def test_is_available_x11_with_xdotool(self):
+        """Test availability on X11 with xdotool."""
+        from src.scroll_capture import ScrollCaptureManager, OPENCV_AVAILABLE
+        from src.capture import DisplayServer
+
+        manager = ScrollCaptureManager()
+        manager.display_server = DisplayServer.X11
+        manager.xdotool_available = True
+
+        available, error = manager.is_available()
+        if OPENCV_AVAILABLE:
+            assert available is True
+            assert error is None
+
+    def test_is_available_x11_without_xdotool(self):
+        """Test availability on X11 without xdotool."""
+        from src.scroll_capture import ScrollCaptureManager, OPENCV_AVAILABLE
+        from src.capture import DisplayServer
+
+        manager = ScrollCaptureManager()
+        manager.display_server = DisplayServer.X11
+        manager.xdotool_available = False
+
+        available, error = manager.is_available()
+        if OPENCV_AVAILABLE:
+            assert available is False
+            assert "xdotool" in error.lower()
+
+    def test_is_available_wayland_with_ydotool(self):
+        """Test availability on Wayland with ydotool."""
+        from src.scroll_capture import ScrollCaptureManager, OPENCV_AVAILABLE
+        from src.capture import DisplayServer
+
+        manager = ScrollCaptureManager()
+        manager.display_server = DisplayServer.WAYLAND
+        manager.ydotool_available = True
+        manager.wtype_available = False
+
+        available, error = manager.is_available()
+        if OPENCV_AVAILABLE:
+            assert available is True
+            assert error is None
+
+    def test_is_available_wayland_with_wtype(self):
+        """Test availability on Wayland with wtype."""
+        from src.scroll_capture import ScrollCaptureManager, OPENCV_AVAILABLE
+        from src.capture import DisplayServer
+
+        manager = ScrollCaptureManager()
+        manager.display_server = DisplayServer.WAYLAND
+        manager.ydotool_available = False
+        manager.wtype_available = True
+
+        available, error = manager.is_available()
+        if OPENCV_AVAILABLE:
+            assert available is True
+            assert error is None
+
+    def test_is_available_wayland_without_tools(self):
+        """Test availability on Wayland without scroll tools."""
+        from src.scroll_capture import ScrollCaptureManager, OPENCV_AVAILABLE
+        from src.capture import DisplayServer
+
+        manager = ScrollCaptureManager()
+        manager.display_server = DisplayServer.WAYLAND
+        manager.ydotool_available = False
+        manager.wtype_available = False
+
+        available, error = manager.is_available()
+        if OPENCV_AVAILABLE:
+            assert available is False
+            assert "ydotool" in error.lower() or "wtype" in error.lower()
 
 
 class TestCheckTools:
@@ -130,6 +212,44 @@ class TestCheckTools:
 
         # OPENCV_AVAILABLE is a module-level constant
         assert isinstance(OPENCV_AVAILABLE, bool)
+
+    def test_check_ydotool_available(self):
+        """Test ydotool check when available."""
+        from src.scroll_capture import ScrollCaptureManager
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            manager = ScrollCaptureManager()
+            result = manager._check_ydotool()
+            assert result is True
+
+    def test_check_ydotool_not_available(self):
+        """Test ydotool check when not available."""
+        from src.scroll_capture import ScrollCaptureManager
+
+        with patch("subprocess.run", side_effect=FileNotFoundError):
+            manager = ScrollCaptureManager()
+            result = manager._check_ydotool()
+            assert result is False
+
+    def test_check_wtype_available(self):
+        """Test wtype check when available."""
+        from src.scroll_capture import ScrollCaptureManager
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            manager = ScrollCaptureManager()
+            result = manager._check_wtype()
+            assert result is True
+
+    def test_check_wtype_not_available(self):
+        """Test wtype check when not available."""
+        from src.scroll_capture import ScrollCaptureManager
+
+        with patch("subprocess.run", side_effect=FileNotFoundError):
+            manager = ScrollCaptureManager()
+            result = manager._check_wtype()
+            assert result is False
 
 
 class TestStartCapture:
@@ -180,6 +300,74 @@ class TestScrollDown:
         manager = ScrollCaptureManager()
         assert hasattr(manager, "scroll_down")
         assert callable(manager.scroll_down)
+
+    def test_scroll_x11_method_exists(self):
+        """Test that _scroll_x11 method exists."""
+        from src.scroll_capture import ScrollCaptureManager
+
+        manager = ScrollCaptureManager()
+        assert hasattr(manager, "_scroll_x11")
+        assert callable(manager._scroll_x11)
+
+    def test_scroll_wayland_method_exists(self):
+        """Test that _scroll_wayland method exists."""
+        from src.scroll_capture import ScrollCaptureManager
+
+        manager = ScrollCaptureManager()
+        assert hasattr(manager, "_scroll_wayland")
+        assert callable(manager._scroll_wayland)
+
+    def test_scroll_x11_uses_xdotool(self):
+        """Test that X11 scroll uses xdotool."""
+        from src.scroll_capture import ScrollCaptureManager
+
+        manager = ScrollCaptureManager()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            manager._scroll_x11()
+            # Should call xdotool click 5 (scroll down)
+            assert mock_run.called
+            call_args = mock_run.call_args_list[0][0][0]
+            assert "xdotool" in call_args
+
+    def test_scroll_wayland_uses_ydotool(self):
+        """Test that Wayland scroll uses ydotool when available."""
+        from src.scroll_capture import ScrollCaptureManager
+
+        manager = ScrollCaptureManager()
+        manager.ydotool_available = True
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            result = manager._scroll_wayland()
+            assert result is True
+            # Should call ydotool
+            call_args = mock_run.call_args_list[0][0][0]
+            assert "ydotool" in call_args
+
+    def test_scroll_wayland_falls_back_to_wtype(self):
+        """Test that Wayland scroll falls back to wtype."""
+        from src.scroll_capture import ScrollCaptureManager
+
+        manager = ScrollCaptureManager()
+        manager.ydotool_available = False
+        manager.wtype_available = True
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            result = manager._scroll_wayland()
+            assert result is True
+            # Should call wtype
+            call_args = mock_run.call_args_list[0][0][0]
+            assert "wtype" in call_args
+
+    def test_scroll_wayland_returns_false_when_no_tools(self):
+        """Test that Wayland scroll returns False when no tools available."""
+        from src.scroll_capture import ScrollCaptureManager
+
+        manager = ScrollCaptureManager()
+        manager.ydotool_available = False
+        manager.wtype_available = False
+        result = manager._scroll_wayland()
+        assert result is False
 
 
 class TestFindOverlap:

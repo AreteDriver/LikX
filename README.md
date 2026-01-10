@@ -149,7 +149,7 @@ likx --window           # Capture window
 
 **GIF Recording:** ffmpeg (X11), wf-recorder (Wayland)
 
-**Scrolling Capture:** opencv-python-headless (pip), xdotool
+**Scrolling Capture:** opencv-python-headless (pip), xdotool (X11), ydotool or wtype (Wayland)
 
 **OCR:** tesseract-ocr, tesseract-ocr-eng
 

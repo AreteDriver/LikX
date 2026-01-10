@@ -29,7 +29,7 @@ except (ImportError, ValueError):
     GTK_AVAILABLE = False
 
 from . import config
-from .capture import capture_region
+from .capture import DisplayServer, capture_region, detect_display_server
 
 
 class ScrollState(Enum):
@@ -66,16 +66,40 @@ class ScrollCaptureManager:
         self._on_progress: Optional[Callable[[int, int], None]] = None
         self._on_complete: Optional[Callable[[ScrollCaptureResult], None]] = None
 
-        # Check tool availability
+        # Detect display server
+        self.display_server = detect_display_server()
+
+        # Check tool availability based on display server
         self.xdotool_available = self._check_xdotool()
+        self.ydotool_available = self._check_ydotool()
+        self.wtype_available = self._check_wtype()
 
     def _check_xdotool(self) -> bool:
-        """Check if xdotool is available."""
+        """Check if xdotool is available (X11)."""
         try:
             result = subprocess.run(
                 ["xdotool", "--version"], capture_output=True, timeout=2
             )
             return result.returncode == 0
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return False
+
+    def _check_ydotool(self) -> bool:
+        """Check if ydotool is available (Wayland)."""
+        try:
+            result = subprocess.run(
+                ["ydotool", "--help"], capture_output=True, timeout=2
+            )
+            return result.returncode == 0
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return False
+
+    def _check_wtype(self) -> bool:
+        """Check if wtype is available (Wayland/wlroots)."""
+        try:
+            subprocess.run(["wtype", "--help"], capture_output=True, timeout=2)
+            # wtype returns 0 on --help
+            return True
         except (FileNotFoundError, subprocess.TimeoutExpired):
             return False
 
@@ -91,11 +115,28 @@ class ScrollCaptureManager:
                 "Install with: pip install opencv-python-headless",
             )
 
-        if not self.xdotool_available:
-            return (
-                False,
-                "xdotool not installed. Install with: sudo apt install xdotool",
-            )
+        # Check for scroll tool based on display server
+        if self.display_server == DisplayServer.X11:
+            if not self.xdotool_available:
+                return (
+                    False,
+                    "xdotool not installed. Install with: sudo apt install xdotool",
+                )
+        elif self.display_server == DisplayServer.WAYLAND:
+            if not self.ydotool_available and not self.wtype_available:
+                return (
+                    False,
+                    "No Wayland scroll tool found. Install ydotool or wtype:\n"
+                    "  sudo apt install ydotool  # Universal Wayland\n"
+                    "  sudo apt install wtype    # wlroots/Sway",
+                )
+        else:
+            # Unknown display server - try X11 tools
+            if not self.xdotool_available:
+                return (
+                    False,
+                    "xdotool not installed. Install with: sudo apt install xdotool",
+                )
 
         return True, None
 
@@ -192,11 +233,21 @@ class ScrollCaptureManager:
         return True, None  # Continue capturing
 
     def scroll_down(self) -> bool:
-        """Scroll down using xdotool.
+        """Scroll down using appropriate tool for the display server.
 
         Returns:
             True if scroll was successful
         """
+        if self.display_server == DisplayServer.X11:
+            return self._scroll_x11()
+        elif self.display_server == DisplayServer.WAYLAND:
+            return self._scroll_wayland()
+        else:
+            # Unknown - try X11
+            return self._scroll_x11()
+
+    def _scroll_x11(self) -> bool:
+        """Scroll down using xdotool (X11)."""
         try:
             # Use mouse wheel scroll (button 5 = scroll down)
             # Multiple clicks for more scroll distance
@@ -209,6 +260,37 @@ class ScrollCaptureManager:
             return True
         except (subprocess.TimeoutExpired, Exception):
             return False
+
+    def _scroll_wayland(self) -> bool:
+        """Scroll down using ydotool or wtype (Wayland)."""
+        # Try ydotool first (most universal)
+        if self.ydotool_available:
+            try:
+                # ydotool uses mouse wheel events
+                # -120 is one scroll down step (negative = down)
+                for _ in range(3):
+                    subprocess.run(
+                        ["ydotool", "mousemove", "--wheel", "--", "-3"],
+                        capture_output=True,
+                        timeout=1,
+                    )
+                return True
+            except (subprocess.TimeoutExpired, Exception):
+                pass
+
+        # Fall back to wtype (wlroots/Sway) using Page_Down
+        if self.wtype_available:
+            try:
+                subprocess.run(
+                    ["wtype", "-k", "Page_Down"],
+                    capture_output=True,
+                    timeout=1,
+                )
+                return True
+            except (subprocess.TimeoutExpired, Exception):
+                pass
+
+        return False
 
     def stop_capture(self) -> None:
         """Request stop of the capture loop."""
