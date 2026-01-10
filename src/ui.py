@@ -46,7 +46,14 @@ from .effects import (
 
 
 class RegionSelector:
-    """Overlay window for selecting a screen region."""
+    """Overlay window for selecting a screen region.
+
+    Features:
+    - Click and drag to select region
+    - Shows monitor boundaries with labels
+    - Press 1-9 to quick-select monitor (captures full monitor)
+    - Press Escape to cancel
+    """
 
     def __init__(self, callback: Callable[[int, int, int, int], None]):
         if not GTK_AVAILABLE:
@@ -59,6 +66,9 @@ class RegionSelector:
         self.end_y = 0
         self.is_selecting = False
         self.scale_factor = 1  # Will be set after window is realized
+
+        # Get monitor information for boundaries and quick-select
+        self.monitors = capture.get_monitors()
 
         self.window = Gtk.Window(type=Gtk.WindowType.POPUP)
         self.window.set_app_paintable(True)
@@ -145,11 +155,32 @@ class RegionSelector:
         if event.keyval == Gdk.KEY_Escape:
             self.window.destroy()
             return True
+
+        # Quick-select monitor with number keys (1-9)
+        if Gdk.KEY_1 <= event.keyval <= Gdk.KEY_9:
+            monitor_idx = event.keyval - Gdk.KEY_1
+            if monitor_idx < len(self.monitors):
+                monitor = self.monitors[monitor_idx]
+                self.window.destroy()
+                # Apply scale factor
+                sf = self.scale_factor
+                self.callback(
+                    monitor.x * sf,
+                    monitor.y * sf,
+                    monitor.width * sf,
+                    monitor.height * sf,
+                )
+            return True
+
         return False
 
     def _on_draw(self, widget: Gtk.Widget, cr) -> bool:
         cr.set_source_rgba(0, 0, 0, 0.3)
         cr.paint()
+
+        # Draw monitor boundaries and labels (if multiple monitors)
+        if len(self.monitors) > 1:
+            self._draw_monitor_boundaries(cr)
 
         if self.is_selecting:
             x = min(self.start_x, self.end_x)
@@ -185,6 +216,57 @@ class RegionSelector:
             cr.show_text(text)
 
         return True
+
+    def _draw_monitor_boundaries(self, cr) -> None:
+        """Draw monitor boundaries and labels."""
+        try:
+            import cairo
+            cr.set_operator(cairo.OPERATOR_OVER)
+        except ImportError:
+            cr.set_operator(0)
+
+        for i, monitor in enumerate(self.monitors):
+            # Draw dashed boundary line
+            cr.set_source_rgba(1.0, 1.0, 1.0, 0.5)
+            cr.set_line_width(2)
+            cr.set_dash([8, 4])
+            cr.rectangle(monitor.x, monitor.y, monitor.width, monitor.height)
+            cr.stroke()
+            cr.set_dash([])  # Reset dash
+
+            # Draw monitor label in corner
+            label = f"{i + 1}"
+            cr.select_font_face("Sans", 0, 1)  # Bold
+            cr.set_font_size(24)
+
+            # Background for label
+            extents = cr.text_extents(label)
+            padding = 8
+            label_x = monitor.x + 15
+            label_y = monitor.y + 35
+
+            cr.set_source_rgba(0, 0, 0, 0.7)
+            cr.rectangle(
+                label_x - padding,
+                label_y - extents.height - padding,
+                extents.width + padding * 2,
+                extents.height + padding * 2,
+            )
+            cr.fill()
+
+            # Label text
+            cr.set_source_rgba(1, 1, 1, 1)
+            cr.move_to(label_x, label_y)
+            cr.show_text(label)
+
+            # Monitor info below
+            cr.set_font_size(12)
+            info = f"{monitor.width}x{monitor.height}"
+            if monitor.is_primary:
+                info += " (Primary)"
+            cr.set_source_rgba(1, 1, 1, 0.8)
+            cr.move_to(label_x, label_y + 18)
+            cr.show_text(info)
 
     def _on_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> bool:
         if event.button == 1:
@@ -2374,8 +2456,100 @@ class MainWindow:
 
     def _on_fullscreen(self, button: Optional[Gtk.Button] = None) -> None:
         """Handle fullscreen capture button click."""
+        monitors = capture.get_monitors()
+
+        # If multiple monitors, show selector dialog
+        if len(monitors) > 1:
+            self._show_monitor_selector(monitors)
+        else:
+            self.window.iconify()
+            GLib.timeout_add(300, self._capture_fullscreen)
+
+    def _show_monitor_selector(self, monitors: list) -> None:
+        """Show monitor selection dialog."""
+        dialog = Gtk.Dialog(
+            title="Select Monitor",
+            parent=self.window,
+            flags=Gtk.DialogFlags.MODAL,
+        )
+        dialog.add_buttons(
+            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+        )
+        dialog.set_default_size(300, -1)
+
+        content = dialog.get_content_area()
+        content.set_border_width(15)
+        content.set_spacing(10)
+
+        label = Gtk.Label(label="Select which monitor to capture:")
+        label.set_xalign(0)
+        content.pack_start(label, False, False, 0)
+
+        # Create button for each monitor
+        button_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+
+        # "All Monitors" option
+        all_btn = Gtk.Button(label="All Monitors (combined)")
+        all_btn.connect("clicked", self._on_monitor_selected, dialog, None)
+        button_box.pack_start(all_btn, False, False, 0)
+
+        # Separator
+        button_box.pack_start(Gtk.Separator(), False, False, 5)
+
+        # Individual monitor buttons
+        for monitor in monitors:
+            primary = " (Primary)" if monitor.is_primary else ""
+            btn_label = f"{monitor.index + 1}: {monitor.name} - {monitor.width}x{monitor.height}{primary}"
+            btn = Gtk.Button(label=btn_label)
+            btn.connect("clicked", self._on_monitor_selected, dialog, monitor)
+            button_box.pack_start(btn, False, False, 0)
+
+        content.pack_start(button_box, False, False, 0)
+
+        # Help text
+        help_label = Gtk.Label()
+        help_label.set_markup(
+            "<small><i>Tip: In region selection, press 1-9 to quick-select a monitor</i></small>"
+        )
+        help_label.set_xalign(0)
+        content.pack_start(help_label, False, False, 5)
+
+        dialog.show_all()
+        response = dialog.run()
+        dialog.destroy()
+
+        if response == Gtk.ResponseType.CANCEL:
+            return
+
+    def _on_monitor_selected(
+        self, button: Gtk.Button, dialog: Gtk.Dialog, monitor: Optional[object]
+    ) -> None:
+        """Handle monitor selection."""
+        dialog.response(Gtk.ResponseType.OK)
         self.window.iconify()
-        GLib.timeout_add(300, self._capture_fullscreen)
+
+        if monitor is None:
+            # Capture all monitors
+            GLib.timeout_add(300, self._capture_fullscreen)
+        else:
+            # Capture specific monitor
+            GLib.timeout_add(300, self._capture_monitor, monitor)
+
+    def _capture_monitor(self, monitor: object) -> bool:
+        """Capture a specific monitor."""
+        result = capture.capture_monitor(monitor)
+        if result.success:
+            cfg = config.load_config()
+            if cfg.get("editor_enabled", True):
+                EditorWindow(result)
+            else:
+                filepath = save_capture(result)
+                if filepath.success and cfg.get("show_notification", True):
+                    show_screenshot_saved(str(filepath.filepath))
+        else:
+            show_notification("Capture Failed", result.error, icon="dialog-error")
+        self.window.deiconify()
+        return False
 
     def _capture_fullscreen(self) -> bool:
         """Capture fullscreen after delay."""

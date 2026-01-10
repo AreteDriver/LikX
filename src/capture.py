@@ -4,7 +4,8 @@ import os
 import time
 import subprocess
 from pathlib import Path
-from typing import Optional, Tuple
+from dataclasses import dataclass
+from typing import List, Optional, Tuple
 from enum import Enum
 
 try:
@@ -56,6 +57,29 @@ class CaptureResult:
         return self.success
 
 
+@dataclass
+class MonitorInfo:
+    """Information about a display monitor."""
+
+    index: int
+    name: str
+    x: int
+    y: int
+    width: int
+    height: int
+    is_primary: bool = False
+    scale_factor: int = 1
+
+    @property
+    def geometry(self) -> Tuple[int, int, int, int]:
+        """Return (x, y, width, height) tuple."""
+        return (self.x, self.y, self.width, self.height)
+
+    def __str__(self) -> str:
+        primary = " (Primary)" if self.is_primary else ""
+        return f"{self.name}: {self.width}x{self.height}{primary}"
+
+
 def detect_display_server() -> DisplayServer:
     """Detect the current display server (X11 or Wayland).
 
@@ -70,6 +94,101 @@ def detect_display_server() -> DisplayServer:
     elif os.environ.get("DISPLAY"):
         return DisplayServer.X11
     return DisplayServer.UNKNOWN
+
+
+def get_monitors() -> List[MonitorInfo]:
+    """Get information about all connected monitors.
+
+    Returns:
+        List of MonitorInfo objects for each monitor.
+    """
+    if not GTK_AVAILABLE:
+        return []
+
+    monitors = []
+    display = Gdk.Display.get_default()
+    if display is None:
+        return []
+
+    n_monitors = display.get_n_monitors()
+    primary_monitor = display.get_primary_monitor()
+
+    for i in range(n_monitors):
+        monitor = display.get_monitor(i)
+        if monitor is None:
+            continue
+
+        geometry = monitor.get_geometry()
+        is_primary = (monitor == primary_monitor)
+
+        # Get monitor name/model
+        name = monitor.get_model() or f"Monitor {i + 1}"
+
+        monitors.append(MonitorInfo(
+            index=i,
+            name=name,
+            x=geometry.x,
+            y=geometry.y,
+            width=geometry.width,
+            height=geometry.height,
+            is_primary=is_primary,
+            scale_factor=monitor.get_scale_factor(),
+        ))
+
+    return monitors
+
+
+def get_monitor_at_point(x: int, y: int) -> Optional[MonitorInfo]:
+    """Get the monitor containing a specific point.
+
+    Args:
+        x, y: Screen coordinates
+
+    Returns:
+        MonitorInfo for the monitor at that point, or None if not found.
+    """
+    for monitor in get_monitors():
+        if (monitor.x <= x < monitor.x + monitor.width and
+                monitor.y <= y < monitor.y + monitor.height):
+            return monitor
+    return None
+
+
+def get_primary_monitor() -> Optional[MonitorInfo]:
+    """Get the primary monitor.
+
+    Returns:
+        MonitorInfo for the primary monitor, or None if not found.
+    """
+    monitors = get_monitors()
+    for monitor in monitors:
+        if monitor.is_primary:
+            return monitor
+    # Fallback to first monitor if no primary
+    return monitors[0] if monitors else None
+
+
+def capture_monitor(
+    monitor: MonitorInfo, delay: int = 0, include_cursor: bool = False
+) -> CaptureResult:
+    """Capture a specific monitor.
+
+    Args:
+        monitor: MonitorInfo object for the monitor to capture.
+        delay: Delay in seconds before capturing.
+        include_cursor: Whether to include the mouse cursor.
+
+    Returns:
+        CaptureResult with the captured screenshot.
+    """
+    if delay > 0:
+        time.sleep(delay)
+
+    # Use region capture with monitor geometry
+    return capture_region(
+        region=monitor.geometry,
+        delay=0,  # Already delayed above
+    )
 
 
 def capture_fullscreen_wayland(delay: int = 0) -> CaptureResult:
