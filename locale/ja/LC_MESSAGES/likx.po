@@ -1,0 +1,510 @@
+# Japanese translation for LikX
+# Copyright (C) 2026 LikX Contributors
+# This file is distributed under the same license as the LikX package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: LikX 3.23.0\n"
+"Report-Msgid-Bugs-To: https://github.com/AreteDriver/LikX/issues\n"
+"POT-Creation-Date: 2026-01-10 10:16-0800\n"
+"PO-Revision-Date: 2026-01-10 12:00-0800\n"
+"Last-Translator: LikX Team\n"
+"Language-Team: Japanese\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Pen Tool"
+msgstr "ペンツール"
+
+msgid "Highlighter"
+msgstr "蛍光ペン"
+
+msgid "Arrow Tool"
+msgstr "矢印ツール"
+
+msgid "Text Tool"
+msgstr "テキストツール"
+
+msgid "Blur Tool"
+msgstr "ぼかしツール"
+
+msgid "Pixelate Tool"
+msgstr "モザイクツール"
+
+msgid "Rectangle"
+msgstr "四角形"
+
+msgid "Ellipse"
+msgstr "楕円"
+
+msgid "Line Tool"
+msgstr "線ツール"
+
+msgid "Crop Tool"
+msgstr "切り抜きツール"
+
+msgid "Eraser"
+msgstr "消しゴム"
+
+msgid "Number Marker"
+msgstr "番号マーカー"
+
+msgid "Measure Tool"
+msgstr "計測ツール"
+
+msgid "Color Picker"
+msgstr "スポイト"
+
+msgid "Stamp Tool"
+msgstr "スタンプツール"
+
+msgid "Zoom Tool"
+msgstr "ズームツール"
+
+msgid "Callout Tool"
+msgstr "吹き出しツール"
+
+msgid "Zoom In"
+msgstr "拡大"
+
+msgid "Zoom Out"
+msgstr "縮小"
+
+msgid "Reset Zoom"
+msgstr "ズームをリセット"
+
+msgid "Save"
+msgstr "保存"
+
+msgid "Copy to Clipboard"
+msgstr "クリップボードにコピー"
+
+msgid "Upload to Cloud"
+msgstr "クラウドにアップロード"
+
+msgid "Undo"
+msgstr "元に戻す"
+
+msgid "Redo"
+msgstr "やり直し"
+
+msgid "Clear All Annotations"
+msgstr "すべての注釈を削除"
+
+msgid "Add Shadow"
+msgstr "影を追加"
+
+msgid "Add Border"
+msgstr "枠線を追加"
+
+msgid "Round Corners"
+msgstr "角を丸める"
+
+msgid "OCR - Extract Text"
+msgstr "OCR - テキスト抽出"
+
+msgid "Pin to Desktop"
+msgstr "デスクトップに固定"
+
+msgid "Screenshot Saved"
+msgstr "スクリーンショットを保存しました"
+
+msgid "Saved to"
+msgstr "保存先"
+
+msgid "Screenshot Copied"
+msgstr "スクリーンショットをコピーしました"
+
+msgid "Screenshot copied to clipboard"
+msgstr "スクリーンショットをクリップボードにコピーしました"
+
+msgid "Upload Successful"
+msgstr "アップロード成功"
+
+msgid "URL copied to clipboard:"
+msgstr "URLをクリップボードにコピーしました:"
+
+msgid "Upload Failed"
+msgstr "アップロード失敗"
+
+msgid "REC"
+msgstr "録画"
+
+msgid "Stop"
+msgstr "停止"
+
+msgid "Frames:"
+msgstr "フレーム数:"
+
+msgid "Height:"
+msgstr "高さ:"
+
+msgid "(Primary)"
+msgstr "(メイン)"
+
+msgid "Size:"
+msgstr "サイズ:"
+
+msgid "Color:"
+msgstr "色:"
+
+msgid "Pick color"
+msgstr "色を選択"
+
+msgid "Color palette"
+msgstr "カラーパレット"
+
+msgid "Bold"
+msgstr "太字"
+
+msgid "Italic"
+msgstr "斜体"
+
+msgid "Select stamp"
+msgstr "スタンプを選択"
+
+msgid "Recent:"
+msgstr "最近:"
+
+msgid "Enter text:"
+msgstr "テキストを入力:"
+
+msgid "Enter callout text:"
+msgstr "吹き出しのテキストを入力:"
+
+msgid "Select which monitor to capture:"
+msgstr "キャプチャするモニターを選択:"
+
+msgid "All Monitors (combined)"
+msgstr "すべてのモニター (結合)"
+
+msgid "Capture Failed"
+msgstr "キャプチャ失敗"
+
+msgid "Region Selection Failed"
+msgstr "範囲選択に失敗しました"
+
+msgid "Recording Unavailable"
+msgstr "録画は利用できません"
+
+msgid "Recording Failed"
+msgstr "録画失敗"
+
+msgid "Processing"
+msgstr "処理中"
+
+msgid "Encoding GIF..."
+msgstr "GIFをエンコード中..."
+
+msgid "GIF Saved"
+msgstr "GIFを保存しました"
+
+msgid "Duration:"
+msgstr "時間:"
+
+msgid "Scroll Capture Unavailable"
+msgstr "スクロールキャプチャは利用できません"
+
+msgid "Scroll Capture Failed"
+msgstr "スクロールキャプチャ失敗"
+
+msgid "Capture Error"
+msgstr "キャプチャエラー"
+
+msgid "Settings"
+msgstr "設定"
+
+msgid "Reset to Defaults"
+msgstr "デフォルトに戻す"
+
+msgid "General"
+msgstr "一般"
+
+msgid "Capture"
+msgstr "キャプチャ"
+
+msgid "GIF"
+msgstr "GIF"
+
+msgid "Upload"
+msgstr "アップロード"
+
+msgid "Editor"
+msgstr "エディター"
+
+msgid "Hotkeys"
+msgstr "ホットキー"
+
+msgid "Language"
+msgstr "言語"
+
+msgid "Save directory:"
+msgstr "保存先フォルダ:"
+
+msgid "Browse..."
+msgstr "参照..."
+
+msgid "Default format:"
+msgstr "デフォルト形式:"
+
+msgid "Auto-save screenshots (skip editor)"
+msgstr "自動保存 (エディターをスキップ)"
+
+msgid "Copy to clipboard automatically"
+msgstr "自動的にクリップボードにコピー"
+
+msgid "Show desktop notifications"
+msgstr "通知を表示"
+
+msgid "Open editor after capture"
+msgstr "キャプチャ後にエディターを開く"
+
+msgid "Capture delay (seconds):"
+msgstr "キャプチャ遅延 (秒):"
+
+msgid "Include mouse cursor in screenshots"
+msgstr "マウスカーソルを含める"
+
+msgid "Quality preset:"
+msgstr "品質プリセット:"
+
+msgid "Low (smaller file)"
+msgstr "低 (小さいファイル)"
+
+msgid "Medium (balanced)"
+msgstr "中 (バランス)"
+
+msgid "High (best quality)"
+msgstr "高 (最高品質)"
+
+msgid "Frame rate (FPS):"
+msgstr "フレームレート (FPS):"
+
+msgid "Color palette size:"
+msgstr "パレットサイズ:"
+
+msgid " colors"
+msgstr " 色"
+
+msgid "Scale factor:"
+msgstr "スケール:"
+
+msgid "Dithering:"
+msgstr "ディザリング:"
+
+msgid "None (sharp, may band)"
+msgstr "なし (シャープ、縞模様の可能性)"
+
+msgid "Bayer (ordered, fast)"
+msgstr "ベイヤー (規則的、高速)"
+
+msgid "Floyd-Steinberg (smooth)"
+msgstr "フロイド-スタインバーグ (滑らか)"
+
+msgid "Sierra (quality)"
+msgstr "シエラ (高品質)"
+
+msgid "Loop:"
+msgstr "ループ:"
+
+msgid "Infinite"
+msgstr "無限"
+
+msgid "Play once"
+msgstr "1回再生"
+
+msgid "2 times"
+msgstr "2回"
+
+msgid "3 times"
+msgstr "3回"
+
+msgid "Optimize with gifsicle (smaller file size)"
+msgstr "gifsicleで最適化 (サイズ削減)"
+
+msgid "Max duration (seconds):"
+msgstr "最大時間 (秒):"
+
+msgid "Upload service:"
+msgstr "アップロードサービス:"
+
+msgid "Automatically upload after save"
+msgstr "保存後に自動アップロード"
+
+msgid "S3 Settings"
+msgstr "S3設定"
+
+msgid "Bucket:"
+msgstr "バケット:"
+
+msgid "Region:"
+msgstr "リージョン:"
+
+msgid "Make uploaded files public"
+msgstr "ファイルを公開する"
+
+msgid "Dropbox Settings"
+msgstr "Dropbox設定"
+
+msgid "Access Token:"
+msgstr "アクセストークン:"
+
+msgid "Get token from Dropbox Developer Console"
+msgstr "Dropbox開発者コンソールからトークンを取得"
+
+msgid "Google Drive Settings"
+msgstr "Google Drive設定"
+
+msgid "Folder ID:"
+msgstr "フォルダID:"
+
+msgid "<b>Grid Settings</b>"
+msgstr "<b>グリッド設定</b>"
+
+msgid "Grid size (pixels):"
+msgstr "グリッドサイズ (ピクセル):"
+
+msgid "Enable grid snap by default (Ctrl+' to toggle)"
+msgstr "グリッドスナップを有効化 (Ctrl+'で切替)"
+
+msgid "<b>Keyboard Shortcuts:</b>"
+msgstr "<b>キーボードショートカット:</b>"
+
+msgid "• <b>Ctrl+'</b>: Toggle grid snap on/off"
+msgstr "• <b>Ctrl+'</b>: グリッドスナップの切替"
+
+msgid "• <b>Arrow keys</b>: Nudge 1px (or snap to grid)"
+msgstr "• <b>矢印キー</b>: 1px移動 (またはグリッドにスナップ)"
+
+msgid "• <b>Shift+Arrow</b>: Nudge 10px"
+msgstr "• <b>Shift+矢印</b>: 10px移動"
+
+msgid "<i>Grid snap helps align elements precisely.</i>"
+msgstr "<i>グリッドスナップで正確な配置ができます。</i>"
+
+msgid "<b>Global Keyboard Shortcuts</b>"
+msgstr "<b>グローバルホットキー</b>"
+
+msgid "<small>Click a field, then press your desired key combination</small>"
+msgstr "<small>フィールドをクリックしてキーの組み合わせを入力</small>"
+
+msgid "Fullscreen Capture:"
+msgstr "全画面キャプチャ:"
+
+msgid "Region Capture:"
+msgstr "範囲キャプチャ:"
+
+msgid "Window Capture:"
+msgstr "ウィンドウキャプチャ:"
+
+msgid "Record GIF:"
+msgstr "GIF録画:"
+
+msgid "Scroll Capture:"
+msgstr "スクロールキャプチャ:"
+
+msgid "Reset"
+msgstr "リセット"
+
+msgid "<b>Notes:</b>"
+msgstr "<b>メモ:</b>"
+
+msgid "• Hotkeys require at least one modifier (Ctrl, Alt, Shift, Super)"
+msgstr "• 修飾キーが必要です (Ctrl, Alt, Shift, Super)"
+
+msgid "• Press Escape to cancel while setting a hotkey"
+msgstr "• Escでキャンセル"
+
+msgid "• Hotkeys work globally on GNOME desktop"
+msgstr "• GNOMEでグローバルに動作します"
+
+msgid "• Restart LikX after changing hotkeys for them to take effect"
+msgstr "• 変更後はLikXを再起動してください"
+
+msgid "<b>Language Settings</b>"
+msgstr "<b>言語設定</b>"
+
+msgid "Interface language:"
+msgstr "インターフェース言語:"
+
+msgid "System Default"
+msgstr "システムデフォルト"
+
+msgid ""
+"<b>Note:</b> Restart LikX after changing the language\n"
+"for the changes to take full effect."
+msgstr ""
+"<b>注意:</b> 言語を変更した後は\n"
+"LikXを再起動してください。"
+
+msgid ""
+"\n"
+"<b>Help translate LikX!</b>\n"
+"Translation files are in the <tt>locale/</tt> directory."
+msgstr ""
+"\n"
+"<b>LikXの翻訳にご協力ください！</b>\n"
+"翻訳ファイルは <tt>locale/</tt> フォルダにあります。"
+
+msgid "Select Save Directory"
+msgstr "保存先フォルダを選択"
+
+msgid "Settings Saved"
+msgstr "設定を保存しました"
+
+msgid "Your preferences have been saved."
+msgstr "設定が保存されました。"
+
+msgid "Restart LikX to apply hotkey changes."
+msgstr "ホットキーの変更を適用するにはLikXを再起動してください。"
+
+msgid "Settings Reset"
+msgstr "設定をリセットしました"
+
+msgid "All settings reset to defaults"
+msgstr "すべての設定をデフォルトに戻しました"
+
+msgid "OCR"
+msgstr "OCR"
+
+msgid "Extract text from image (Tesseract)"
+msgstr "画像からテキストを抽出 (Tesseract)"
+
+msgid "Pin to desktop (always on top)"
+msgstr "デスクトップに固定 (常に最前面)"
+
+msgid "Image Effects"
+msgstr "画像エフェクト"
+
+msgid "Drop Shadow"
+msgstr "ドロップシャドウ"
+
+msgid "Background"
+msgstr "背景"
+
+msgid "Adjust Brightness/Contrast"
+msgstr "明るさ/コントラスト調整"
+
+msgid "Grayscale"
+msgstr "グレースケール"
+
+msgid "Invert Colors"
+msgstr "色を反転"
+
+msgid "Pin Failed"
+msgstr "固定に失敗しました"
+
+msgid "Error"
+msgstr "エラー"
+
+msgid "Could not open folder:"
+msgstr "フォルダを開けませんでした:"
+
+msgid "Brightness:"
+msgstr "明るさ:"
+
+msgid "Contrast:"
+msgstr "コントラスト:"
