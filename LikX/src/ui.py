@@ -32,6 +32,8 @@ from .pinned import PinnedWindow
 from .history import HistoryManager
 from .recorder import GifRecorder, RecordingState
 from .recording_overlay import RecordingOverlay
+from .scroll_capture import ScrollCaptureManager, ScrollCaptureResult
+from .scroll_overlay import ScrollCaptureOverlay
 from .effects import (
     add_shadow,
     add_border,
@@ -2205,6 +2207,7 @@ class MainWindow:
             ("⬚", "Region (Ctrl+Shift+R)", self._on_region),
             ("🪟", "Window (Ctrl+Shift+W)", self._on_window),
             ("🎬", "Record GIF (Ctrl+Alt+G)", self._on_record_gif),
+            ("📜", "Scroll Capture (Ctrl+Alt+S)", self._on_scroll_capture),
             ("🖼️", "Open Image", self._on_open_image),
         ]
         for icon, tip, callback in capture_buttons:
@@ -2363,6 +2366,11 @@ class MainWindow:
             self._on_record_gif,
             f"python3 {script_path} --record-gif",
         )
+        self.hotkey_manager.register_hotkey(
+            cfg.get("hotkey_scroll_capture", "<Control><Alt>S"),
+            self._on_scroll_capture,
+            f"python3 {script_path} --scroll-capture",
+        )
 
     def _on_fullscreen(self, button: Optional[Gtk.Button] = None) -> None:
         """Handle fullscreen capture button click."""
@@ -2501,6 +2509,138 @@ class MainWindow:
         self.window.deiconify()
         self.recorder = None
         self.recording_overlay = None
+
+    def _on_scroll_capture(self, button: Optional[Gtk.Button] = None) -> None:
+        """Handle scroll capture button click."""
+        self.scroll_manager = ScrollCaptureManager()
+        available, error = self.scroll_manager.is_available()
+
+        if not available:
+            show_notification("Scroll Capture Unavailable", error, icon="dialog-error")
+            return
+
+        self.window.iconify()
+        GLib.timeout_add(300, self._start_scroll_region_selection)
+
+    def _start_scroll_region_selection(self) -> bool:
+        """Start region selection for scroll capture."""
+        try:
+            RegionSelector(self._on_scroll_region_selected)
+        except Exception as e:
+            show_notification(
+                "Region Selection Failed", str(e), icon="dialog-error"
+            )
+            self.window.deiconify()
+        return False
+
+    def _on_scroll_region_selected(
+        self, x: int, y: int, width: int, height: int
+    ) -> None:
+        """Handle region selection for scroll capture."""
+        success, error = self.scroll_manager.start_capture(
+            x,
+            y,
+            width,
+            height,
+            on_progress=self._on_scroll_progress,
+            on_complete=self._on_scroll_complete,
+        )
+
+        if not success:
+            show_notification("Scroll Capture Failed", error, icon="dialog-error")
+            self.window.deiconify()
+            return
+
+        # Show overlay
+        self.scroll_overlay = ScrollCaptureOverlay(
+            on_stop=self._on_scroll_stop, region=(x, y, width, height)
+        )
+
+        # Start capture loop
+        self._scroll_capture_loop()
+
+    def _scroll_capture_loop(self) -> None:
+        """Main capture loop - captures frame, scrolls, repeats."""
+        cfg = config.load_config()
+        delay_ms = cfg.get("scroll_delay_ms", 300)
+
+        # Capture current frame
+        should_continue, error = self.scroll_manager.capture_frame()
+
+        if error:
+            show_notification("Capture Error", error, icon="dialog-error")
+            self._finish_scroll_capture()
+            return
+
+        if not should_continue:
+            # End of content or stopped
+            self._finish_scroll_capture()
+            return
+
+        # Scroll down
+        self.scroll_manager.scroll_down()
+
+        # Schedule next capture after delay
+        GLib.timeout_add(delay_ms, self._scroll_capture_next)
+
+    def _scroll_capture_next(self) -> bool:
+        """Continue capture loop (called by GLib.timeout_add)."""
+        self._scroll_capture_loop()
+        return False  # Don't repeat
+
+    def _on_scroll_progress(self, frame_count: int, estimated_height: int) -> None:
+        """Handle scroll capture progress updates."""
+        if hasattr(self, "scroll_overlay") and self.scroll_overlay:
+            self.scroll_overlay.update_progress(frame_count, estimated_height)
+
+    def _on_scroll_stop(self) -> None:
+        """Handle scroll capture stop request."""
+        self.scroll_manager.stop_capture()
+
+    def _finish_scroll_capture(self) -> None:
+        """Finish scroll capture and show result."""
+        # Destroy overlay
+        if hasattr(self, "scroll_overlay") and self.scroll_overlay:
+            self.scroll_overlay.destroy()
+            self.scroll_overlay = None
+
+        # Get stitched result
+        result = self.scroll_manager.finish_capture()
+
+        if result.success:
+            cfg = config.load_config()
+            if cfg.get("show_notification", True):
+                show_notification(
+                    "Scroll Capture Complete",
+                    f"Captured {result.frame_count} frames\n"
+                    f"Total height: {result.total_height}px",
+                    icon="image-x-generic",
+                )
+
+            # Create CaptureResult for editor
+            from .capture import CaptureResult
+
+            capture_result = CaptureResult(True, pixbuf=result.pixbuf)
+
+            if cfg.get("editor_enabled", True):
+                EditorWindow(capture_result)
+            else:
+                from .capture import save_capture
+
+                saved = save_capture(capture_result)
+                if saved.success:
+                    show_screenshot_saved(str(saved.filepath))
+        else:
+            show_notification(
+                "Scroll Capture Failed", result.error, icon="dialog-error"
+            )
+
+        self.window.deiconify()
+        self.scroll_manager = None
+
+    def _on_scroll_complete(self, result: ScrollCaptureResult) -> None:
+        """Handle scroll capture completion callback."""
+        pass  # Handled by _finish_scroll_capture
 
     def _on_settings(self, button: Gtk.Button) -> None:
         """Handle settings button click."""
@@ -2676,7 +2816,8 @@ class SettingsDialog:
             + f"Fullscreen: {self.cfg.get('hotkey_fullscreen', 'Ctrl+Shift+F')}\n"
             + f"Region: {self.cfg.get('hotkey_region', 'Ctrl+Shift+R')}\n"
             + f"Window: {self.cfg.get('hotkey_window', 'Ctrl+Shift+W')}\n"
-            + f"Record GIF: {self.cfg.get('hotkey_record_gif', 'Ctrl+Alt+G')}\n\n"
+            + f"Record GIF: {self.cfg.get('hotkey_record_gif', 'Ctrl+Alt+G')}\n"
+            + f"Scroll Capture: {self.cfg.get('hotkey_scroll_capture', 'Ctrl+Alt+S')}\n\n"
             + "<i>(Hotkeys work on GNOME desktop)</i>"
         )
         box.pack_start(hotkey_label, False, False, 0)

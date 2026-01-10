@@ -31,6 +31,14 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "gif_colors": 256,  # Color palette size (128-256)
     "gif_scale_factor": 1.0,  # Downscale factor (0.5-1.0)
     "hotkey_record_gif": "<Control><Alt>G",
+    # Scroll capture settings
+    "scroll_delay_ms": 300,  # Delay between scroll+capture cycles
+    "scroll_max_frames": 50,  # Safety limit
+    "scroll_overlap_search": 150,  # Max pixels to search for overlap
+    "scroll_ignore_top": 0.15,  # Ignore top 15% (fixed headers)
+    "scroll_ignore_bottom": 0.15,  # Ignore bottom 15% (fixed footers)
+    "scroll_confidence": 0.7,  # Template matching confidence threshold
+    "hotkey_scroll_capture": "<Control><Alt>S",
 }
 
 # Configuration file path

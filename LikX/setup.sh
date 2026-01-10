@@ -186,6 +186,12 @@ install_python_deps() {
     if ! python3 -c "import cairo" 2>/dev/null; then
         $PIP_CMD install --user pycairo
     fi
+
+    # Install numpy and opencv for scroll capture
+    if ! python3 -c "import cv2" 2>/dev/null; then
+        echo "Installing OpenCV for scroll capture..."
+        $PIP_CMD install --user numpy opencv-python-headless
+    fi
 }
 
 # Setup configuration
@@ -296,6 +302,7 @@ main() {
     echo "  Ctrl+Shift+R - Region capture"
     echo "  Ctrl+Shift+W - Window capture"
     echo "  Ctrl+Alt+G   - Record GIF"
+    echo "  Ctrl+Alt+S   - Scroll Capture"
     echo
     echo "Display server: $DISPLAY_SERVER"
     
