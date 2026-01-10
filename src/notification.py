@@ -69,7 +69,9 @@ def show_notification(
 
 def show_screenshot_saved(filepath: str) -> None:
     """Show notification that screenshot was saved."""
-    show_notification(_("Screenshot Saved"), _("Saved to") + f" {filepath}", icon="document-save")
+    show_notification(
+        _("Screenshot Saved"), _("Saved to") + f" {filepath}", icon="document-save"
+    )
 
 
 def show_screenshot_copied() -> None:
@@ -91,4 +93,6 @@ def show_upload_success(url: str) -> None:
 
 def show_upload_error(error: str) -> None:
     """Show notification that upload failed."""
-    show_notification(_("Upload Failed"), error, icon="dialog-error", urgency="critical")
+    show_notification(
+        _("Upload Failed"), error, icon="dialog-error", urgency="critical"
+    )

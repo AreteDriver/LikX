@@ -223,6 +223,7 @@ class RegionSelector:
         """Draw monitor boundaries and labels."""
         try:
             import cairo
+
             cr.set_operator(cairo.OPERATOR_OVER)
         except ImportError:
             cr.set_operator(0)
@@ -799,10 +800,26 @@ class EditorWindow:
 
         # 20-color palette grid (10x2)
         palette = [
-            (0, 0, 0), (0.4, 0.4, 0.4), (0.5, 0, 0), (0.5, 0.25, 0), (0.5, 0.5, 0),
-            (0, 0.4, 0), (0, 0.4, 0.4), (0, 0, 0.5), (0.3, 0, 0.5), (0.5, 0, 0.3),
-            (1, 1, 1), (0.75, 0.75, 0.75), (1, 0, 0), (1, 0.5, 0), (1, 1, 0),
-            (0, 0.8, 0), (0, 0.8, 0.8), (0, 0, 1), (0.6, 0.3, 1), (1, 0.4, 0.7),
+            (0, 0, 0),
+            (0.4, 0.4, 0.4),
+            (0.5, 0, 0),
+            (0.5, 0.25, 0),
+            (0.5, 0.5, 0),
+            (0, 0.4, 0),
+            (0, 0.4, 0.4),
+            (0, 0, 0.5),
+            (0.3, 0, 0.5),
+            (0.5, 0, 0.3),
+            (1, 1, 1),
+            (0.75, 0.75, 0.75),
+            (1, 0, 0),
+            (1, 0.5, 0),
+            (1, 1, 0),
+            (0, 0.8, 0),
+            (0, 0.8, 0.8),
+            (0, 0, 1),
+            (0.6, 0.3, 1),
+            (1, 0.4, 0.7),
         ]
         color_grid = Gtk.Grid(row_spacing=2, column_spacing=2)
         for i, (r, g, b) in enumerate(palette):
@@ -814,7 +831,7 @@ class EditorWindow:
                 lambda w, cr, r=r, g=g, b=b: self._draw_color_swatch(cr, r, g, b),
             )
             btn.add(da)
-            btn.set_tooltip_text(f"RGB({int(r*255)},{int(g*255)},{int(b*255)})")
+            btn.set_tooltip_text(f"RGB({int(r * 255)},{int(g * 255)},{int(b * 255)})")
             btn.connect(
                 "clicked",
                 lambda b, r=r, g=g, bl=b: (
@@ -884,14 +901,26 @@ class EditorWindow:
 
         # Tools that use size
         size_tools = {
-            ToolType.PEN, ToolType.HIGHLIGHTER, ToolType.LINE, ToolType.ARROW,
-            ToolType.RECTANGLE, ToolType.ELLIPSE, ToolType.BLUR, ToolType.PIXELATE,
+            ToolType.PEN,
+            ToolType.HIGHLIGHTER,
+            ToolType.LINE,
+            ToolType.ARROW,
+            ToolType.RECTANGLE,
+            ToolType.ELLIPSE,
+            ToolType.BLUR,
+            ToolType.PIXELATE,
             ToolType.ERASER,
         }
         # Tools that use color
         color_tools = {
-            ToolType.PEN, ToolType.HIGHLIGHTER, ToolType.LINE, ToolType.ARROW,
-            ToolType.RECTANGLE, ToolType.ELLIPSE, ToolType.TEXT, ToolType.CALLOUT,
+            ToolType.PEN,
+            ToolType.HIGHLIGHTER,
+            ToolType.LINE,
+            ToolType.ARROW,
+            ToolType.RECTANGLE,
+            ToolType.ELLIPSE,
+            ToolType.TEXT,
+            ToolType.CALLOUT,
             ToolType.NUMBER,
         }
 
@@ -1345,13 +1374,37 @@ class EditorWindow:
         cr.new_path()
         cr.move_to(bx + corner_radius, by)
         cr.line_to(bx + box_width - corner_radius, by)
-        cr.arc(bx + box_width - corner_radius, by + corner_radius, corner_radius, -3.14159 / 2, 0)
+        cr.arc(
+            bx + box_width - corner_radius,
+            by + corner_radius,
+            corner_radius,
+            -3.14159 / 2,
+            0,
+        )
         cr.line_to(bx + box_width, by + box_height - corner_radius)
-        cr.arc(bx + box_width - corner_radius, by + box_height - corner_radius, corner_radius, 0, 3.14159 / 2)
+        cr.arc(
+            bx + box_width - corner_radius,
+            by + box_height - corner_radius,
+            corner_radius,
+            0,
+            3.14159 / 2,
+        )
         cr.line_to(bx + corner_radius, by + box_height)
-        cr.arc(bx + corner_radius, by + box_height - corner_radius, corner_radius, 3.14159 / 2, 3.14159)
+        cr.arc(
+            bx + corner_radius,
+            by + box_height - corner_radius,
+            corner_radius,
+            3.14159 / 2,
+            3.14159,
+        )
         cr.line_to(bx, by + corner_radius)
-        cr.arc(bx + corner_radius, by + corner_radius, corner_radius, 3.14159, 3 * 3.14159 / 2)
+        cr.arc(
+            bx + corner_radius,
+            by + corner_radius,
+            corner_radius,
+            3.14159,
+            3 * 3.14159 / 2,
+        )
         cr.close_path()
 
         # Fill with light yellow (preview)
@@ -1423,7 +1476,9 @@ class EditorWindow:
         handle_size = 8
         cr.set_source_rgba(1, 1, 1, 1)
         for hx, hy in [(left, top), (right, top), (left, bottom), (right, bottom)]:
-            cr.rectangle(hx - handle_size / 2, hy - handle_size / 2, handle_size, handle_size)
+            cr.rectangle(
+                hx - handle_size / 2, hy - handle_size / 2, handle_size, handle_size
+            )
             cr.fill()
 
         # Draw dimension text
@@ -1438,7 +1493,9 @@ class EditorWindow:
 
         # Background for text
         cr.set_source_rgba(0, 0, 0, 0.7)
-        cr.rectangle(tx - 4, ty - extents.height - 2, extents.width + 8, extents.height + 6)
+        cr.rectangle(
+            tx - 4, ty - extents.height - 2, extents.width + 8, extents.height + 6
+        )
         cr.fill()
 
         # Text
@@ -1520,12 +1577,12 @@ class EditorWindow:
         cr.set_dash([6, 4])
 
         for guide_type, value in self.editor_state.active_snap_guides:
-            if guide_type == 'h':
+            if guide_type == "h":
                 # Horizontal line at y=value
                 cr.move_to(0, value)
                 cr.line_to(width, value)
                 cr.stroke()
-            elif guide_type == 'v':
+            elif guide_type == "v":
                 # Vertical line at x=value
                 cr.move_to(value, 0)
                 cr.line_to(value, height)
@@ -1639,9 +1696,7 @@ class EditorWindow:
         del self._crop_start
         del self._crop_end
 
-        self.statusbar.push(
-            self.statusbar_context, f"Cropped to {width}×{height}"
-        )
+        self.statusbar.push(self.statusbar_context, f"Cropped to {width}×{height}")
         self.drawing_area.queue_draw()
 
     def _screen_to_image(self, x: float, y: float) -> tuple:
@@ -1653,10 +1708,10 @@ class EditorWindow:
         """Update cursor based on hover position over resize handles."""
         # Map handle names to cursor types
         handle_cursors = {
-            'nw': Gdk.CursorType.TOP_LEFT_CORNER,
-            'ne': Gdk.CursorType.TOP_RIGHT_CORNER,
-            'sw': Gdk.CursorType.BOTTOM_LEFT_CORNER,
-            'se': Gdk.CursorType.BOTTOM_RIGHT_CORNER,
+            "nw": Gdk.CursorType.TOP_LEFT_CORNER,
+            "ne": Gdk.CursorType.TOP_RIGHT_CORNER,
+            "sw": Gdk.CursorType.BOTTOM_LEFT_CORNER,
+            "se": Gdk.CursorType.BOTTOM_RIGHT_CORNER,
         }
 
         handle = self.editor_state._hit_test_handles(img_x, img_y)
@@ -1688,7 +1743,9 @@ class EditorWindow:
                 # Try to select an element at this position
                 # Shift+click adds to selection (multi-select)
                 shift_held = event.state & Gdk.ModifierType.SHIFT_MASK
-                self.editor_state.select_at(img_x, img_y, add_to_selection=bool(shift_held))
+                self.editor_state.select_at(
+                    img_x, img_y, add_to_selection=bool(shift_held)
+                )
                 self.drawing_area.queue_draw()
             elif self.editor_state.current_tool == ToolType.TEXT:
                 # Show text input dialog
@@ -2475,7 +2532,8 @@ class MainWindow:
             flags=Gtk.DialogFlags.MODAL,
         )
         dialog.add_buttons(
-            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_CANCEL,
+            Gtk.ResponseType.CANCEL,
         )
         dialog.set_default_size(300, -1)
 
@@ -2672,7 +2730,10 @@ class MainWindow:
             if cfg.get("show_notification", True):
                 show_notification(
                     _("GIF Saved"),
-                    _("Saved to") + f" {result.filepath}\n" + _("Duration:") + f" {result.duration:.1f}s",
+                    _("Saved to")
+                    + f" {result.filepath}\n"
+                    + _("Duration:")
+                    + f" {result.duration:.1f}s",
                     icon="video-x-generic",
                 )
 
@@ -2692,7 +2753,9 @@ class MainWindow:
         available, error = self.scroll_manager.is_available()
 
         if not available:
-            show_notification(_("Scroll Capture Unavailable"), error, icon="dialog-error")
+            show_notification(
+                _("Scroll Capture Unavailable"), error, icon="dialog-error"
+            )
             return
 
         self.window.iconify()
@@ -2703,9 +2766,7 @@ class MainWindow:
         try:
             RegionSelector(self._on_scroll_region_selected)
         except Exception as e:
-            show_notification(
-                "Region Selection Failed", str(e), icon="dialog-error"
-            )
+            show_notification("Region Selection Failed", str(e), icon="dialog-error")
             self.window.deiconify()
         return False
 
@@ -2929,8 +2990,18 @@ class HotkeyEntry(Gtk.Button):
         keyname = Gdk.keyval_name(keyval)
 
         # Ignore modifier-only keys
-        if keyname in ("Control_L", "Control_R", "Shift_L", "Shift_R",
-                       "Alt_L", "Alt_R", "Super_L", "Super_R", "Meta_L", "Meta_R"):
+        if keyname in (
+            "Control_L",
+            "Control_R",
+            "Shift_L",
+            "Shift_R",
+            "Alt_L",
+            "Alt_R",
+            "Super_L",
+            "Super_R",
+            "Meta_L",
+            "Meta_R",
+        ):
             return True
 
         # Escape cancels
@@ -3071,7 +3142,9 @@ class SettingsDialog:
         self.auto_save_check.set_active(self.cfg.get("auto_save", False))
         box.pack_start(self.auto_save_check, False, False, 0)
 
-        self.clipboard_check = Gtk.CheckButton(label=_("Copy to clipboard automatically"))
+        self.clipboard_check = Gtk.CheckButton(
+            label=_("Copy to clipboard automatically")
+        )
         self.clipboard_check.set_active(self.cfg.get("copy_to_clipboard", True))
         box.pack_start(self.clipboard_check, False, False, 0)
 
@@ -3104,7 +3177,9 @@ class SettingsDialog:
 
         box.pack_start(Gtk.Separator(), False, False, 5)
 
-        self.cursor_check = Gtk.CheckButton(label=_("Include mouse cursor in screenshots"))
+        self.cursor_check = Gtk.CheckButton(
+            label=_("Include mouse cursor in screenshots")
+        )
         self.cursor_check.set_active(self.cfg.get("include_cursor", False))
         box.pack_start(self.cursor_check, False, False, 0)
 
@@ -3120,9 +3195,11 @@ class SettingsDialog:
         quality_label = Gtk.Label(label=_("Quality preset:"), xalign=0)
         quality_label.set_size_request(150, -1)
         self.gif_quality_combo = Gtk.ComboBoxText()
-        qualities = [("low", _("Low (smaller file)")),
-                     ("medium", _("Medium (balanced)")),
-                     ("high", _("High (best quality)"))]
+        qualities = [
+            ("low", _("Low (smaller file)")),
+            ("medium", _("Medium (balanced)")),
+            ("high", _("High (best quality)")),
+        ]
         for qid, qname in qualities:
             self.gif_quality_combo.append(qid, qname)
         self.gif_quality_combo.set_active_id(self.cfg.get("gif_quality", "medium"))
@@ -3174,10 +3251,12 @@ class SettingsDialog:
         dither_label = Gtk.Label(label=_("Dithering:"), xalign=0)
         dither_label.set_size_request(150, -1)
         self.gif_dither_combo = Gtk.ComboBoxText()
-        dithers = [("none", _("None (sharp, may band)")),
-                   ("bayer", _("Bayer (ordered, fast)")),
-                   ("floyd_steinberg", _("Floyd-Steinberg (smooth)")),
-                   ("sierra2", _("Sierra (quality)"))]
+        dithers = [
+            ("none", _("None (sharp, may band)")),
+            ("bayer", _("Bayer (ordered, fast)")),
+            ("floyd_steinberg", _("Floyd-Steinberg (smooth)")),
+            ("sierra2", _("Sierra (quality)")),
+        ]
         for did, dname in dithers:
             self.gif_dither_combo.append(did, dname)
         self.gif_dither_combo.set_active_id(self.cfg.get("gif_dither", "bayer"))
@@ -3190,8 +3269,12 @@ class SettingsDialog:
         loop_label = Gtk.Label(label=_("Loop:"), xalign=0)
         loop_label.set_size_request(150, -1)
         self.gif_loop_combo = Gtk.ComboBoxText()
-        loops = [("0", _("Infinite")), ("1", _("Play once")),
-                 ("2", _("2 times")), ("3", _("3 times"))]
+        loops = [
+            ("0", _("Infinite")),
+            ("1", _("Play once")),
+            ("2", _("2 times")),
+            ("3", _("3 times")),
+        ]
         for lid, lname in loops:
             self.gif_loop_combo.append(lid, lname)
         self.gif_loop_combo.set_active_id(str(self.cfg.get("gif_loop", 0)))
@@ -3305,7 +3388,8 @@ class SettingsDialog:
         dropbox_help = Gtk.Label(xalign=0)
         dropbox_help.set_markup(
             '<small><a href="https://www.dropbox.com/developers/apps">'
-            + _("Get token from Dropbox Developer Console") + "</a></small>"
+            + _("Get token from Dropbox Developer Console")
+            + "</a></small>"
         )
         dropbox_box.pack_start(dropbox_help, False, False, 0)
 
@@ -3434,10 +3518,14 @@ class SettingsDialog:
         # Grid info
         info_label = Gtk.Label(xalign=0)
         info_label.set_markup(
-            _("<b>Keyboard Shortcuts:</b>") + "\n\n"
-            + _("• <b>Ctrl+'</b>: Toggle grid snap on/off") + "\n"
-            + _("• <b>Arrow keys</b>: Nudge 1px (or snap to grid)") + "\n"
-            + _("• <b>Shift+Arrow</b>: Nudge 10px") + "\n\n"
+            _("<b>Keyboard Shortcuts:</b>")
+            + "\n\n"
+            + _("• <b>Ctrl+'</b>: Toggle grid snap on/off")
+            + "\n"
+            + _("• <b>Arrow keys</b>: Nudge 1px (or snap to grid)")
+            + "\n"
+            + _("• <b>Shift+Arrow</b>: Nudge 10px")
+            + "\n\n"
             + _("<i>Grid snap helps align elements precisely.</i>")
         )
         info_label.set_line_wrap(True)
@@ -3458,7 +3546,8 @@ class SettingsDialog:
         # Header
         header = Gtk.Label(xalign=0)
         header.set_markup(
-            _("<b>Global Keyboard Shortcuts</b>") + "\n"
+            _("<b>Global Keyboard Shortcuts</b>")
+            + "\n"
             + _("<small>Click a field, then press your desired key combination</small>")
         )
         box.pack_start(header, False, False, 0)
@@ -3492,7 +3581,9 @@ class SettingsDialog:
 
             # Reset button for this hotkey
             reset_btn = Gtk.Button(label=_("Reset"))
-            reset_btn.set_tooltip_text(f"Reset to default: {self._format_hotkey(default)}")
+            reset_btn.set_tooltip_text(
+                f"Reset to default: {self._format_hotkey(default)}"
+            )
             reset_btn.connect("clicked", self._on_reset_hotkey, key, default)
             grid.attach(reset_btn, 2, row, 1, 1)
 
@@ -3503,10 +3594,14 @@ class SettingsDialog:
         # Info section
         info_label = Gtk.Label(xalign=0)
         info_label.set_markup(
-            _("<b>Notes:</b>") + "\n\n"
-            + _("• Hotkeys require at least one modifier (Ctrl, Alt, Shift, Super)") + "\n"
-            + _("• Press Escape to cancel while setting a hotkey") + "\n"
-            + _("• Hotkeys work globally on GNOME desktop") + "\n"
+            _("<b>Notes:</b>")
+            + "\n\n"
+            + _("• Hotkeys require at least one modifier (Ctrl, Alt, Shift, Super)")
+            + "\n"
+            + _("• Press Escape to cancel while setting a hotkey")
+            + "\n"
+            + _("• Hotkeys work globally on GNOME desktop")
+            + "\n"
             + _("• Restart LikX after changing hotkeys for them to take effect")
         )
         info_label.set_line_wrap(True)
@@ -3565,8 +3660,10 @@ class SettingsDialog:
         # Info
         info_label = Gtk.Label(xalign=0)
         info_label.set_markup(
-            _("<b>Note:</b> Restart LikX after changing the language\n"
-              "for the changes to take full effect.")
+            _(
+                "<b>Note:</b> Restart LikX after changing the language\n"
+                "for the changes to take full effect."
+            )
         )
         info_label.set_line_wrap(True)
         box.pack_start(info_label, False, False, 0)
@@ -3574,17 +3671,17 @@ class SettingsDialog:
         # Help contribute
         contribute_label = Gtk.Label(xalign=0)
         contribute_label.set_markup(
-            _("\n<b>Help translate LikX!</b>\n"
-              "Translation files are in the <tt>locale/</tt> directory.")
+            _(
+                "\n<b>Help translate LikX!</b>\n"
+                "Translation files are in the <tt>locale/</tt> directory."
+            )
         )
         contribute_label.set_line_wrap(True)
         box.pack_start(contribute_label, False, False, 0)
 
         return box
 
-    def _on_reset_hotkey(
-        self, button: Gtk.Button, key: str, default: str
-    ) -> None:
+    def _on_reset_hotkey(self, button: Gtk.Button, key: str, default: str) -> None:
         """Reset a single hotkey to its default value."""
         if key in self.hotkey_entries:
             self.hotkey_entries[key].set_hotkey(default)
@@ -3637,7 +3734,9 @@ class SettingsDialog:
         self.cfg["gif_quality"] = self.gif_quality_combo.get_active_id() or "medium"
         self.cfg["gif_fps"] = int(self.gif_fps_spin.get_value())
         self.cfg["gif_colors"] = int(self.gif_colors_combo.get_active_id() or "256")
-        self.cfg["gif_scale_factor"] = float(self.gif_scale_combo.get_active_id() or "1.0")
+        self.cfg["gif_scale_factor"] = float(
+            self.gif_scale_combo.get_active_id() or "1.0"
+        )
         self.cfg["gif_dither"] = self.gif_dither_combo.get_active_id() or "bayer"
         self.cfg["gif_loop"] = int(self.gif_loop_combo.get_active_id() or "0")
         self.cfg["gif_optimize"] = self.gif_optimize_check.get_active()
@@ -3653,8 +3752,9 @@ class SettingsDialog:
         if config.save_config(self.cfg):
             show_notification(
                 _("Settings Saved"),
-                _("Your preferences have been saved.") + "\n"
-                + _("Restart LikX to apply hotkey changes.")
+                _("Your preferences have been saved.")
+                + "\n"
+                + _("Restart LikX to apply hotkey changes."),
             )
 
     def _reset_to_defaults(self) -> None:
@@ -3949,7 +4049,9 @@ def _on_history(self, button):
     try:
         subprocess.Popen(["xdg-open", str(folder)])
     except Exception as e:
-        show_notification(_("Error"), _("Could not open folder:") + f" {e}", icon="dialog-error")
+        show_notification(
+            _("Error"), _("Could not open folder:") + f" {e}", icon="dialog-error"
+        )
 
 
 def _on_quick_actions(self, button):
@@ -4069,8 +4171,10 @@ def _on_open_image(self, button):
         action=Gtk.FileChooserAction.OPEN,
     )
     dialog.add_buttons(
-        Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-        Gtk.STOCK_OPEN, Gtk.ResponseType.OK,
+        Gtk.STOCK_CANCEL,
+        Gtk.ResponseType.CANCEL,
+        Gtk.STOCK_OPEN,
+        Gtk.ResponseType.OK,
     )
 
     # Add image file filter

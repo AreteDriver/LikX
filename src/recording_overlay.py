@@ -171,9 +171,7 @@ class RecordingOverlay:
 
         # Draw border
         drawing_area = Gtk.DrawingArea()
-        drawing_area.connect(
-            "draw", self._draw_border, width, height, border_width
-        )
+        drawing_area.connect("draw", self._draw_border, width, height, border_width)
         self.border_window.add(drawing_area)
 
         self.border_window.show_all()

@@ -119,21 +119,23 @@ def get_monitors() -> List[MonitorInfo]:
             continue
 
         geometry = monitor.get_geometry()
-        is_primary = (monitor == primary_monitor)
+        is_primary = monitor == primary_monitor
 
         # Get monitor name/model
         name = monitor.get_model() or f"Monitor {i + 1}"
 
-        monitors.append(MonitorInfo(
-            index=i,
-            name=name,
-            x=geometry.x,
-            y=geometry.y,
-            width=geometry.width,
-            height=geometry.height,
-            is_primary=is_primary,
-            scale_factor=monitor.get_scale_factor(),
-        ))
+        monitors.append(
+            MonitorInfo(
+                index=i,
+                name=name,
+                x=geometry.x,
+                y=geometry.y,
+                width=geometry.width,
+                height=geometry.height,
+                is_primary=is_primary,
+                scale_factor=monitor.get_scale_factor(),
+            )
+        )
 
     return monitors
 
@@ -148,8 +150,10 @@ def get_monitor_at_point(x: int, y: int) -> Optional[MonitorInfo]:
         MonitorInfo for the monitor at that point, or None if not found.
     """
     for monitor in get_monitors():
-        if (monitor.x <= x < monitor.x + monitor.width and
-                monitor.y <= y < monitor.y + monitor.height):
+        if (
+            monitor.x <= x < monitor.x + monitor.width
+            and monitor.y <= y < monitor.y + monitor.height
+        ):
             return monitor
     return None
 

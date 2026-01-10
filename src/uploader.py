@@ -14,9 +14,7 @@ class Uploader:
     def __init__(self):
         self.imgur_client_id = "546c25a59c58ad7"  # Anonymous Imgur uploads
 
-    def upload(
-        self, filepath: Path
-    ) -> Tuple[bool, Optional[str], Optional[str]]:
+    def upload(self, filepath: Path) -> Tuple[bool, Optional[str], Optional[str]]:
         """Upload image using configured service.
 
         Args:
@@ -131,9 +129,7 @@ class Uploader:
         except Exception as e:
             return False, None, str(e)
 
-    def upload_to_s3(
-        self, filepath: Path
-    ) -> Tuple[bool, Optional[str], Optional[str]]:
+    def upload_to_s3(self, filepath: Path) -> Tuple[bool, Optional[str], Optional[str]]:
         """Upload image to AWS S3.
 
         Requires AWS CLI configured or environment variables:
@@ -161,10 +157,13 @@ class Uploader:
 
             # Build aws s3 cp command
             cmd = [
-                "aws", "s3", "cp",
+                "aws",
+                "s3",
+                "cp",
                 str(filepath),
                 f"s3://{bucket}/{s3_key}",
-                "--region", region,
+                "--region",
+                region,
             ]
 
             if make_public:
@@ -191,7 +190,11 @@ class Uploader:
         except subprocess.TimeoutExpired:
             return False, None, "Upload timed out"
         except FileNotFoundError:
-            return False, None, "AWS CLI not installed. Install with: pip install awscli"
+            return (
+                False,
+                None,
+                "AWS CLI not installed. Install with: pip install awscli",
+            )
         except Exception as e:
             return False, None, str(e)
 
@@ -226,12 +229,18 @@ class Uploader:
             # Upload file using Dropbox API
             result = subprocess.run(
                 [
-                    "curl", "-X", "POST",
+                    "curl",
+                    "-X",
+                    "POST",
                     "https://content.dropboxapi.com/2/files/upload",
-                    "-H", f"Authorization: Bearer {access_token}",
-                    "-H", "Content-Type: application/octet-stream",
-                    "-H", f'Dropbox-API-Arg: {{"path": "{dropbox_path}", "mode": "add"}}',
-                    "--data-binary", f"@{filepath}",
+                    "-H",
+                    f"Authorization: Bearer {access_token}",
+                    "-H",
+                    "Content-Type: application/octet-stream",
+                    "-H",
+                    f'Dropbox-API-Arg: {{"path": "{dropbox_path}", "mode": "add"}}',
+                    "--data-binary",
+                    f"@{filepath}",
                 ],
                 capture_output=True,
                 text=True,
@@ -250,11 +259,16 @@ class Uploader:
             # Create shared link
             share_result = subprocess.run(
                 [
-                    "curl", "-X", "POST",
+                    "curl",
+                    "-X",
+                    "POST",
                     "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings",
-                    "-H", f"Authorization: Bearer {access_token}",
-                    "-H", "Content-Type: application/json",
-                    "-d", json.dumps({"path": dropbox_path}),
+                    "-H",
+                    f"Authorization: Bearer {access_token}",
+                    "-H",
+                    "Content-Type: application/json",
+                    "-d",
+                    json.dumps({"path": dropbox_path}),
                 ],
                 capture_output=True,
                 text=True,
@@ -270,9 +284,12 @@ class Uploader:
                 elif "error" in share_response:
                     # Link may already exist, try to get existing
                     if "shared_link_already_exists" in str(share_response):
-                        existing = share_response.get("error", {}).get(
-                            "shared_link_already_exists", {}
-                        ).get("metadata", {}).get("url", "")
+                        existing = (
+                            share_response.get("error", {})
+                            .get("shared_link_already_exists", {})
+                            .get("metadata", {})
+                            .get("url", "")
+                        )
                         if existing:
                             return True, existing.replace("dl=0", "dl=1"), None
 
