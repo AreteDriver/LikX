@@ -2678,6 +2678,118 @@ class MainWindow:
         Gtk.main()
 
 
+class HotkeyEntry(Gtk.Button):
+    """A button widget that captures keyboard shortcuts.
+
+    Click the button, then press a key combination to set the hotkey.
+    """
+
+    def __init__(self, initial_value: str = ""):
+        super().__init__()
+        self._hotkey = initial_value
+        self._capturing = False
+        self._update_label()
+
+        self.set_size_request(180, -1)
+        self.connect("clicked", self._on_clicked)
+        self.connect("key-press-event", self._on_key_press)
+        self.connect("focus-out-event", self._on_focus_out)
+
+    def _update_label(self) -> None:
+        """Update button label to show current hotkey."""
+        if self._capturing:
+            self.set_label("Press a key combination...")
+        elif self._hotkey:
+            # Convert GTK format to readable format
+            display = self._hotkey_to_display(self._hotkey)
+            self.set_label(display)
+        else:
+            self.set_label("Click to set...")
+
+    def _hotkey_to_display(self, hotkey: str) -> str:
+        """Convert GTK hotkey format to human-readable format."""
+        display = hotkey
+        display = display.replace("<Control>", "Ctrl+")
+        display = display.replace("<Shift>", "Shift+")
+        display = display.replace("<Alt>", "Alt+")
+        display = display.replace("<Super>", "Super+")
+        return display
+
+    def _display_to_hotkey(self, display: str) -> str:
+        """Convert human-readable format to GTK hotkey format."""
+        hotkey = display
+        hotkey = hotkey.replace("Ctrl+", "<Control>")
+        hotkey = hotkey.replace("Shift+", "<Shift>")
+        hotkey = hotkey.replace("Alt+", "<Alt>")
+        hotkey = hotkey.replace("Super+", "<Super>")
+        return hotkey
+
+    def _on_clicked(self, button: Gtk.Button) -> None:
+        """Start capturing key combination."""
+        self._capturing = True
+        self._update_label()
+        self.grab_focus()
+
+    def _on_key_press(self, widget: Gtk.Widget, event: Gdk.EventKey) -> bool:
+        """Handle key press to capture hotkey."""
+        if not self._capturing:
+            return False
+
+        # Get modifiers
+        modifiers = []
+        state = event.state
+
+        if state & Gdk.ModifierType.CONTROL_MASK:
+            modifiers.append("<Control>")
+        if state & Gdk.ModifierType.SHIFT_MASK:
+            modifiers.append("<Shift>")
+        if state & Gdk.ModifierType.MOD1_MASK:  # Alt
+            modifiers.append("<Alt>")
+        if state & Gdk.ModifierType.SUPER_MASK:
+            modifiers.append("<Super>")
+
+        # Get the key
+        keyval = event.keyval
+        keyname = Gdk.keyval_name(keyval)
+
+        # Ignore modifier-only keys
+        if keyname in ("Control_L", "Control_R", "Shift_L", "Shift_R",
+                       "Alt_L", "Alt_R", "Super_L", "Super_R", "Meta_L", "Meta_R"):
+            return True
+
+        # Escape cancels
+        if keyname == "Escape":
+            self._capturing = False
+            self._update_label()
+            return True
+
+        # Require at least one modifier
+        if not modifiers:
+            return True
+
+        # Build hotkey string
+        self._hotkey = "".join(modifiers) + keyname.upper()
+        self._capturing = False
+        self._update_label()
+        return True
+
+    def _on_focus_out(self, widget: Gtk.Widget, event: Gdk.Event) -> bool:
+        """Cancel capture if focus is lost."""
+        if self._capturing:
+            self._capturing = False
+            self._update_label()
+        return False
+
+    def get_hotkey(self) -> str:
+        """Get the current hotkey value in GTK format."""
+        return self._hotkey
+
+    def set_hotkey(self, hotkey: str) -> None:
+        """Set the hotkey value."""
+        self._hotkey = hotkey
+        self._update_label()
+
+
 class SettingsDialog:
     """Settings dialog window with all options."""
 
@@ -2720,6 +2832,10 @@ class SettingsDialog:
         # Editor settings tab
         editor_box = self._create_editor_settings()
         notebook.append_page(editor_box, Gtk.Label(label="Editor"))
+
+        # Hotkeys settings tab
+        hotkey_box = self._create_hotkey_settings()
+        notebook.append_page(hotkey_box, Gtk.Label(label="Hotkeys"))
 
         self.dialog.show_all()
 
@@ -2807,20 +2923,6 @@ class SettingsDialog:
         self.cursor_check = Gtk.CheckButton(label="Include mouse cursor in screenshots")
         self.cursor_check.set_active(self.cfg.get("include_cursor", False))
         box.pack_start(self.cursor_check, False, False, 0)
-
-        # Hotkeys info
-        box.pack_start(Gtk.Separator(), False, False, 5)
-        hotkey_label = Gtk.Label(xalign=0)
-        hotkey_label.set_markup(
-            "<b>Global Hotkeys:</b>\n\n"
-            + f"Fullscreen: {self.cfg.get('hotkey_fullscreen', 'Ctrl+Shift+F')}\n"
-            + f"Region: {self.cfg.get('hotkey_region', 'Ctrl+Shift+R')}\n"
-            + f"Window: {self.cfg.get('hotkey_window', 'Ctrl+Shift+W')}\n"
-            + f"Record GIF: {self.cfg.get('hotkey_record_gif', 'Ctrl+Alt+G')}\n"
-            + f"Scroll Capture: {self.cfg.get('hotkey_scroll_capture', 'Ctrl+Alt+S')}\n\n"
-            + "<i>(Hotkeys work on GNOME desktop)</i>"
-        )
-        box.pack_start(hotkey_label, False, False, 0)
 
         return box
 
@@ -3052,6 +3154,86 @@ class SettingsDialog:
         value = int(scale.get_value())
         self.grid_size_value.set_text(f"{value}px")
 
+    def _create_hotkey_settings(self) -> Gtk.Box:
+        """Create hotkey settings tab."""
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        box.set_border_width(10)
+
+        # Header
+        header = Gtk.Label(xalign=0)
+        header.set_markup(
+            "<b>Global Keyboard Shortcuts</b>\n"
+            "<small>Click a field, then press your desired key combination</small>"
+        )
+        box.pack_start(header, False, False, 0)
+
+        box.pack_start(Gtk.Separator(), False, False, 5)
+
+        # Create grid for hotkey entries
+        grid = Gtk.Grid()
+        grid.set_column_spacing(15)
+        grid.set_row_spacing(10)
+
+        # Hotkey definitions: (config_key, label, default)
+        hotkeys = [
+            ("hotkey_fullscreen", "Fullscreen Capture:", "<Control><Shift>F"),
+            ("hotkey_region", "Region Capture:", "<Control><Shift>R"),
+            ("hotkey_window", "Window Capture:", "<Control><Shift>W"),
+            ("hotkey_record_gif", "Record GIF:", "<Control><Alt>G"),
+            ("hotkey_scroll_capture", "Scroll Capture:", "<Control><Alt>S"),
+        ]
+
+        self.hotkey_entries = {}
+
+        for row, (key, label_text, default) in enumerate(hotkeys):
+            label = Gtk.Label(label=label_text, xalign=0)
+            label.set_size_request(150, -1)
+            grid.attach(label, 0, row, 1, 1)
+
+            entry = HotkeyEntry(self.cfg.get(key, default))
+            self.hotkey_entries[key] = entry
+            grid.attach(entry, 1, row, 1, 1)
+
+            # Reset button for this hotkey
+            reset_btn = Gtk.Button(label="Reset")
+            reset_btn.set_tooltip_text(f"Reset to default: {self._format_hotkey(default)}")
+            reset_btn.connect("clicked", self._on_reset_hotkey, key, default)
+            grid.attach(reset_btn, 2, row, 1, 1)
+
+        box.pack_start(grid, False, False, 0)
+
+        box.pack_start(Gtk.Separator(), False, False, 10)
+
+        # Info section
+        info_label = Gtk.Label(xalign=0)
+        info_label.set_markup(
+            "<b>Notes:</b>\n\n"
+            "• Hotkeys require at least one modifier (Ctrl, Alt, Shift, Super)\n"
+            "• Press Escape to cancel while setting a hotkey\n"
+            "• Hotkeys work globally on GNOME desktop\n"
+            "• Restart LikX after changing hotkeys for them to take effect"
+        )
+        info_label.set_line_wrap(True)
+        box.pack_start(info_label, False, False, 0)
+
+        return box
+
+    def _format_hotkey(self, hotkey: str) -> str:
+        """Format hotkey for display."""
+        display = hotkey
+        display = display.replace("<Control>", "Ctrl+")
+        display = display.replace("<Shift>", "Shift+")
+        display = display.replace("<Alt>", "Alt+")
+        display = display.replace("<Super>", "Super+")
+        return display
+
+    def _on_reset_hotkey(
+        self, button: Gtk.Button, key: str, default: str
+    ) -> None:
+        """Reset a single hotkey to its default value."""
+        if key in self.hotkey_entries:
+            self.hotkey_entries[key].set_hotkey(default)
+
     def _browse_directory(self, button: Gtk.Button) -> None:
         """Browse for save directory."""
         dialog = Gtk.FileChooserDialog(
@@ -3096,9 +3278,18 @@ class SettingsDialog:
         # Editor settings
         self.cfg["grid_size"] = int(self.grid_size_scale.get_value())
         self.cfg["snap_to_grid"] = self.snap_grid_check.get_active()
+        # Hotkey settings
+        for key, entry in self.hotkey_entries.items():
+            hotkey = entry.get_hotkey()
+            if hotkey:
+                self.cfg[key] = hotkey
 
         if config.save_config(self.cfg):
-            show_notification("Settings Saved", "Your preferences have been saved")
+            show_notification(
+                "Settings Saved",
+                "Your preferences have been saved.\n"
+                "Restart LikX to apply hotkey changes."
+            )
 
     def _reset_to_defaults(self) -> None:
         """Reset settings to defaults."""
