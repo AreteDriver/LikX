@@ -69,14 +69,15 @@ class TestScrollCaptureManagerInit:
 
     def test_init_checks_tools(self):
         """Test that init checks for required tools."""
-        from src.scroll_capture import ScrollCaptureManager, OPENCV_AVAILABLE
+        from src.scroll_capture import ScrollCaptureManager, _ensure_opencv
 
         manager = ScrollCaptureManager()
         assert hasattr(manager, "xdotool_available")
         assert hasattr(manager, "ydotool_available")
         assert hasattr(manager, "wtype_available")
-        # OpenCV is module-level constant
-        assert isinstance(OPENCV_AVAILABLE, bool)
+        # OpenCV is lazy-loaded, trigger it and check result
+        result = _ensure_opencv()
+        assert isinstance(result, bool)
 
     def test_init_detects_display_server(self):
         """Test that init detects display server."""
@@ -208,10 +209,11 @@ class TestCheckTools:
 
     def test_check_opencv(self):
         """Test OpenCV availability check."""
-        from src.scroll_capture import OPENCV_AVAILABLE
+        from src.scroll_capture import _ensure_opencv
 
-        # OPENCV_AVAILABLE is a module-level constant
-        assert isinstance(OPENCV_AVAILABLE, bool)
+        # OpenCV is lazy-loaded, trigger it and check result
+        result = _ensure_opencv()
+        assert isinstance(result, bool)
 
     def test_check_ydotool_available(self):
         """Test ydotool check when available."""

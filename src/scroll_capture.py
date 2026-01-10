@@ -6,14 +6,25 @@ from enum import Enum
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
-import numpy as np
+# Lazy-loaded imports for performance (numpy/cv2 add ~70ms startup)
+np = None
+cv2 = None
+OPENCV_AVAILABLE = None
 
-try:
-    import cv2
 
-    OPENCV_AVAILABLE = True
-except ImportError:
-    OPENCV_AVAILABLE = False
+def _ensure_opencv():
+    """Lazy-load numpy and opencv when needed."""
+    global np, cv2, OPENCV_AVAILABLE
+    if OPENCV_AVAILABLE is None:
+        try:
+            import numpy as _np
+            import cv2 as _cv2
+            np = _np
+            cv2 = _cv2
+            OPENCV_AVAILABLE = True
+        except ImportError:
+            OPENCV_AVAILABLE = False
+    return OPENCV_AVAILABLE
 
 try:
     import gi
@@ -108,7 +119,7 @@ class ScrollCaptureManager:
         if not GTK_AVAILABLE:
             return False, "GTK not available"
 
-        if not OPENCV_AVAILABLE:
+        if not _ensure_opencv():
             return (
                 False,
                 "OpenCV not installed. "
@@ -341,6 +352,9 @@ class ScrollCaptureManager:
         Returns:
             Number of overlapping pixels, or 0 if no match found
         """
+        if not _ensure_opencv():
+            return 0
+
         cfg = config.load_config()
         search_range = cfg.get("scroll_overlap_search", 150)
         ignore_top = cfg.get("scroll_ignore_top", 0.15)
@@ -394,8 +408,9 @@ class ScrollCaptureManager:
 
         return 0
 
-    def _pixbuf_to_numpy(self, pixbuf) -> np.ndarray:
+    def _pixbuf_to_numpy(self, pixbuf):
         """Convert GdkPixbuf to numpy array."""
+        _ensure_opencv()  # Ensure numpy is loaded
         width = pixbuf.get_width()
         height = pixbuf.get_height()
         rowstride = pixbuf.get_rowstride()
@@ -458,6 +473,7 @@ class ScrollCaptureManager:
 
     def _surface_to_pixbuf(self, surface: cairo.ImageSurface) -> object:
         """Convert cairo surface to GdkPixbuf."""
+        _ensure_opencv()  # Ensure numpy is loaded
         width = surface.get_width()
         height = surface.get_height()
 
