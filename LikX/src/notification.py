@@ -2,6 +2,8 @@
 
 import subprocess
 
+from .i18n import _
+
 
 def show_notification(
     title: str,
@@ -67,21 +69,23 @@ def show_notification(
 
 def show_screenshot_saved(filepath: str) -> None:
     """Show notification that screenshot was saved."""
-    show_notification("Screenshot Saved", f"Saved to {filepath}", icon="document-save")
+    show_notification(
+        _("Screenshot Saved"), _("Saved to") + f" {filepath}", icon="document-save"
+    )
 
 
 def show_screenshot_copied() -> None:
     """Show notification that screenshot was copied to clipboard."""
     show_notification(
-        "Screenshot Copied", "Screenshot copied to clipboard", icon="edit-copy"
+        _("Screenshot Copied"), _("Screenshot copied to clipboard"), icon="edit-copy"
     )
 
 
 def show_upload_success(url: str) -> None:
     """Show notification that upload succeeded."""
     show_notification(
-        "Upload Successful",
-        f"URL copied to clipboard: {url}",
+        _("Upload Successful"),
+        _("URL copied to clipboard:") + f" {url}",
         icon="emblem-web",
         timeout=10000,
     )
@@ -89,4 +93,6 @@ def show_upload_success(url: str) -> None:
 
 def show_upload_error(error: str) -> None:
     """Show notification that upload failed."""
-    show_notification("Upload Failed", error, icon="dialog-error", urgency="critical")
+    show_notification(
+        _("Upload Failed"), error, icon="dialog-error", urgency="critical"
+    )

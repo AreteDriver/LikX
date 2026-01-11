@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   security-events: write
 
 jobs:
@@ -164,3 +164,56 @@ jobs:
               except Exception as e:
                   print(f'⚠ {f}: {e}')
           " || true
+
+  flatpak:
+    name: Build Flatpak
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:gnome-47
+      options: --privileged
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          manifest-path: LikX/com.github.aretedriver.likx.yml
+          bundle: likx.flatpak
+          cache-key: flatpak-builder-${{ github.sha }}
+
+      - name: Upload Flatpak artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: likx-flatpak
+          path: likx.flatpak
+          retention-days: 14
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [flatpak]
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Flatpak
+        uses: actions/download-artifact@v4
+        with:
+          name: likx-flatpak
+
+      - name: Rename bundle with version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          mv likx.flatpak likx-${VERSION}.flatpak
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: likx-*.flatpak
+          generate_release_notes: true
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

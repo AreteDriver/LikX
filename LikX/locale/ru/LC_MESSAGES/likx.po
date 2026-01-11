@@ -1,0 +1,510 @@
+# Russian translation for LikX
+# Copyright (C) 2026 LikX Contributors
+# This file is distributed under the same license as the LikX package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: LikX 3.23.0\n"
+"Report-Msgid-Bugs-To: https://github.com/AreteDriver/LikX/issues\n"
+"POT-Creation-Date: 2026-01-10 10:16-0800\n"
+"PO-Revision-Date: 2026-01-10 12:00-0800\n"
+"Last-Translator: LikX Team\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Pen Tool"
+msgstr "Карандаш"
+
+msgid "Highlighter"
+msgstr "Маркер"
+
+msgid "Arrow Tool"
+msgstr "Стрелка"
+
+msgid "Text Tool"
+msgstr "Текст"
+
+msgid "Blur Tool"
+msgstr "Размытие"
+
+msgid "Pixelate Tool"
+msgstr "Пикселизация"
+
+msgid "Rectangle"
+msgstr "Прямоугольник"
+
+msgid "Ellipse"
+msgstr "Эллипс"
+
+msgid "Line Tool"
+msgstr "Линия"
+
+msgid "Crop Tool"
+msgstr "Обрезка"
+
+msgid "Eraser"
+msgstr "Ластик"
+
+msgid "Number Marker"
+msgstr "Нумерация"
+
+msgid "Measure Tool"
+msgstr "Измерение"
+
+msgid "Color Picker"
+msgstr "Пипетка"
+
+msgid "Stamp Tool"
+msgstr "Штамп"
+
+msgid "Zoom Tool"
+msgstr "Масштаб"
+
+msgid "Callout Tool"
+msgstr "Выноска"
+
+msgid "Zoom In"
+msgstr "Увеличить"
+
+msgid "Zoom Out"
+msgstr "Уменьшить"
+
+msgid "Reset Zoom"
+msgstr "Сбросить масштаб"
+
+msgid "Save"
+msgstr "Сохранить"
+
+msgid "Copy to Clipboard"
+msgstr "Копировать в буфер"
+
+msgid "Upload to Cloud"
+msgstr "Загрузить в облако"
+
+msgid "Undo"
+msgstr "Отменить"
+
+msgid "Redo"
+msgstr "Повторить"
+
+msgid "Clear All Annotations"
+msgstr "Очистить все аннотации"
+
+msgid "Add Shadow"
+msgstr "Добавить тень"
+
+msgid "Add Border"
+msgstr "Добавить рамку"
+
+msgid "Round Corners"
+msgstr "Скруглить углы"
+
+msgid "OCR - Extract Text"
+msgstr "OCR - Извлечь текст"
+
+msgid "Pin to Desktop"
+msgstr "Закрепить на рабочем столе"
+
+msgid "Screenshot Saved"
+msgstr "Снимок сохранён"
+
+msgid "Saved to"
+msgstr "Сохранено в"
+
+msgid "Screenshot Copied"
+msgstr "Снимок скопирован"
+
+msgid "Screenshot copied to clipboard"
+msgstr "Снимок скопирован в буфер обмена"
+
+msgid "Upload Successful"
+msgstr "Загрузка успешна"
+
+msgid "URL copied to clipboard:"
+msgstr "URL скопирован в буфер:"
+
+msgid "Upload Failed"
+msgstr "Ошибка загрузки"
+
+msgid "REC"
+msgstr "ЗАП"
+
+msgid "Stop"
+msgstr "Стоп"
+
+msgid "Frames:"
+msgstr "Кадры:"
+
+msgid "Height:"
+msgstr "Высота:"
+
+msgid "(Primary)"
+msgstr "(Основной)"
+
+msgid "Size:"
+msgstr "Размер:"
+
+msgid "Color:"
+msgstr "Цвет:"
+
+msgid "Pick color"
+msgstr "Выбрать цвет"
+
+msgid "Color palette"
+msgstr "Палитра цветов"
+
+msgid "Bold"
+msgstr "Жирный"
+
+msgid "Italic"
+msgstr "Курсив"
+
+msgid "Select stamp"
+msgstr "Выбрать штамп"
+
+msgid "Recent:"
+msgstr "Недавние:"
+
+msgid "Enter text:"
+msgstr "Введите текст:"
+
+msgid "Enter callout text:"
+msgstr "Введите текст выноски:"
+
+msgid "Select which monitor to capture:"
+msgstr "Выберите монитор для захвата:"
+
+msgid "All Monitors (combined)"
+msgstr "Все мониторы (объединённые)"
+
+msgid "Capture Failed"
+msgstr "Ошибка захвата"
+
+msgid "Region Selection Failed"
+msgstr "Ошибка выбора области"
+
+msgid "Recording Unavailable"
+msgstr "Запись недоступна"
+
+msgid "Recording Failed"
+msgstr "Ошибка записи"
+
+msgid "Processing"
+msgstr "Обработка"
+
+msgid "Encoding GIF..."
+msgstr "Кодирование GIF..."
+
+msgid "GIF Saved"
+msgstr "GIF сохранён"
+
+msgid "Duration:"
+msgstr "Длительность:"
+
+msgid "Scroll Capture Unavailable"
+msgstr "Захват прокрутки недоступен"
+
+msgid "Scroll Capture Failed"
+msgstr "Ошибка захвата прокрутки"
+
+msgid "Capture Error"
+msgstr "Ошибка захвата"
+
+msgid "Settings"
+msgstr "Настройки"
+
+msgid "Reset to Defaults"
+msgstr "Сбросить настройки"
+
+msgid "General"
+msgstr "Общие"
+
+msgid "Capture"
+msgstr "Захват"
+
+msgid "GIF"
+msgstr "GIF"
+
+msgid "Upload"
+msgstr "Загрузка"
+
+msgid "Editor"
+msgstr "Редактор"
+
+msgid "Hotkeys"
+msgstr "Горячие клавиши"
+
+msgid "Language"
+msgstr "Язык"
+
+msgid "Save directory:"
+msgstr "Папка сохранения:"
+
+msgid "Browse..."
+msgstr "Обзор..."
+
+msgid "Default format:"
+msgstr "Формат по умолчанию:"
+
+msgid "Auto-save screenshots (skip editor)"
+msgstr "Автосохранение (пропустить редактор)"
+
+msgid "Copy to clipboard automatically"
+msgstr "Автоматически копировать в буфер"
+
+msgid "Show desktop notifications"
+msgstr "Показывать уведомления"
+
+msgid "Open editor after capture"
+msgstr "Открыть редактор после захвата"
+
+msgid "Capture delay (seconds):"
+msgstr "Задержка захвата (сек):"
+
+msgid "Include mouse cursor in screenshots"
+msgstr "Включить курсор мыши"
+
+msgid "Quality preset:"
+msgstr "Качество:"
+
+msgid "Low (smaller file)"
+msgstr "Низкое (меньший файл)"
+
+msgid "Medium (balanced)"
+msgstr "Среднее (баланс)"
+
+msgid "High (best quality)"
+msgstr "Высокое (лучшее качество)"
+
+msgid "Frame rate (FPS):"
+msgstr "Частота кадров (FPS):"
+
+msgid "Color palette size:"
+msgstr "Размер палитры:"
+
+msgid " colors"
+msgstr " цветов"
+
+msgid "Scale factor:"
+msgstr "Масштаб:"
+
+msgid "Dithering:"
+msgstr "Сглаживание:"
+
+msgid "None (sharp, may band)"
+msgstr "Нет (чёткое, возможны полосы)"
+
+msgid "Bayer (ordered, fast)"
+msgstr "Байера (упорядоченное, быстро)"
+
+msgid "Floyd-Steinberg (smooth)"
+msgstr "Флойда-Стейнберга (плавное)"
+
+msgid "Sierra (quality)"
+msgstr "Сьерра (качество)"
+
+msgid "Loop:"
+msgstr "Повтор:"
+
+msgid "Infinite"
+msgstr "Бесконечно"
+
+msgid "Play once"
+msgstr "Один раз"
+
+msgid "2 times"
+msgstr "2 раза"
+
+msgid "3 times"
+msgstr "3 раза"
+
+msgid "Optimize with gifsicle (smaller file size)"
+msgstr "Оптимизировать gifsicle (меньший размер)"
+
+msgid "Max duration (seconds):"
+msgstr "Макс. длительность (сек):"
+
+msgid "Upload service:"
+msgstr "Сервис загрузки:"
+
+msgid "Automatically upload after save"
+msgstr "Загружать после сохранения"
+
+msgid "S3 Settings"
+msgstr "Настройки S3"
+
+msgid "Bucket:"
+msgstr "Бакет:"
+
+msgid "Region:"
+msgstr "Регион:"
+
+msgid "Make uploaded files public"
+msgstr "Сделать файлы публичными"
+
+msgid "Dropbox Settings"
+msgstr "Настройки Dropbox"
+
+msgid "Access Token:"
+msgstr "Токен доступа:"
+
+msgid "Get token from Dropbox Developer Console"
+msgstr "Получить токен в консоли разработчика Dropbox"
+
+msgid "Google Drive Settings"
+msgstr "Настройки Google Drive"
+
+msgid "Folder ID:"
+msgstr "ID папки:"
+
+msgid "<b>Grid Settings</b>"
+msgstr "<b>Настройки сетки</b>"
+
+msgid "Grid size (pixels):"
+msgstr "Размер сетки (пикс.):"
+
+msgid "Enable grid snap by default (Ctrl+' to toggle)"
+msgstr "Привязка к сетке (Ctrl+' для переключения)"
+
+msgid "<b>Keyboard Shortcuts:</b>"
+msgstr "<b>Горячие клавиши:</b>"
+
+msgid "• <b>Ctrl+'</b>: Toggle grid snap on/off"
+msgstr "• <b>Ctrl+'</b>: Вкл/выкл привязку к сетке"
+
+msgid "• <b>Arrow keys</b>: Nudge 1px (or snap to grid)"
+msgstr "• <b>Стрелки</b>: Сдвиг 1px (или к сетке)"
+
+msgid "• <b>Shift+Arrow</b>: Nudge 10px"
+msgstr "• <b>Shift+Стрелка</b>: Сдвиг 10px"
+
+msgid "<i>Grid snap helps align elements precisely.</i>"
+msgstr "<i>Привязка помогает точно выравнивать элементы.</i>"
+
+msgid "<b>Global Keyboard Shortcuts</b>"
+msgstr "<b>Глобальные горячие клавиши</b>"
+
+msgid "<small>Click a field, then press your desired key combination</small>"
+msgstr "<small>Нажмите на поле и введите комбинацию клавиш</small>"
+
+msgid "Fullscreen Capture:"
+msgstr "Захват экрана:"
+
+msgid "Region Capture:"
+msgstr "Захват области:"
+
+msgid "Window Capture:"
+msgstr "Захват окна:"
+
+msgid "Record GIF:"
+msgstr "Запись GIF:"
+
+msgid "Scroll Capture:"
+msgstr "Захват прокрутки:"
+
+msgid "Reset"
+msgstr "Сброс"
+
+msgid "<b>Notes:</b>"
+msgstr "<b>Примечания:</b>"
+
+msgid "• Hotkeys require at least one modifier (Ctrl, Alt, Shift, Super)"
+msgstr "• Требуется модификатор (Ctrl, Alt, Shift, Super)"
+
+msgid "• Press Escape to cancel while setting a hotkey"
+msgstr "• Нажмите Escape для отмены"
+
+msgid "• Hotkeys work globally on GNOME desktop"
+msgstr "• Работает глобально в GNOME"
+
+msgid "• Restart LikX after changing hotkeys for them to take effect"
+msgstr "• Перезапустите LikX после изменения клавиш"
+
+msgid "<b>Language Settings</b>"
+msgstr "<b>Настройки языка</b>"
+
+msgid "Interface language:"
+msgstr "Язык интерфейса:"
+
+msgid "System Default"
+msgstr "Системный"
+
+msgid ""
+"<b>Note:</b> Restart LikX after changing the language\n"
+"for the changes to take full effect."
+msgstr ""
+"<b>Примечание:</b> Перезапустите LikX после смены языка\n"
+"для применения изменений."
+
+msgid ""
+"\n"
+"<b>Help translate LikX!</b>\n"
+"Translation files are in the <tt>locale/</tt> directory."
+msgstr ""
+"\n"
+"<b>Помогите перевести LikX!</b>\n"
+"Файлы переводов находятся в папке <tt>locale/</tt>."
+
+msgid "Select Save Directory"
+msgstr "Выберите папку сохранения"
+
+msgid "Settings Saved"
+msgstr "Настройки сохранены"
+
+msgid "Your preferences have been saved."
+msgstr "Ваши настройки сохранены."
+
+msgid "Restart LikX to apply hotkey changes."
+msgstr "Перезапустите LikX для применения клавиш."
+
+msgid "Settings Reset"
+msgstr "Настройки сброшены"
+
+msgid "All settings reset to defaults"
+msgstr "Все настройки сброшены"
+
+msgid "OCR"
+msgstr "OCR"
+
+msgid "Extract text from image (Tesseract)"
+msgstr "Извлечь текст из изображения (Tesseract)"
+
+msgid "Pin to desktop (always on top)"
+msgstr "Закрепить (поверх всех окон)"
+
+msgid "Image Effects"
+msgstr "Эффекты изображения"
+
+msgid "Drop Shadow"
+msgstr "Тень"
+
+msgid "Background"
+msgstr "Фон"
+
+msgid "Adjust Brightness/Contrast"
+msgstr "Яркость/Контраст"
+
+msgid "Grayscale"
+msgstr "Оттенки серого"
+
+msgid "Invert Colors"
+msgstr "Инвертировать цвета"
+
+msgid "Pin Failed"
+msgstr "Ошибка закрепления"
+
+msgid "Error"
+msgstr "Ошибка"
+
+msgid "Could not open folder:"
+msgstr "Не удалось открыть папку:"
+
+msgid "Brightness:"
+msgstr "Яркость:"
+
+msgid "Contrast:"
+msgstr "Контраст:"

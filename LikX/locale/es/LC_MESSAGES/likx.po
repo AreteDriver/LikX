@@ -1,0 +1,454 @@
+# Spanish translations for LikX.
+# Copyright (C) 2024 LikX Contributors
+# This file is distributed under the same license as the LikX package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: LikX 3.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/AreteDriver/LikX/issues\n"
+"POT-Creation-Date: 2026-01-10 10:16-0800\n"
+"PO-Revision-Date: 2026-01-10 10:30-0800\n"
+"Last-Translator: Claude <noreply@anthropic.com>\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# Tools
+msgid "Pen Tool"
+msgstr "Herramienta Pluma"
+
+msgid "Highlighter"
+msgstr "Resaltador"
+
+msgid "Arrow Tool"
+msgstr "Herramienta Flecha"
+
+msgid "Text Tool"
+msgstr "Herramienta Texto"
+
+msgid "Blur Tool"
+msgstr "Herramienta Difuminar"
+
+msgid "Pixelate Tool"
+msgstr "Herramienta Pixelar"
+
+msgid "Rectangle"
+msgstr "Rectángulo"
+
+msgid "Ellipse"
+msgstr "Elipse"
+
+msgid "Line Tool"
+msgstr "Herramienta Línea"
+
+msgid "Crop Tool"
+msgstr "Herramienta Recortar"
+
+msgid "Eraser"
+msgstr "Borrador"
+
+msgid "Number Marker"
+msgstr "Marcador Numérico"
+
+msgid "Measure Tool"
+msgstr "Herramienta Medir"
+
+msgid "Color Picker"
+msgstr "Selector de Color"
+
+msgid "Stamp Tool"
+msgstr "Herramienta Sello"
+
+msgid "Zoom Tool"
+msgstr "Herramienta Zoom"
+
+msgid "Callout Tool"
+msgstr "Herramienta Llamada"
+
+# Zoom Actions
+msgid "Zoom In"
+msgstr "Acercar"
+
+msgid "Zoom Out"
+msgstr "Alejar"
+
+msgid "Reset Zoom"
+msgstr "Restablecer Zoom"
+
+# Actions
+msgid "Save"
+msgstr "Guardar"
+
+msgid "Copy to Clipboard"
+msgstr "Copiar al Portapapeles"
+
+msgid "Upload to Cloud"
+msgstr "Subir a la Nube"
+
+msgid "Undo"
+msgstr "Deshacer"
+
+msgid "Redo"
+msgstr "Rehacer"
+
+msgid "Clear All Annotations"
+msgstr "Borrar Todas las Anotaciones"
+
+# Effects
+msgid "Add Shadow"
+msgstr "Agregar Sombra"
+
+msgid "Add Border"
+msgstr "Agregar Borde"
+
+msgid "Round Corners"
+msgstr "Esquinas Redondeadas"
+
+msgid "OCR - Extract Text"
+msgstr "OCR - Extraer Texto"
+
+msgid "Pin to Desktop"
+msgstr "Fijar al Escritorio"
+
+# Notifications
+msgid "Screenshot Saved"
+msgstr "Captura Guardada"
+
+msgid "Saved to"
+msgstr "Guardado en"
+
+msgid "Screenshot Copied"
+msgstr "Captura Copiada"
+
+msgid "Screenshot copied to clipboard"
+msgstr "Captura copiada al portapapeles"
+
+msgid "Upload Successful"
+msgstr "Subida Exitosa"
+
+msgid "URL copied to clipboard:"
+msgstr "URL copiada al portapapeles:"
+
+msgid "Upload Failed"
+msgstr "Error al Subir"
+
+msgid "Capture Failed"
+msgstr "Error en la Captura"
+
+msgid "Region Selection Failed"
+msgstr "Error en la Selección de Región"
+
+msgid "Recording Unavailable"
+msgstr "Grabación No Disponible"
+
+msgid "Recording Failed"
+msgstr "Error en la Grabación"
+
+msgid "Processing"
+msgstr "Procesando"
+
+msgid "Encoding GIF..."
+msgstr "Codificando GIF..."
+
+msgid "GIF Saved"
+msgstr "GIF Guardado"
+
+msgid "Duration:"
+msgstr "Duración:"
+
+msgid "Scroll Capture Unavailable"
+msgstr "Captura con Desplazamiento No Disponible"
+
+msgid "Scroll Capture Failed"
+msgstr "Error en Captura con Desplazamiento"
+
+msgid "Capture Error"
+msgstr "Error de Captura"
+
+msgid "Pin Failed"
+msgstr "Error al Fijar"
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Could not open folder:"
+msgstr "No se pudo abrir la carpeta:"
+
+# Recording Overlay
+msgid "REC"
+msgstr "REC"
+
+msgid "Stop"
+msgstr "Detener"
+
+# Scroll Overlay
+msgid "Frames:"
+msgstr "Cuadros:"
+
+msgid "Height:"
+msgstr "Altura:"
+
+# Settings Dialog
+msgid "Settings"
+msgstr "Configuración"
+
+msgid "Reset to Defaults"
+msgstr "Restablecer Valores"
+
+msgid "General"
+msgstr "General"
+
+msgid "Capture"
+msgstr "Captura"
+
+msgid "Upload"
+msgstr "Subida"
+
+msgid "Editor"
+msgstr "Editor"
+
+msgid "Hotkeys"
+msgstr "Atajos"
+
+msgid "Language"
+msgstr "Idioma"
+
+# General Settings
+msgid "Save directory:"
+msgstr "Directorio de guardado:"
+
+msgid "Browse..."
+msgstr "Examinar..."
+
+msgid "Default format:"
+msgstr "Formato predeterminado:"
+
+msgid "Auto-save screenshots (skip editor)"
+msgstr "Guardar capturas automáticamente (omitir editor)"
+
+msgid "Copy to clipboard automatically"
+msgstr "Copiar al portapapeles automáticamente"
+
+msgid "Show desktop notifications"
+msgstr "Mostrar notificaciones de escritorio"
+
+msgid "Open editor after capture"
+msgstr "Abrir editor después de capturar"
+
+# Capture Settings
+msgid "Capture delay (seconds):"
+msgstr "Retraso de captura (segundos):"
+
+msgid "Include mouse cursor in screenshots"
+msgstr "Incluir cursor del ratón en las capturas"
+
+# Upload Settings
+msgid "Upload service:"
+msgstr "Servicio de subida:"
+
+msgid "Automatically upload after save"
+msgstr "Subir automáticamente después de guardar"
+
+msgid "S3 Settings"
+msgstr "Configuración S3"
+
+msgid "Bucket:"
+msgstr "Bucket:"
+
+msgid "Region:"
+msgstr "Región:"
+
+msgid "Make uploaded files public"
+msgstr "Hacer públicos los archivos subidos"
+
+msgid "Dropbox Settings"
+msgstr "Configuración Dropbox"
+
+msgid "Access Token:"
+msgstr "Token de Acceso:"
+
+msgid "Get token from Dropbox Developer Console"
+msgstr "Obtener token desde la Consola de Desarrolladores de Dropbox"
+
+msgid "Google Drive Settings"
+msgstr "Configuración Google Drive"
+
+msgid "Folder ID:"
+msgstr "ID de Carpeta:"
+
+# Editor Settings
+msgid "<b>Grid Settings</b>"
+msgstr "<b>Configuración de Cuadrícula</b>"
+
+msgid "Grid size (pixels):"
+msgstr "Tamaño de cuadrícula (píxeles):"
+
+msgid "Enable grid snap by default (Ctrl+' to toggle)"
+msgstr "Activar ajuste a cuadrícula por defecto (Ctrl+' para alternar)"
+
+msgid "<b>Keyboard Shortcuts:</b>"
+msgstr "<b>Atajos de Teclado:</b>"
+
+msgid "• <b>Ctrl+'</b>: Toggle grid snap on/off"
+msgstr "• <b>Ctrl+'</b>: Alternar ajuste a cuadrícula"
+
+msgid "• <b>Arrow keys</b>: Nudge 1px (or snap to grid)"
+msgstr "• <b>Teclas de flecha</b>: Mover 1px (o ajustar a cuadrícula)"
+
+msgid "• <b>Shift+Arrow</b>: Nudge 10px"
+msgstr "• <b>Shift+Flecha</b>: Mover 10px"
+
+msgid "<i>Grid snap helps align elements precisely.</i>"
+msgstr "<i>El ajuste a cuadrícula ayuda a alinear elementos con precisión.</i>"
+
+# Hotkey Settings
+msgid "<b>Global Keyboard Shortcuts</b>"
+msgstr "<b>Atajos de Teclado Globales</b>"
+
+msgid "<small>Click a field, then press your desired key combination</small>"
+msgstr "<small>Haz clic en un campo, luego presiona la combinación de teclas deseada</small>"
+
+msgid "Fullscreen Capture:"
+msgstr "Captura de Pantalla Completa:"
+
+msgid "Region Capture:"
+msgstr "Captura de Región:"
+
+msgid "Window Capture:"
+msgstr "Captura de Ventana:"
+
+msgid "Record GIF:"
+msgstr "Grabar GIF:"
+
+msgid "Scroll Capture:"
+msgstr "Captura con Desplazamiento:"
+
+msgid "Reset"
+msgstr "Restablecer"
+
+msgid "<b>Notes:</b>"
+msgstr "<b>Notas:</b>"
+
+msgid "• Hotkeys require at least one modifier (Ctrl, Alt, Shift, Super)"
+msgstr "• Los atajos requieren al menos un modificador (Ctrl, Alt, Shift, Super)"
+
+msgid "• Press Escape to cancel while setting a hotkey"
+msgstr "• Presiona Escape para cancelar mientras configuras un atajo"
+
+msgid "• Hotkeys work globally on GNOME desktop"
+msgstr "• Los atajos funcionan globalmente en el escritorio GNOME"
+
+msgid "• Restart LikX after changing hotkeys for them to take effect"
+msgstr "• Reinicia LikX después de cambiar los atajos para que surtan efecto"
+
+# Language Settings
+msgid "<b>Language Settings</b>"
+msgstr "<b>Configuración de Idioma</b>"
+
+msgid "Interface language:"
+msgstr "Idioma de la interfaz:"
+
+msgid "System Default"
+msgstr "Predeterminado del Sistema"
+
+msgid "<b>Note:</b> Restart LikX after changing the language\nfor the changes to take full effect."
+msgstr "<b>Nota:</b> Reinicia LikX después de cambiar el idioma\npara que los cambios surtan efecto."
+
+msgid "\n<b>Help translate LikX!</b>\nTranslation files are in the <tt>locale/</tt> directory."
+msgstr "\n<b>¡Ayuda a traducir LikX!</b>\nLos archivos de traducción están en el directorio <tt>locale/</tt>."
+
+# Misc UI
+msgid "Select Save Directory"
+msgstr "Seleccionar Directorio de Guardado"
+
+msgid "Settings Saved"
+msgstr "Configuración Guardada"
+
+msgid "Your preferences have been saved."
+msgstr "Tus preferencias han sido guardadas."
+
+msgid "Restart LikX to apply hotkey changes."
+msgstr "Reinicia LikX para aplicar los cambios de atajos."
+
+msgid "Settings Reset"
+msgstr "Configuración Restablecida"
+
+msgid "All settings reset to defaults"
+msgstr "Toda la configuración restablecida a valores predeterminados"
+
+msgid "(Primary)"
+msgstr "(Principal)"
+
+msgid "Select which monitor to capture:"
+msgstr "Selecciona qué monitor capturar:"
+
+msgid "All Monitors (combined)"
+msgstr "Todos los Monitores (combinados)"
+
+# Editor UI
+msgid "Size:"
+msgstr "Tamaño:"
+
+msgid "Color:"
+msgstr "Color:"
+
+msgid "Recent:"
+msgstr "Recientes:"
+
+msgid "Enter text:"
+msgstr "Ingresa texto:"
+
+msgid "Enter callout text:"
+msgstr "Ingresa texto de llamada:"
+
+msgid "Pick color"
+msgstr "Elegir color"
+
+msgid "Color palette"
+msgstr "Paleta de colores"
+
+msgid "Bold"
+msgstr "Negrita"
+
+msgid "Italic"
+msgstr "Cursiva"
+
+msgid "Select stamp"
+msgstr "Seleccionar sello"
+
+msgid "OCR"
+msgstr "OCR"
+
+msgid "Extract text from image (Tesseract)"
+msgstr "Extraer texto de imagen (Tesseract)"
+
+msgid "Pin to desktop (always on top)"
+msgstr "Fijar al escritorio (siempre visible)"
+
+msgid "Image Effects"
+msgstr "Efectos de Imagen"
+
+# Effects Menu
+msgid "Drop Shadow"
+msgstr "Sombra Paralela"
+
+msgid "Background"
+msgstr "Fondo"
+
+msgid "Adjust Brightness/Contrast"
+msgstr "Ajustar Brillo/Contraste"
+
+msgid "Grayscale"
+msgstr "Escala de Grises"
+
+msgid "Invert Colors"
+msgstr "Invertir Colores"
+
+msgid "Brightness:"
+msgstr "Brillo:"
+
+msgid "Contrast:"
+msgstr "Contraste:"

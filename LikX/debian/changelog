@@ -1,3 +1,27 @@
+likx (3.24.0-1) unstable; urgency=medium
+
+  * Add Wayland support for scroll capture (ydotool/wtype)
+  * Add GIF quality options: dithering, loop count, gifsicle optimization
+  * Add 6 new translations: French, German, Portuguese, Italian, Russian, Japanese
+  * Now supports 8 languages total
+  * Fix flaky test with coverage instrumentation
+  * Add 33 new tests (955 total)
+  * Code formatting improvements
+
+ -- AreteDriver <aretedriver@users.noreply.github.com>  Fri, 10 Jan 2026 14:00:00 +0000
+
+likx (3.23.0-1) unstable; urgency=medium
+
+  * Add internationalization (i18n) with Spanish translation
+  * Add GIF recording (ffmpeg on X11, wf-recorder on Wayland)
+  * Add scrolling screenshot capture with auto-stitching
+  * Add multi-monitor quick-select (number keys 1-9)
+  * Add customizable keyboard shortcuts UI
+  * Add cloud upload support for S3, Dropbox, Google Drive
+  * 891 tests with full coverage
+
+ -- AreteDriver <aretedriver@users.noreply.github.com>  Fri, 10 Jan 2026 12:00:00 +0000
+
 likx (3.2.0-1) unstable; urgency=medium
 
   * Add Measure Tool (M) for pixel distance and dimension display

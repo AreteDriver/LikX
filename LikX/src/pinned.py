@@ -153,7 +153,8 @@ class PinnedWindow:
 
     def _on_opacity_changed(self, scale):
         """Change window opacity."""
-        self.window.set_opacity(scale.get_value())
+        # Use Widget.set_opacity instead of deprecated Window.set_opacity
+        Gtk.Widget.set_opacity(self.window, scale.get_value())
 
     def _on_button_press(self, widget, event):
         """Start dragging."""

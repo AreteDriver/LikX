@@ -277,3 +277,307 @@ class TestPinnedWindowOpacity:
     def test_opacity_default(self):
         default_opacity = 1.0
         assert default_opacity == 1.0
+
+
+import pytest
+
+
+def _create_test_pixbuf(width=100, height=100):
+    """Create a test pixbuf."""
+    try:
+        import gi
+        gi.require_version("GdkPixbuf", "2.0")
+        from gi.repository import GdkPixbuf
+        pixbuf = GdkPixbuf.Pixbuf.new(
+            GdkPixbuf.Colorspace.RGB, True, 8, width, height
+        )
+        pixbuf.fill(0x808080FF)
+        return pixbuf
+    except Exception:
+        return None
+
+
+class TestPinnedWindowWithGTK:
+    """Test PinnedWindow with real GTK."""
+
+    @pytest.fixture
+    def pixbuf(self):
+        """Create test pixbuf."""
+        pb = _create_test_pixbuf(200, 150)
+        if pb is None:
+            pytest.skip("GTK not available")
+        return pb
+
+    def test_pinned_window_creates(self, pixbuf):
+        """Test PinnedWindow can be created."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf, title="Test Window")
+        assert pw is not None
+        assert pw.pixbuf == pixbuf
+        assert pw.scale == 1.0
+        pw.window.destroy()
+
+    def test_pinned_window_initial_state(self, pixbuf):
+        """Test initial state of PinnedWindow."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        assert pw.dragging is False
+        assert pw.offset_x == 0
+        assert pw.offset_y == 0
+        assert pw.drag_start_x == 0
+        assert pw.drag_start_y == 0
+        pw.window.destroy()
+
+    def test_zoom_in(self, pixbuf):
+        """Test zoom in increases scale."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        original_scale = pw.scale
+        pw._zoom(1.2)
+        assert pw.scale > original_scale
+        pw.window.destroy()
+
+    def test_zoom_out(self, pixbuf):
+        """Test zoom out decreases scale."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        original_scale = pw.scale
+        pw._zoom(0.8)
+        assert pw.scale < original_scale
+        pw.window.destroy()
+
+    def test_reset_zoom(self, pixbuf):
+        """Test reset zoom restores scale to 1.0."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        pw._zoom(2.0)  # Zoom in
+        assert pw.scale != 1.0
+        pw._reset_zoom()
+        assert pw.scale == 1.0
+        pw.window.destroy()
+
+    def test_zoom_max_clamp(self, pixbuf):
+        """Test zoom is clamped at maximum."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        # Zoom in many times
+        for _ in range(20):
+            pw._zoom(1.5)
+        assert pw.scale <= 10.0
+        pw.window.destroy()
+
+    def test_zoom_min_clamp(self, pixbuf):
+        """Test zoom is clamped at minimum."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        # Zoom out many times
+        for _ in range(20):
+            pw._zoom(0.5)
+        assert pw.scale >= 0.1
+        pw.window.destroy()
+
+    def test_pin_toggle(self, pixbuf):
+        """Test pin toggle handler."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        # Toggle off
+        pw.pin_toggle.set_active(False)
+        pw._on_pin_toggled(pw.pin_toggle)
+        # Toggle on
+        pw.pin_toggle.set_active(True)
+        pw._on_pin_toggled(pw.pin_toggle)
+        pw.window.destroy()
+
+    def test_opacity_change(self, pixbuf):
+        """Test opacity change handler."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        pw.opacity_scale.set_value(0.5)
+        pw._on_opacity_changed(pw.opacity_scale)
+        pw.window.destroy()
+
+    def test_destroy_handler(self, pixbuf):
+        """Test destroy handler."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        pw._on_destroy(pw.window)
+        pw.window.destroy()
+
+
+class TestPinnedWindowEventHandlers:
+    """Test event handler logic with mock events."""
+
+    @pytest.fixture
+    def pixbuf(self):
+        """Create test pixbuf."""
+        pb = _create_test_pixbuf(100, 100)
+        if pb is None:
+            pytest.skip("GTK not available")
+        return pb
+
+    def test_button_press_starts_drag(self, pixbuf):
+        """Test button press starts dragging."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+
+        # Create mock event
+        mock_event = MagicMock()
+        mock_event.button = 1
+        mock_event.x = 50
+        mock_event.y = 60
+
+        pw._on_button_press(pw.image, mock_event)
+
+        assert pw.dragging is True
+        assert pw.drag_start_x == 50
+        assert pw.drag_start_y == 60
+        pw.window.destroy()
+
+    def test_button_release_stops_drag(self, pixbuf):
+        """Test button release stops dragging."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        pw.dragging = True
+
+        mock_event = MagicMock()
+        mock_event.button = 1
+
+        pw._on_button_release(pw.image, mock_event)
+
+        assert pw.dragging is False
+        pw.window.destroy()
+
+    def test_motion_during_drag(self, pixbuf):
+        """Test motion event during drag."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        pw.dragging = True
+        pw.drag_start_x = 100
+        pw.drag_start_y = 100
+
+        mock_event = MagicMock()
+        mock_event.x = 150
+        mock_event.y = 120
+
+        result = pw._on_motion(pw.image, mock_event)
+        assert result is True
+        pw.window.destroy()
+
+    def test_motion_without_drag(self, pixbuf):
+        """Test motion event without dragging."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        pw.dragging = False
+
+        mock_event = MagicMock()
+        mock_event.x = 150
+        mock_event.y = 120
+
+        result = pw._on_motion(pw.image, mock_event)
+        assert result is True
+        pw.window.destroy()
+
+    def test_right_click_does_not_start_drag(self, pixbuf):
+        """Test right click doesn't start drag."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+
+        mock_event = MagicMock()
+        mock_event.button = 3  # Right click
+        mock_event.x = 50
+        mock_event.y = 60
+
+        pw._on_button_press(pw.image, mock_event)
+
+        assert pw.dragging is False
+        pw.window.destroy()
+
+
+class TestPinnedWindowToolbar:
+    """Test toolbar creation."""
+
+    @pytest.fixture
+    def pixbuf(self):
+        """Create test pixbuf."""
+        pb = _create_test_pixbuf(100, 100)
+        if pb is None:
+            pytest.skip("GTK not available")
+        return pb
+
+    def test_toolbar_created(self, pixbuf):
+        """Test toolbar is created."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        toolbar = pw._create_toolbar()
+        assert toolbar is not None
+        pw.window.destroy()
+
+    def test_pin_toggle_exists(self, pixbuf):
+        """Test pin toggle button exists."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        assert pw.pin_toggle is not None
+        assert pw.pin_toggle.get_active() is True  # Default on
+        pw.window.destroy()
+
+    def test_opacity_scale_exists(self, pixbuf):
+        """Test opacity scale exists."""
+        from src.pinned import PinnedWindow, GTK_AVAILABLE
+        if not GTK_AVAILABLE:
+            pytest.skip("GTK not available")
+
+        pw = PinnedWindow(pixbuf)
+        assert pw.opacity_scale is not None
+        assert pw.opacity_scale.get_value() == 1.0  # Default full opacity
+        pw.window.destroy()

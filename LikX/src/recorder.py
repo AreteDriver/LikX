@@ -49,26 +49,19 @@ class GifRecorder:
         self.display_server = detect_display_server()
         self.ffmpeg_available = self._check_ffmpeg()
         self.wf_recorder_available = self._check_wf_recorder()
+        self.gifsicle_available = self._check_gifsicle()
 
     def _check_ffmpeg(self) -> bool:
         """Check if ffmpeg is available."""
-        try:
-            result = subprocess.run(
-                ["ffmpeg", "-version"], capture_output=True, timeout=2
-            )
-            return result.returncode == 0
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            return False
+        return config.check_tool_available(["ffmpeg", "-version"])
 
     def _check_wf_recorder(self) -> bool:
         """Check if wf-recorder is available (for wlroots Wayland)."""
-        try:
-            result = subprocess.run(
-                ["wf-recorder", "--help"], capture_output=True, timeout=2
-            )
-            return result.returncode == 0
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            return False
+        return config.check_tool_available(["wf-recorder", "--help"])
+
+    def _check_gifsicle(self) -> bool:
+        """Check if gifsicle is available for GIF optimization."""
+        return config.check_tool_available(["gifsicle", "--version"])
 
     def is_available(self) -> Tuple[bool, Optional[str]]:
         """Check if recording is available on this system."""
@@ -283,6 +276,9 @@ class GifRecorder:
         colors = cfg.get("gif_colors", 256)
         scale = cfg.get("gif_scale_factor", 1.0)
         fps = cfg.get("gif_fps", 15)
+        dither = cfg.get("gif_dither", "bayer")
+        loop_count = cfg.get("gif_loop", 0)
+        optimize = cfg.get("gif_optimize", True)
 
         # Apply quality presets
         if quality == "low":
@@ -303,6 +299,9 @@ class GifRecorder:
 
         filters.append(f"fps={fps}")
         filter_str = ",".join(filters) if filters else f"fps={fps}"
+
+        # Build dither string for paletteuse
+        dither_opts = self._get_dither_options(dither)
 
         # Two-pass encoding for optimal GIF quality with palette
         palette_path = Path(tempfile.mktemp(suffix=".png"))
@@ -335,7 +334,9 @@ class GifRecorder:
                 "-i",
                 str(palette_path),
                 "-lavfi",
-                f"{filter_str} [x]; [x][1:v] paletteuse=dither=bayer:bayer_scale=5",
+                f"{filter_str} [x]; [x][1:v] paletteuse={dither_opts}",
+                "-loop",
+                str(loop_count),
                 str(output_path),
             ]
 
@@ -346,6 +347,10 @@ class GifRecorder:
                     error=f"GIF encoding failed: {result.stderr.decode()[:200]}",
                 )
 
+            # Optional: Optimize with gifsicle
+            if optimize and self.gifsicle_available:
+                self._optimize_gif(output_path)
+
             return RecordingResult(True, filepath=output_path, duration=duration)
 
         except subprocess.TimeoutExpired:
@@ -355,6 +360,43 @@ class GifRecorder:
         finally:
             if palette_path.exists():
                 palette_path.unlink()
+
+    def _get_dither_options(self, dither: str) -> str:
+        """Get ffmpeg paletteuse dither options string."""
+        dither_map = {
+            "none": "dither=none",
+            "bayer": "dither=bayer:bayer_scale=5",
+            "floyd_steinberg": "dither=floyd_steinberg",
+            "sierra2": "dither=sierra2",
+            "sierra2_4a": "dither=sierra2_4a",
+        }
+        return dither_map.get(dither, "dither=bayer:bayer_scale=5")
+
+    def _optimize_gif(self, gif_path: Path) -> bool:
+        """Optimize GIF file size using gifsicle."""
+        try:
+            # gifsicle optimization: -O3 for best compression
+            temp_optimized = gif_path.with_suffix(".opt.gif")
+            cmd = [
+                "gifsicle",
+                "-O3",
+                "--colors",
+                "256",
+                "-o",
+                str(temp_optimized),
+                str(gif_path),
+            ]
+            result = subprocess.run(cmd, capture_output=True, timeout=60)
+            if result.returncode == 0 and temp_optimized.exists():
+                # Replace original with optimized version
+                temp_optimized.replace(gif_path)
+                return True
+            # Clean up on failure
+            if temp_optimized.exists():
+                temp_optimized.unlink()
+            return False
+        except Exception:
+            return False
 
     def cancel(self) -> None:
         """Cancel recording without saving."""

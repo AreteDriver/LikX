@@ -11,7 +11,7 @@ try:
 
     gi.require_version("Gdk", "3.0")
     gi.require_version("GdkPixbuf", "2.0")
-    from gi.repository import Gdk, GdkPixbuf
+    from gi.repository import Gdk, GdkPixbuf  # noqa: F401 - Gdk used in cairo calls
 
     GTK_AVAILABLE = True
 except (ImportError, ValueError):
@@ -196,8 +196,7 @@ class EditorState:
         """Add a color to recent colors list (most recent first)."""
         # Check if color already exists (by value comparison)
         for i, c in enumerate(self.recent_colors):
-            if (c.r == color.r and c.g == color.g and
-                c.b == color.b and c.a == color.a):
+            if c.r == color.r and c.g == color.g and c.b == color.b and c.a == color.a:
                 # Move to front
                 self.recent_colors.pop(i)
                 break
@@ -207,7 +206,7 @@ class EditorState:
 
         # Trim to max size
         if len(self.recent_colors) > self.max_recent_colors:
-            self.recent_colors = self.recent_colors[:self.max_recent_colors]
+            self.recent_colors = self.recent_colors[: self.max_recent_colors]
 
     def get_recent_colors(self) -> List[Color]:
         """Get list of recently used colors (most recent first)."""
@@ -456,7 +455,11 @@ class EditorState:
             self.selected_indices.add(value)
 
     def select_at(
-        self, x: float, y: float, add_to_selection: bool = False, handle_margin: float = 8.0
+        self,
+        x: float,
+        y: float,
+        add_to_selection: bool = False,
+        handle_margin: float = 8.0,
     ) -> bool:
         """Try to select an element at the given position.
 
@@ -510,8 +513,7 @@ class EditorState:
 
         x1, y1, x2, y2 = bbox
         margin = max(5, elem.stroke_width / 2)
-        return (x1 - margin <= x <= x2 + margin and
-                y1 - margin <= y <= y2 + margin)
+        return x1 - margin <= x <= x2 + margin and y1 - margin <= y <= y2 + margin
 
     def _get_element_bbox(self, elem: DrawingElement) -> Optional[tuple]:
         """Get bounding box (x1, y1, x2, y2) for an element."""
@@ -530,7 +532,9 @@ class EditorState:
 
         return (min(xs), min(ys), max(xs), max(ys))
 
-    def _hit_test_handles(self, x: float, y: float, margin: float = 8.0) -> Optional[str]:
+    def _hit_test_handles(
+        self, x: float, y: float, margin: float = 8.0
+    ) -> Optional[str]:
         """Check if point hits a resize handle. Returns handle name or None."""
         # Only show resize handles for single selection
         if len(self.selected_indices) != 1:
@@ -544,10 +548,10 @@ class EditorState:
 
         x1, y1, x2, y2 = bbox
         handles = {
-            'nw': (x1, y1),
-            'ne': (x2, y1),
-            'sw': (x1, y2),
-            'se': (x2, y2),
+            "nw": (x1, y1),
+            "ne": (x2, y1),
+            "sw": (x1, y2),
+            "se": (x2, y2),
         }
 
         for name, (hx, hy) in handles.items():
@@ -637,13 +641,13 @@ class EditorState:
         orig_height = y2 - y1
 
         # Update corner based on handle
-        if 'n' in handle:
+        if "n" in handle:
             y1 = y
-        if 's' in handle:
+        if "s" in handle:
             y2 = y
-        if 'w' in handle:
+        if "w" in handle:
             x1 = x
-        if 'e' in handle:
+        if "e" in handle:
             x2 = x
 
         # Apply aspect ratio lock if enabled
@@ -653,13 +657,13 @@ class EditorState:
             new_height = abs(y2 - y1)
 
             # Determine which dimension to constrain based on handle
-            if handle in ('n', 's'):
+            if handle in ("n", "s"):
                 # Vertical drag - adjust width to match
                 new_width = new_height * aspect_ratio
                 center_x = (x1 + x2) / 2
                 x1 = center_x - new_width / 2
                 x2 = center_x + new_width / 2
-            elif handle in ('e', 'w'):
+            elif handle in ("e", "w"):
                 # Horizontal drag - adjust height to match
                 new_height = new_width / aspect_ratio
                 center_y = (y1 + y2) / 2
@@ -675,16 +679,16 @@ class EditorState:
                 new_height = orig_height * scale
 
                 # Anchor to the opposite corner
-                if 'n' in handle and 'w' in handle:
+                if "n" in handle and "w" in handle:
                     x1 = x2 - new_width
                     y1 = y2 - new_height
-                elif 'n' in handle and 'e' in handle:
+                elif "n" in handle and "e" in handle:
                     x2 = x1 + new_width
                     y1 = y2 - new_height
-                elif 's' in handle and 'w' in handle:
+                elif "s" in handle and "w" in handle:
                     x1 = x2 - new_width
                     y2 = y1 + new_height
-                elif 's' in handle and 'e' in handle:
+                elif "s" in handle and "e" in handle:
                     x2 = x1 + new_width
                     y2 = y1 + new_height
 
@@ -718,7 +722,8 @@ class EditorState:
 
         # Filter out locked elements
         deletable = [
-            idx for idx in self.selected_indices
+            idx
+            for idx in self.selected_indices
             if 0 <= idx < len(self.elements) and not self.elements[idx].locked
         ]
 
@@ -752,8 +757,11 @@ class EditorState:
 
     def get_all_selected(self) -> List[DrawingElement]:
         """Get all selected elements."""
-        return [self.elements[idx] for idx in sorted(self.selected_indices)
-                if 0 <= idx < len(self.elements)]
+        return [
+            self.elements[idx]
+            for idx in sorted(self.selected_indices)
+            if 0 <= idx < len(self.elements)
+        ]
 
     def nudge_selected(self, dx: float, dy: float) -> bool:
         """Move all selected elements by (dx, dy) pixels.
@@ -1040,14 +1048,14 @@ class EditorState:
             return False
 
         # Find leftmost edge
-        min_x = float('inf')
+        min_x = float("inf")
         for idx in self.selected_indices:
             if 0 <= idx < len(self.elements):
                 bbox = self._get_element_bbox(self.elements[idx])
                 if bbox:
                     min_x = min(min_x, bbox[0])
 
-        if min_x == float('inf'):
+        if min_x == float("inf"):
             return False
 
         # Save for undo
@@ -1076,14 +1084,14 @@ class EditorState:
             return False
 
         # Find rightmost edge
-        max_x = float('-inf')
+        max_x = float("-inf")
         for idx in self.selected_indices:
             if 0 <= idx < len(self.elements):
                 bbox = self._get_element_bbox(self.elements[idx])
                 if bbox:
                     max_x = max(max_x, bbox[2])
 
-        if max_x == float('-inf'):
+        if max_x == float("-inf"):
             return False
 
         # Save for undo
@@ -1112,14 +1120,14 @@ class EditorState:
             return False
 
         # Find topmost edge
-        min_y = float('inf')
+        min_y = float("inf")
         for idx in self.selected_indices:
             if 0 <= idx < len(self.elements):
                 bbox = self._get_element_bbox(self.elements[idx])
                 if bbox:
                     min_y = min(min_y, bbox[1])
 
-        if min_y == float('inf'):
+        if min_y == float("inf"):
             return False
 
         # Save for undo
@@ -1148,14 +1156,14 @@ class EditorState:
             return False
 
         # Find bottommost edge
-        max_y = float('-inf')
+        max_y = float("-inf")
         for idx in self.selected_indices:
             if 0 <= idx < len(self.elements):
                 bbox = self._get_element_bbox(self.elements[idx])
                 if bbox:
                     max_y = max(max_y, bbox[3])
 
-        if max_y == float('-inf'):
+        if max_y == float("-inf"):
             return False
 
         # Save for undo
@@ -1266,6 +1274,7 @@ class EditorState:
 
         # Generate unique group ID
         import uuid
+
         group_id = str(uuid.uuid4())[:8]
 
         # Save for undo
@@ -1612,7 +1621,8 @@ class EditorState:
 
         # Check if any non-locked elements exist
         modifiable = [
-            idx for idx in self.selected_indices
+            idx
+            for idx in self.selected_indices
             if 0 <= idx < len(self.elements) and not self.elements[idx].locked
         ]
         if not modifiable:
@@ -1641,7 +1651,8 @@ class EditorState:
 
         # Check if any non-locked elements exist
         modifiable = [
-            idx for idx in self.selected_indices
+            idx
+            for idx in self.selected_indices
             if 0 <= idx < len(self.elements) and not self.elements[idx].locked
         ]
         if not modifiable:
@@ -1759,7 +1770,9 @@ class EditorState:
 
         return h_lines, v_lines
 
-    def _apply_snap(self, elem_bbox: Tuple[float, float, float, float]) -> Tuple[float, float]:
+    def _apply_snap(
+        self, elem_bbox: Tuple[float, float, float, float]
+    ) -> Tuple[float, float]:
         """Calculate snap offset for the element.
 
         Args:
@@ -1788,7 +1801,7 @@ class EditorState:
             for snap_y in h_lines:
                 if abs(elem_y - snap_y) < self.snap_threshold:
                     snap_dy = snap_y - elem_y
-                    self.active_snap_guides.append(('h', snap_y))
+                    self.active_snap_guides.append(("h", snap_y))
                     break
             if snap_dy != 0:
                 break
@@ -1799,7 +1812,7 @@ class EditorState:
             for snap_x in v_lines:
                 if abs(elem_x - snap_x) < self.snap_threshold:
                     snap_dx = snap_x - elem_x
-                    self.active_snap_guides.append(('v', snap_x))
+                    self.active_snap_guides.append(("v", snap_x))
                     break
             if snap_dx != 0:
                 break
@@ -2144,7 +2157,9 @@ def _render_arrow(ctx: Any, element: DrawingElement) -> None:
     # For DOUBLE style, also draw arrowhead at start (pointing backward)
     if style == ArrowStyle.DOUBLE:
         reverse_angle = angle + math.pi  # Point in opposite direction
-        _draw_arrowhead(ctx, start.x, start.y, reverse_angle, arrow_length, ArrowStyle.OPEN)
+        _draw_arrowhead(
+            ctx, start.x, start.y, reverse_angle, arrow_length, ArrowStyle.OPEN
+        )
 
 
 def _render_rectangle(ctx: Any, element: DrawingElement) -> None:
@@ -2520,7 +2535,13 @@ def _render_callout(ctx: Any, element: DrawingElement) -> None:
 
     # Left edge
     ctx.line_to(box_x, box_y + corner_radius)
-    ctx.arc(box_x + corner_radius, box_y + corner_radius, corner_radius, math.pi, 3 * math.pi / 2)
+    ctx.arc(
+        box_x + corner_radius,
+        box_y + corner_radius,
+        corner_radius,
+        math.pi,
+        3 * math.pi / 2,
+    )
 
     ctx.close_path()
 

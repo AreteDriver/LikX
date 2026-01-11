@@ -1,0 +1,595 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR LikX Contributors
+# This file is distributed under the same license as the LikX package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: LikX 3.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/AreteDriver/LikX/issues\n"
+"POT-Creation-Date: 2026-01-10 10:16-0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:46
+msgid "Pen Tool"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:53
+msgid "Highlighter"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:60
+msgid "Arrow Tool"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:67
+msgid "Text Tool"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:74
+msgid "Blur Tool"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:81
+msgid "Pixelate Tool"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:88
+msgid "Rectangle"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:95
+msgid "Ellipse"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:102
+msgid "Line Tool"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:109
+msgid "Crop Tool"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:116
+msgid "Eraser"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:123
+msgid "Number Marker"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:130
+msgid "Measure Tool"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:137
+msgid "Color Picker"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:144
+msgid "Stamp Tool"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:151
+msgid "Zoom Tool"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:158
+msgid "Callout Tool"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:171
+msgid "Zoom In"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:182
+msgid "Zoom Out"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:193
+msgid "Reset Zoom"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:210
+msgid "Save"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:217
+msgid "Copy to Clipboard"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:224
+msgid "Upload to Cloud"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:231
+msgid "Undo"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:238
+msgid "Redo"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:245
+msgid "Clear All Annotations"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:258
+msgid "Add Shadow"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:265
+#: /home/arete/projects/LikX/LikX/src/ui.py:3603
+msgid "Add Border"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:272
+#: /home/arete/projects/LikX/LikX/src/ui.py:3605
+msgid "Round Corners"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:285
+msgid "OCR - Extract Text"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/commands.py:292
+msgid "Pin to Desktop"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/notification.py:72
+msgid "Screenshot Saved"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/notification.py:72
+#: /home/arete/projects/LikX/LikX/src/ui.py:2675
+msgid "Saved to"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/notification.py:78
+msgid "Screenshot Copied"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/notification.py:78
+msgid "Screenshot copied to clipboard"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/notification.py:85
+msgid "Upload Successful"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/notification.py:86
+msgid "URL copied to clipboard:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/notification.py:94
+msgid "Upload Failed"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/recording_overlay.py:73
+msgid "REC"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/recording_overlay.py:83
+#: /home/arete/projects/LikX/LikX/src/scroll_overlay.py:91
+msgid "Stop"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/scroll_overlay.py:79
+#: /home/arete/projects/LikX/LikX/src/scroll_overlay.py:213
+msgid "Frames:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/scroll_overlay.py:85
+#: /home/arete/projects/LikX/LikX/src/scroll_overlay.py:219
+msgid "Height:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:268
+#: /home/arete/projects/LikX/LikX/src/ui.py:2503
+msgid "(Primary)"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:666
+msgid "Size:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:681
+msgid "Color:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:686
+msgid "Pick color"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:691
+msgid "Color palette"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:726
+msgid "Bold"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:731
+msgid "Italic"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:743
+msgid "Select stamp"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:829
+msgid "Recent:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:1838
+msgid "Enter text:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:1874
+msgid "Enter callout text:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2486
+msgid "Select which monitor to capture:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2494
+msgid "All Monitors (combined)"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2552
+#: /home/arete/projects/LikX/LikX/src/ui.py:2568
+#: /home/arete/projects/LikX/LikX/src/ui.py:2598
+#: /home/arete/projects/LikX/LikX/src/ui.py:2618
+msgid "Capture Failed"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2582
+#: /home/arete/projects/LikX/LikX/src/ui.py:2639
+msgid "Region Selection Failed"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2628
+msgid "Recording Unavailable"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2650
+#: /home/arete/projects/LikX/LikX/src/ui.py:2683
+msgid "Recording Failed"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2663
+msgid "Processing"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2663
+msgid "Encoding GIF..."
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2674
+msgid "GIF Saved"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2675
+msgid "Duration:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2695
+msgid "Scroll Capture Unavailable"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2726
+msgid "Scroll Capture Failed"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2747
+msgid "Capture Error"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2974
+msgid "Settings"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2979
+msgid "Reset to Defaults"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:2998
+msgid "General"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3002
+msgid "Capture"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3006
+msgid "Upload"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3010
+msgid "Editor"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3014
+msgid "Hotkeys"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3018
+msgid "Language"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3037
+msgid "Save directory:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3041
+msgid "Browse..."
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3050
+msgid "Default format:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3065
+msgid "Auto-save screenshots (skip editor)"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3070
+msgid "Copy to clipboard automatically"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3074
+msgid "Show desktop notifications"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3078
+msgid "Open editor after capture"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3091
+msgid "Capture delay (seconds):"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3103
+msgid "Include mouse cursor in screenshots"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3116
+msgid "Upload service:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3135
+msgid "Automatically upload after save"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3143
+msgid "S3 Settings"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3148
+msgid "Bucket:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3158
+msgid "Region:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3166
+msgid "Make uploaded files public"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3174
+msgid "Dropbox Settings"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3179
+msgid "Access Token:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3192
+msgid "Get token from Dropbox Developer Console"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3200
+msgid "Google Drive Settings"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3205
+msgid "Folder ID:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3283
+msgid "<b>Grid Settings</b>"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3288
+msgid "Grid size (pixels):"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3311
+msgid "Enable grid snap by default (Ctrl+' to toggle)"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3321
+msgid "<b>Keyboard Shortcuts:</b>"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3322
+msgid "• <b>Ctrl+'</b>: Toggle grid snap on/off"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3323
+msgid "• <b>Arrow keys</b>: Nudge 1px (or snap to grid)"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3324
+msgid "• <b>Shift+Arrow</b>: Nudge 10px"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3325
+msgid "<i>Grid snap helps align elements precisely.</i>"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3345
+msgid "<b>Global Keyboard Shortcuts</b>"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3346
+msgid "<small>Click a field, then press your desired key combination</small>"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3359
+msgid "Fullscreen Capture:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3360
+msgid "Region Capture:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3361
+msgid "Window Capture:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3362
+msgid "Record GIF:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3363
+msgid "Scroll Capture:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3378
+msgid "Reset"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3390
+msgid "<b>Notes:</b>"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3391
+msgid "• Hotkeys require at least one modifier (Ctrl, Alt, Shift, Super)"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3392
+msgid "• Press Escape to cancel while setting a hotkey"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3393
+msgid "• Hotkeys work globally on GNOME desktop"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3394
+msgid "• Restart LikX after changing hotkeys for them to take effect"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3419
+msgid "<b>Language Settings</b>"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3426
+msgid "Interface language:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3432
+msgid "System Default"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3452
+msgid ""
+"<b>Note:</b> Restart LikX after changing the language\n"
+"for the changes to take full effect."
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3461
+msgid ""
+"\n"
+"<b>Help translate LikX!</b>\n"
+"Translation files are in the <tt>locale/</tt> directory."
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3479
+msgid "Select Save Directory"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3530
+msgid "Settings Saved"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3531
+msgid "Your preferences have been saved."
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3532
+msgid "Restart LikX to apply hotkey changes."
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3538
+msgid "Settings Reset"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3538
+msgid "All settings reset to defaults"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3575
+msgid "OCR"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3576
+msgid "Extract text from image (Tesseract)"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3583
+msgid "Pin to desktop (always on top)"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3590
+msgid "Image Effects"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3602
+msgid "Drop Shadow"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3604
+msgid "Background"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3606
+msgid "Adjust Brightness/Contrast"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3607
+msgid "Grayscale"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3608
+msgid "Invert Colors"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3728
+msgid "Pin Failed"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3827
+msgid "Error"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3827
+msgid "Could not open folder:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3872
+msgid "Brightness:"
+msgstr ""
+
+#: /home/arete/projects/LikX/LikX/src/ui.py:3886
+msgid "Contrast:"
+msgstr ""

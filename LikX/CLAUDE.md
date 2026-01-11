@@ -37,10 +37,15 @@ cd snap && snapcraft
 | `src/pinned.py` | Pin-to-desktop floating window |
 | `src/effects.py` | Shadow, border, round corners |
 | `src/config.py` | User settings persistence |
-| `src/uploader.py` | Imgur cloud upload |
+| `src/uploader.py` | Cloud upload (Imgur, S3, Dropbox, Google Drive) |
 | `src/command_palette.py` | Ctrl+Shift+P searchable command interface |
 | `src/commands.py` | Command registry for palette |
 | `src/radial_menu.py` | Right-click radial tool selector |
+| `src/i18n.py` | Internationalization (gettext) |
+| `src/recorder.py` | GIF recording (ffmpeg/wf-recorder) |
+| `src/recording_overlay.py` | GIF recording progress UI |
+| `src/scroll_capture.py` | Scrolling screenshot capture |
+| `src/scroll_overlay.py` | Scroll capture progress UI |
 
 ## Keyboard Shortcuts
 | Shortcut | Action |
@@ -98,7 +103,17 @@ cd snap && snapcraft
 | `Z` | Zoom tool (scroll to zoom) |
 | `K` | Callout/speech bubble |
 | `C` | Crop (hold Shift for 1:1 square) |
+| `G` | GIF recording |
 | Right-click | Radial menu for quick tool selection |
+
+### Global Hotkeys (configurable)
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+F` | Fullscreen capture |
+| `Ctrl+Shift+R` | Region capture |
+| `Ctrl+Shift+W` | Window capture |
+| `Ctrl+Alt+G` | Record GIF |
+| `Ctrl+Alt+S` | Scrolling screenshot |
 
 ## Tool Features
 
@@ -128,6 +143,15 @@ cd snap && snapcraft
 - Type hints encouraged
 - GTK signal handlers: `_on_<widget>_<signal>`
 - Use `src/config.py` for all settings
+- Wrap user-visible strings with `_()` for translation
+
+## Internationalization
+- Translation function: `from src.i18n import _`
+- Template file: `locale/likx.pot`
+- Translations: `locale/<lang>/LC_MESSAGES/likx.po`
+- Available: en, es, fr, de, pt, it, ru, ja (8 languages)
+- Extract strings: `./scripts/extract_strings.sh`
+- Compile: `msgfmt locale/<lang>/LC_MESSAGES/likx.po -o locale/<lang>/LC_MESSAGES/likx.mo`
 
 ## Testing
 ```bash

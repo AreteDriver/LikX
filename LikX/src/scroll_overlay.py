@@ -13,6 +13,8 @@ try:
 except (ImportError, ValueError):
     GTK_AVAILABLE = False
 
+from .i18n import _
+
 
 class ScrollCaptureOverlay:
     """Floating overlay showing scroll capture progress.
@@ -74,19 +76,19 @@ class ScrollCaptureOverlay:
         hbox.pack_start(info_box, False, False, 0)
 
         # Frame counter
-        self.frame_label = Gtk.Label(label="Frames: 0")
+        self.frame_label = Gtk.Label(label=_("Frames:") + " 0")
         self.frame_label.set_xalign(0)
         self.frame_label.get_style_context().add_class("scroll-info")
         info_box.pack_start(self.frame_label, False, False, 0)
 
         # Height estimate
-        self.height_label = Gtk.Label(label="Height: 0px")
+        self.height_label = Gtk.Label(label=_("Height:") + " 0px")
         self.height_label.set_xalign(0)
         self.height_label.get_style_context().add_class("scroll-info-dim")
         info_box.pack_start(self.height_label, False, False, 0)
 
         # Stop button
-        stop_btn = Gtk.Button(label="Stop")
+        stop_btn = Gtk.Button(label=_("Stop"))
         stop_btn.get_style_context().add_class("scroll-stop")
         stop_btn.connect("clicked", self._on_stop_clicked)
         hbox.pack_start(stop_btn, False, False, 0)
@@ -208,13 +210,13 @@ class ScrollCaptureOverlay:
         self.frame_count = frame_count
         self.estimated_height = estimated_height
 
-        self.frame_label.set_text(f"Frames: {frame_count}")
+        self.frame_label.set_text(_("Frames:") + f" {frame_count}")
 
         if estimated_height >= 1000:
             height_str = f"{estimated_height / 1000:.1f}k px"
         else:
             height_str = f"{estimated_height} px"
-        self.height_label.set_text(f"Height: {height_str}")
+        self.height_label.set_text(_("Height:") + f" {height_str}")
 
     def _on_stop_clicked(self, button) -> None:
         """Handle stop button click."""
