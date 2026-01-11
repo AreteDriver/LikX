@@ -1,7 +1,6 @@
 """Tests for hotkeys module."""
 
 import sys
-import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -103,7 +102,8 @@ class TestRegisterHotkey:
 
         from src.hotkeys import HotkeyManager
         manager = HotkeyManager()
-        callback = lambda: None
+        def callback():
+            return None
 
         result = manager.register_hotkey("<Super>Print", callback, "likx --capture")
 
@@ -117,7 +117,8 @@ class TestRegisterHotkey:
 
         from src.hotkeys import HotkeyManager
         manager = HotkeyManager()
-        callback = lambda: "test"
+        def callback():
+            return "test"
 
         manager.register_hotkey("<Control>s", callback, "likx --save")
 
@@ -129,7 +130,8 @@ class TestRegisterHotkey:
         # KDE hotkey registration is not implemented
         from src.hotkeys import HotkeyManager
         manager = HotkeyManager()
-        callback = lambda: None
+        def callback():
+            return None
 
         result = manager.register_hotkey("Meta+Print", callback, "likx --capture")
 
@@ -140,7 +142,8 @@ class TestRegisterHotkey:
     def test_register_unsupported_desktop_returns_false(self):
         from src.hotkeys import HotkeyManager
         manager = HotkeyManager()
-        callback = lambda: None
+        def callback():
+            return None
 
         result = manager.register_hotkey("<Super>s", callback, "likx")
 
@@ -157,7 +160,8 @@ class TestGnomeHotkeyRegistration:
 
         from src.hotkeys import HotkeyManager
         manager = HotkeyManager()
-        callback = lambda: None
+        def callback():
+            return None
 
         result = manager.register_hotkey("<Super>Print", callback, "likx --capture")
 
@@ -175,7 +179,8 @@ class TestGnomeHotkeyRegistration:
 
         from src.hotkeys import HotkeyManager
         manager = HotkeyManager()
-        callback = lambda: None
+        def callback():
+            return None
 
         result = manager.register_hotkey("<Super>Print", callback, "likx --capture")
 
@@ -188,7 +193,8 @@ class TestGnomeHotkeyRegistration:
 
         from src.hotkeys import HotkeyManager
         manager = HotkeyManager()
-        callback = lambda: None
+        def callback():
+            return None
 
         result = manager.register_hotkey("<Super>Print", callback, "likx --capture")
 
@@ -284,10 +290,11 @@ class TestHotkeyEdgeCases:
 
         from src.hotkeys import HotkeyManager
         manager = HotkeyManager()
-        callback = lambda: None
+        def callback():
+            return None
 
         # Empty key combo - implementation may accept or reject
-        result = manager.register_hotkey("", callback, "likx")
+        manager.register_hotkey("", callback, "likx")
         # Just verify it doesn't crash
 
     @patch("src.hotkeys.subprocess.run")
@@ -297,8 +304,9 @@ class TestHotkeyEdgeCases:
 
         from src.hotkeys import HotkeyManager
         manager = HotkeyManager()
-        callback = lambda: None
+        def callback():
+            return None
 
         # Empty command - implementation may accept or reject
-        result = manager.register_hotkey("<Super>s", callback, "")
+        manager.register_hotkey("<Super>s", callback, "")
         # Just verify it doesn't crash

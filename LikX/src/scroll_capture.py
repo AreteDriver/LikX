@@ -39,8 +39,8 @@ try:
 except (ImportError, ValueError):
     GTK_AVAILABLE = False
 
-from . import config
-from .capture import DisplayServer, capture_region, detect_display_server
+from . import config  # noqa: E402
+from .capture import DisplayServer, capture_region, detect_display_server  # noqa: E402
 
 
 class ScrollState(Enum):

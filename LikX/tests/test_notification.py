@@ -48,13 +48,12 @@ class TestShowNotificationFallback:
     def test_fallback_to_notify_send(self, mock_run):
         # Make GI import fail by patching
         with patch.dict("sys.modules", {"gi": None}):
-            from importlib import reload
             from src import notification
             # Can't easily reload to trigger import error, so test subprocess path directly
             mock_run.return_value = MagicMock(returncode=0)
 
             # Call with subprocess working
-            result = notification.show_notification("Title", "Body")
+            notification.show_notification("Title", "Body")
             # Either GI works (returns True) or subprocess works (returns True)
             # We can't easily control which path without complex patching
 
@@ -94,7 +93,7 @@ class TestShowNotificationExceptions:
         # Patch out the GI try block
         with patch("builtins.__import__", side_effect=ImportError()):
             # Should return False, not raise
-            result = show_notification("Title", "Body")
+            show_notification("Title", "Body")
             # Result depends on whether GI works first
 
     @patch("src.notification.subprocess.run")

@@ -1,6 +1,6 @@
 """Tests for the recording and scroll capture overlay modules."""
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -49,10 +49,9 @@ class TestRecordingOverlayWithMockedGtk:
         if not GTK_AVAILABLE:
             pytest.skip("GTK not available")
 
-        from src.recording_overlay import RecordingOverlay
 
         # Should be able to create with callback
-        callback = MagicMock()
+        MagicMock()
         # This would need a display, so we can't fully test without X11/Wayland
 
     def test_overlay_accepts_region(self):
@@ -63,7 +62,6 @@ class TestRecordingOverlayWithMockedGtk:
             pytest.skip("GTK not available")
 
         # Region is optional parameter
-        from src.recording_overlay import RecordingOverlay
 
         # Can't fully instantiate without display
 
@@ -78,7 +76,6 @@ class TestScrollOverlayWithMockedGtk:
         if not GTK_AVAILABLE:
             pytest.skip("GTK not available")
 
-        from src.scroll_overlay import ScrollCaptureOverlay
 
         # Should accept on_stop callback
 

@@ -187,7 +187,7 @@ class TestCaptureMainFunction:
         mock_config.return_value = {}
         mock_fullscreen.return_value = CaptureResult(success=True, pixbuf=MagicMock())
 
-        result = capture(CaptureMode.FULLSCREEN)
+        capture(CaptureMode.FULLSCREEN)
         mock_fullscreen.assert_called_once()
 
     @patch('src.capture.config.load_config')
@@ -198,7 +198,7 @@ class TestCaptureMainFunction:
         mock_config.return_value = {}
         mock_region.return_value = CaptureResult(success=True, pixbuf=MagicMock())
 
-        result = capture(CaptureMode.REGION, region=(0, 0, 100, 100))
+        capture(CaptureMode.REGION, region=(0, 0, 100, 100))
         mock_region.assert_called_once()
 
     @patch('src.capture.config.load_config')
@@ -209,7 +209,7 @@ class TestCaptureMainFunction:
         mock_config.return_value = {}
         mock_window.return_value = CaptureResult(success=True, pixbuf=MagicMock())
 
-        result = capture(CaptureMode.WINDOW, window_id=12345)
+        capture(CaptureMode.WINDOW, window_id=12345)
         mock_window.assert_called_once()
 
     @patch('src.capture.config.load_config')
@@ -232,7 +232,7 @@ class TestCaptureMainFunction:
         mock_fullscreen.return_value = CaptureResult(success=True, pixbuf=mock_pixbuf)
         mock_save.return_value = CaptureResult(success=True, filepath=Path("/tmp/test.png"))
 
-        result = capture(CaptureMode.FULLSCREEN, auto_save=True)
+        capture(CaptureMode.FULLSCREEN, auto_save=True)
         mock_save.assert_called_once()
 
 
@@ -368,7 +368,7 @@ class TestCaptureWindowX11:
         ]
         mock_region.return_value = CaptureResult(success=True)
 
-        result = capture_window()
+        capture_window()
         mock_region.assert_called_once()
 
     @patch('src.capture.detect_display_server')
@@ -426,7 +426,7 @@ class TestSaveCaptureExtended:
         with tempfile.TemporaryDirectory() as tmpdir:
             filepath = Path(tmpdir) / "subdir" / "test.png"
 
-            save_result = save_capture(result, filepath=filepath)
+            save_capture(result, filepath=filepath)
             # Directory should be created
 
     def test_save_exception_handling(self):
@@ -485,7 +485,7 @@ class TestCopyToClipboardExtended:
     @patch('src.capture.os.path.exists')
     @patch('src.capture.os.unlink')
     def test_external_tools_fail_fallback_to_gtk(self, mock_unlink, mock_exists, mock_popen, mock_detect):
-        from src.capture import copy_to_clipboard, CaptureResult, DisplayServer, GTK_AVAILABLE
+        from src.capture import copy_to_clipboard, CaptureResult, DisplayServer
 
         mock_detect.return_value = DisplayServer.X11
         mock_pixbuf = MagicMock()

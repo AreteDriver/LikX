@@ -4,7 +4,6 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 import subprocess
 
-import pytest
 
 
 class TestRecorderModuleImport:
@@ -266,7 +265,6 @@ class TestConfigIntegration:
 
     def test_uses_config_fps(self):
         """Test that recorder uses config for FPS."""
-        from src.recorder import GifRecorder
         from src import config
 
         cfg = config.load_config()

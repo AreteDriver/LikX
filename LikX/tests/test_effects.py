@@ -346,7 +346,7 @@ class TestEffectsSierraAndSierra2Dither:
         assert callable(grayscale)
 
 
-import pytest
+import pytest  # noqa: E402
 
 
 def _create_test_pixbuf(width=100, height=100, color=(128, 64, 192)):
@@ -530,12 +530,11 @@ class TestEffectsChaining:
     def test_all_effects_combined(self, pixbuf):
         """Test applying multiple effects in sequence."""
         from src.effects import (
-            add_shadow, add_border, add_background,
-            round_corners, adjust_brightness_contrast
+            add_shadow, add_border, round_corners, adjust_brightness_contrast
         )
         # Start with original
         result = pixbuf
-        original_w, original_h = result.get_width(), result.get_height()
+        original_w, _original_h = result.get_width(), result.get_height()
 
         # Apply brightness/contrast (preserves size)
         result = adjust_brightness_contrast(result, brightness=0.1, contrast=0.2)
