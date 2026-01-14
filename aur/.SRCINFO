@@ -1,6 +1,6 @@
 pkgbase = likx
 	pkgdesc = Screenshot capture and annotation tool for Linux with X11/Wayland support
-	pkgver = 3.24.0
+	pkgver = 3.25.0
 	pkgrel = 1
 	url = https://github.com/AreteDriver/LikX
 	arch = any
@@ -27,7 +27,7 @@ pkgbase = likx
 	optdepends = grim: screen capture on wlroots compositors
 	optdepends = slurp: region selection on wlroots compositors
 	optdepends = wf-recorder: GIF recording on wlroots compositors
-	source = likx-3.24.0.tar.gz::https://github.com/AreteDriver/LikX/archive/refs/tags/v3.24.0.tar.gz
+	source = likx-3.25.0.tar.gz::https://github.com/AreteDriver/LikX/archive/refs/tags/v3.25.0.tar.gz
 	sha256sums = SKIP
 
 pkgname = likx

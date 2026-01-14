@@ -1,6 +1,6 @@
 # Maintainer: AreteDriver <aretedriver@users.noreply.github.com>
 pkgname=likx
-pkgver=3.24.0
+pkgver=3.25.0
 pkgrel=1
 pkgdesc="Screenshot capture and annotation tool for Linux with X11/Wayland support"
 arch=('any')
