@@ -1,0 +1,126 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "likx"
+version = "3.24.0"
+description = "Screenshot capture and annotation tool for Linux"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
+authors = [
+    { name = "AreteDriver", email = "aretedriver@users.noreply.github.com" }
+]
+keywords = [
+    "screenshot",
+    "annotation",
+    "linux",
+    "gtk",
+    "x11",
+    "wayland",
+    "ocr",
+    "screen-capture"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: X11 Applications :: GTK",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics :: Capture :: Screen Capture",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "pycairo>=1.20.0",
+    "numpy>=1.20.0",
+    "opencv-python-headless>=4.5.0",
+    "Pillow>=9.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/AreteDriver/LikX"
+Documentation = "https://github.com/AreteDriver/LikX#readme"
+Repository = "https://github.com/AreteDriver/LikX.git"
+Issues = "https://github.com/AreteDriver/LikX/issues"
+Changelog = "https://github.com/AreteDriver/LikX/blob/main/CHANGELOG.md"
+
+# Note: LikX relies on system packages (GTK, PyGObject) not available on PyPI.
+# Install system dependencies first: ./LikX/setup.sh
+# For development install: pip install -e ".[dev]"
+# The entry point runs from the LikX subdirectory.
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["LikX*"]
+
+[tool.setuptools.package-data]
+LikX = [
+    "resources/**/*",
+    "locale/**/*",
+]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 100
+src = ["LikX"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults
+    "E402",   # module level import not at top of file
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["LikX"]
+
+[tool.pytest.ini_options]
+testpaths = ["LikX/tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["LikX/src"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

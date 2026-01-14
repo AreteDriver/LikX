@@ -117,14 +117,22 @@ LikX/
 
 ---
 
-## Roadmap
+## Comparison
 
-- [ ] Native .deb and .rpm packaging
-- [ ] Flatpak distribution
-- [ ] Additional cloud providers (S3, custom endpoints)
-- [ ] Video/GIF recording mode
-- [ ] Keyboard shortcut customization UI
-- [ ] Multi-monitor support improvements
+| Feature | LikX | Flameshot | Ksnip | Shutter |
+|---------|------|-----------|-------|---------|
+| Wayland | Yes | Partial | Yes | No |
+| X11 | Yes | Yes | Yes | Yes |
+| GIF Recording | Yes | No | No | No |
+| Scrolling Capture | Yes | No | No | Yes |
+| OCR | Yes | No | Yes | No |
+| Pin to Desktop | Yes | No | No | No |
+| Visual Effects | Yes | No | No | Yes |
+| Blur/Pixelate | Yes | Yes | Yes | Yes |
+| Cloud Upload | Yes | Yes | Yes | Yes |
+| Multi-language | Yes | Yes | Yes | Yes |
+| Snap Store | Yes | Yes | Yes | No |
+| AppImage | Yes | Yes | Yes | No |
 
 ---
 
