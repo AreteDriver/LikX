@@ -2491,26 +2491,31 @@ class MainWindow:
             cfg.get("hotkey_fullscreen", "<Control><Shift>F"),
             self._on_fullscreen,
             f"python3 {script_path} --fullscreen --no-edit",
+            hotkey_id="fullscreen",
         )
         self.hotkey_manager.register_hotkey(
             cfg.get("hotkey_region", "<Control><Shift>R"),
             self._on_region,
             f"python3 {script_path} --region --no-edit",
+            hotkey_id="region",
         )
         self.hotkey_manager.register_hotkey(
             cfg.get("hotkey_window", "<Control><Shift>W"),
             self._on_window,
             f"python3 {script_path} --window --no-edit",
+            hotkey_id="window",
         )
         self.hotkey_manager.register_hotkey(
             cfg.get("hotkey_record_gif", "<Control><Alt>G"),
             self._on_record_gif,
             f"python3 {script_path} --record-gif",
+            hotkey_id="record-gif",
         )
         self.hotkey_manager.register_hotkey(
             cfg.get("hotkey_scroll_capture", "<Control><Alt>S"),
             self._on_scroll_capture,
             f"python3 {script_path} --scroll-capture",
+            hotkey_id="scroll-capture",
         )
 
     def _on_fullscreen(self, button: Optional[Gtk.Button] = None) -> None:
@@ -2881,7 +2886,27 @@ class MainWindow:
 
     def _on_settings(self, button: Gtk.Button) -> None:
         """Handle settings button click."""
-        SettingsDialog(self.window)
+        SettingsDialog(self.window, on_hotkeys_changed=self._apply_hotkey_changes)
+
+    def _apply_hotkey_changes(self, hotkey_updates: dict) -> None:
+        """Apply hotkey changes immediately without restart.
+
+        Args:
+            hotkey_updates: Dict mapping config keys to new hotkey values
+        """
+        # Map config keys to hotkey IDs
+        key_to_id = {
+            "hotkey_fullscreen": "fullscreen",
+            "hotkey_region": "region",
+            "hotkey_window": "window",
+            "hotkey_record_gif": "record-gif",
+            "hotkey_scroll_capture": "scroll-capture",
+        }
+
+        for config_key, new_combo in hotkey_updates.items():
+            hotkey_id = key_to_id.get(config_key)
+            if hotkey_id and new_combo:
+                self.hotkey_manager.update_hotkey(hotkey_id, new_combo)
 
     def _on_about(self, button: Gtk.Button) -> None:
         """Show about dialog."""
@@ -3040,7 +3065,8 @@ class HotkeyEntry(Gtk.Button):
 class SettingsDialog:
     """Settings dialog window with all options."""
 
-    def __init__(self, parent: Gtk.Window):
+    def __init__(self, parent: Gtk.Window, on_hotkeys_changed: callable = None):
+        self.on_hotkeys_changed = on_hotkeys_changed
         self.dialog = Gtk.Dialog(
             title=_("Settings"), parent=parent, flags=Gtk.DialogFlags.MODAL
         )
@@ -3741,20 +3767,26 @@ class SettingsDialog:
         self.cfg["gif_loop"] = int(self.gif_loop_combo.get_active_id() or "0")
         self.cfg["gif_optimize"] = self.gif_optimize_check.get_active()
         self.cfg["gif_max_duration"] = int(self.gif_max_duration_spin.get_value())
-        # Hotkey settings
+        # Hotkey settings - collect changes for live update
+        hotkey_updates = {}
         for key, entry in self.hotkey_entries.items():
             hotkey = entry.get_hotkey()
             if hotkey:
+                # Track if hotkey changed
+                if hotkey != self.cfg.get(key):
+                    hotkey_updates[key] = hotkey
                 self.cfg[key] = hotkey
         # Language settings
         self.cfg["language"] = self.language_combo.get_active_id() or "system"
 
         if config.save_config(self.cfg):
+            # Apply hotkey changes immediately if callback provided
+            if self.on_hotkeys_changed and hotkey_updates:
+                self.on_hotkeys_changed(hotkey_updates)
+
             show_notification(
                 _("Settings Saved"),
-                _("Your preferences have been saved.")
-                + "\n"
-                + _("Restart LikX to apply hotkey changes."),
+                _("Your preferences have been saved."),
             )
 
     def _reset_to_defaults(self) -> None:

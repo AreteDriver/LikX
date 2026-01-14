@@ -108,7 +108,8 @@ class TestRegisterHotkey:
         result = manager.register_hotkey("<Super>Print", callback, "likx --capture")
 
         assert result is True
-        assert "<Super>Print" in manager.hotkeys
+        # Hotkey ID is derived from command: "capture"
+        assert "capture" in manager.hotkeys
 
     @patch("src.hotkeys.subprocess.run")
     @patch.dict("os.environ", {"XDG_CURRENT_DESKTOP": "GNOME"})
@@ -122,7 +123,9 @@ class TestRegisterHotkey:
 
         manager.register_hotkey("<Control>s", callback, "likx --save")
 
-        assert manager.hotkeys["<Control>s"] is callback
+        # Hotkey ID is derived from command: "save"
+        # Hotkeys dict stores (callback, command) tuple
+        assert manager.hotkeys["save"][0] is callback
 
     @patch("src.hotkeys.subprocess.run")
     @patch.dict("os.environ", {"XDG_CURRENT_DESKTOP": "KDE"})
