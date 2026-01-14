@@ -30,8 +30,8 @@ DOMAIN = "likx"
 # Locale directory (relative to package)
 LOCALE_DIR = Path(__file__).parent.parent / "locale"
 
-# Global translator instance
-_translator: Optional[gettext.GNUTranslations] = None
+# Global translator instance (NullTranslations is base class for GNUTranslations)
+_translator: Optional[gettext.NullTranslations] = None
 
 
 def get_system_language() -> str:
@@ -133,6 +133,7 @@ def _(message: str) -> str:
     global _translator
     if _translator is None:
         init_translations()
+        assert _translator is not None  # init_translations always sets _translator
     return _translator.gettext(message)
 
 
@@ -150,6 +151,7 @@ def ngettext(singular: str, plural: str, n: int) -> str:
     global _translator
     if _translator is None:
         init_translations()
+        assert _translator is not None  # init_translations always sets _translator
     return _translator.ngettext(singular, plural, n)
 
 

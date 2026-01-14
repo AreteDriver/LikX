@@ -86,10 +86,10 @@ def load_config() -> Dict[str, Any]:
 
     if CONFIG_FILE.exists():
         try:
-            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            with open(CONFIG_FILE, encoding="utf-8") as f:
                 user_config = json.load(f)
                 config.update(user_config)
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             pass
 
     return config
@@ -104,7 +104,7 @@ def save_config(config: Dict[str, Any]) -> bool:
         with open(CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=4)
         return True
-    except IOError:
+    except OSError:
         return False
 
 

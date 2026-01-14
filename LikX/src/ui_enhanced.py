@@ -9,17 +9,17 @@ try:
     import gi
 
     gi.require_version("Gtk", "3.0")
-    from gi.repository import Gtk, Gdk
+    from gi.repository import Gdk, Gtk
 
     GTK_AVAILABLE = True
 except (ImportError, ValueError):
     GTK_AVAILABLE = False
 
+from .effects import add_background, add_border, add_shadow, round_corners
+from .history import HistoryManager, HistoryWindow
+from .notification import show_notification
 from .ocr import OCREngine
 from .pinned import PinnedWindow
-from .history import HistoryWindow, HistoryManager
-from .effects import add_shadow, add_border, add_background, round_corners
-from .notification import show_notification
 
 
 def add_advanced_features_to_editor(editor_window):

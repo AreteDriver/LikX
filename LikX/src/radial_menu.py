@@ -8,14 +8,13 @@ try:
 
     gi.require_version("Gtk", "3.0")
     gi.require_version("Gdk", "3.0")
-    from gi.repository import Gtk, Gdk
+    from gi.repository import Gdk, Gtk
 
     GTK_AVAILABLE = True
 except (ImportError, ValueError):
     GTK_AVAILABLE = False
 
 from .editor import ToolType
-
 
 # Menu item definition: (label, tool_type, icon)
 RADIAL_ITEMS: List[Tuple[str, Optional[ToolType], str]] = [
@@ -120,7 +119,7 @@ class RadialMenu(Gtk.Window):
         segment_angle = 2 * math.pi / self.SEGMENT_COUNT
         start_offset = -math.pi / 2 - segment_angle / 2  # Start at top
 
-        for i, (label, tool_type, icon) in enumerate(RADIAL_ITEMS):
+        for i, (label, _tool_type, icon) in enumerate(RADIAL_ITEMS):
             start_angle = start_offset + i * segment_angle
             end_angle = start_angle + segment_angle
 

@@ -1,7 +1,7 @@
 """Global keyboard shortcuts for LikX."""
 
-import subprocess
 import os
+import subprocess
 from typing import Callable, Dict, List, Tuple
 
 

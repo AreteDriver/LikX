@@ -1,15 +1,15 @@
 """Enhanced user interface module for LikX with full features."""
 
 import sys
-from typing import Optional, Callable
 from pathlib import Path
+from typing import Callable, Optional
 
 try:
     import gi
 
     gi.require_version("Gtk", "3.0")
     gi.require_version("Gdk", "3.0")
-    from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
+    from gi.repository import Gdk, GdkPixbuf, GLib, Gtk
 
     GTK_AVAILABLE = True
 except (ImportError, ValueError):
@@ -18,33 +18,33 @@ except (ImportError, ValueError):
 from . import capture as capture_module
 from . import config
 from .capture import CaptureMode, CaptureResult, capture, save_capture
+from .editor import ArrowStyle, Color, EditorState, ToolType, render_elements
+from .effects import (
+    add_background,
+    add_border,
+    add_shadow,
+    adjust_brightness_contrast,
+    grayscale,
+    invert_colors,
+    round_corners,
+)
+from .history import HistoryManager
+from .hotkeys import HotkeyManager
 from .i18n import _
-from .editor import EditorState, ToolType, Color, ArrowStyle, render_elements
 from .notification import (
     show_notification,
-    show_screenshot_saved,
     show_screenshot_copied,
-    show_upload_success,
+    show_screenshot_saved,
     show_upload_error,
+    show_upload_success,
 )
-from .uploader import Uploader
-from .hotkeys import HotkeyManager
 from .ocr import OCREngine
 from .pinned import PinnedWindow
-from .history import HistoryManager
 from .recorder import GifRecorder, RecordingState
 from .recording_overlay import RecordingOverlay
 from .scroll_capture import ScrollCaptureManager, ScrollCaptureResult
 from .scroll_overlay import ScrollCaptureOverlay
-from .effects import (
-    add_shadow,
-    add_border,
-    add_background,
-    round_corners,
-    adjust_brightness_contrast,
-    invert_colors,
-    grayscale,
-)
+from .uploader import Uploader
 
 
 class RegionSelector:
@@ -1109,8 +1109,8 @@ class EditorWindow:
     def _show_command_palette(self) -> None:
         """Show the command palette for quick command access."""
         if not hasattr(self, "_command_palette") or self._command_palette is None:
-            from .commands import build_command_registry
             from .command_palette import CommandPalette
+            from .commands import build_command_registry
 
             commands = build_command_registry(self)
             self._command_palette = CommandPalette(commands, self.window)
@@ -1249,13 +1249,14 @@ class EditorWindow:
         if temp_file.exists():
             temp_file.unlink()
 
-        if success:
+        if success and url:
             self.uploader.copy_url_to_clipboard(url)
             self.statusbar.push(self.statusbar_context, f"Uploaded: {url}")
             show_upload_success(url)
         else:
-            self.statusbar.push(self.statusbar_context, f"Upload failed: {error}")
-            show_upload_error(error)
+            err_msg = error or "Unknown error"
+            self.statusbar.push(self.statusbar_context, f"Upload failed: {err_msg}")
+            show_upload_error(err_msg)
 
     def _copy_to_clipboard(self) -> None:
         """Copy the edited screenshot to clipboard."""
@@ -1973,9 +1974,7 @@ class EditorWindow:
                 for btn in self.color_buttons.values():
                     btn.set_active(False)
             # Show feedback
-            hex_color = "#{:02x}{:02x}{:02x}".format(
-                int(color.r * 255), int(color.g * 255), int(color.b * 255)
-            )
+            hex_color = f"#{int(color.r * 255):02x}{int(color.g * 255):02x}{int(color.b * 255):02x}"
             self._show_toast(f"Color picked: {hex_color}")
 
     def _show_toast(self, message: str) -> None:
@@ -2204,7 +2203,7 @@ class EditorWindow:
         if shift and not ctrl and not alt:
             if event.keyval == Gdk.KEY_bracketleft:
                 if self.editor_state.adjust_selected_opacity(-0.1):
-                    opacity = self.editor_state.get_selected_opacity()
+                    opacity = self.editor_state.get_selected_opacity() or 1.0
                     self._show_toast(f"Opacity: {int(opacity * 100)}%")
                     self.drawing_area.queue_draw()
                 else:
@@ -2212,7 +2211,7 @@ class EditorWindow:
                 return True
             elif event.keyval == Gdk.KEY_bracketright:
                 if self.editor_state.adjust_selected_opacity(0.1):
-                    opacity = self.editor_state.get_selected_opacity()
+                    opacity = self.editor_state.get_selected_opacity() or 1.0
                     self._show_toast(f"Opacity: {int(opacity * 100)}%")
                     self.drawing_area.queue_draw()
                 else:
@@ -2482,8 +2481,8 @@ class MainWindow:
     def _register_global_hotkeys(self) -> None:
         """Register global keyboard shortcuts."""
         cfg = config.load_config()
-        import sys
         import os
+        import sys
 
         script_path = os.path.abspath(sys.argv[0])
 
@@ -3065,7 +3064,7 @@ class HotkeyEntry(Gtk.Button):
 class SettingsDialog:
     """Settings dialog window with all options."""
 
-    def __init__(self, parent: Gtk.Window, on_hotkeys_changed: callable = None):
+    def __init__(self, parent: Gtk.Window, on_hotkeys_changed: Optional[Callable] = None):
         self.on_hotkeys_changed = on_hotkeys_changed
         self.dialog = Gtk.Dialog(
             title=_("Settings"), parent=parent, flags=Gtk.DialogFlags.MODAL
@@ -4051,13 +4050,13 @@ def _apply_round_corners(self):
 
 
 # Inject methods into EditorWindow
-EditorWindow.__init__ = _EditorWindow_init_enhanced
-EditorWindow._extract_text = _extract_text
-EditorWindow._pin_to_desktop = _pin_to_desktop
-EditorWindow._apply_shadow = _apply_shadow
-EditorWindow._apply_border = _apply_border
-EditorWindow._apply_background = _apply_background
-EditorWindow._apply_round_corners = _apply_round_corners
+EditorWindow.__init__ = _EditorWindow_init_enhanced  # type: ignore[method-assign]
+EditorWindow._extract_text = _extract_text  # type: ignore[attr-defined]
+EditorWindow._pin_to_desktop = _pin_to_desktop  # type: ignore[attr-defined]
+EditorWindow._apply_shadow = _apply_shadow  # type: ignore[attr-defined]
+EditorWindow._apply_border = _apply_border  # type: ignore[attr-defined]
+EditorWindow._apply_background = _apply_background  # type: ignore[attr-defined]
+EditorWindow._apply_round_corners = _apply_round_corners  # type: ignore[attr-defined]
 
 
 # Enhance MainWindow
@@ -4190,9 +4189,9 @@ def _apply_invert(self):
 
 
 # Inject adjustment methods
-EditorWindow._show_adjust_dialog = _show_adjust_dialog
-EditorWindow._apply_grayscale = _apply_grayscale
-EditorWindow._apply_invert = _apply_invert
+EditorWindow._show_adjust_dialog = _show_adjust_dialog  # type: ignore[attr-defined]
+EditorWindow._apply_grayscale = _apply_grayscale  # type: ignore[attr-defined]
+EditorWindow._apply_invert = _apply_invert  # type: ignore[attr-defined]
 
 
 def _on_open_image(self, button):
@@ -4271,7 +4270,7 @@ def _on_open_image(self, button):
 
 
 # Inject enhanced methods
-MainWindow.__init__ = _MainWindow_init_enhanced
-MainWindow._on_history = _on_history
-MainWindow._on_quick_actions = _on_quick_actions
-MainWindow._on_open_image = _on_open_image
+MainWindow.__init__ = _MainWindow_init_enhanced  # type: ignore[method-assign]
+MainWindow._on_history = _on_history  # type: ignore[attr-defined]
+MainWindow._on_quick_actions = _on_quick_actions  # type: ignore[attr-defined]
+MainWindow._on_open_image = _on_open_image  # type: ignore[attr-defined]

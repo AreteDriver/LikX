@@ -1,0 +1,65 @@
+# Maintainer: AreteDriver <aretedriver@users.noreply.github.com>
+pkgname=likx
+pkgver=3.24.0
+pkgrel=1
+pkgdesc="Screenshot capture and annotation tool for Linux with X11/Wayland support"
+arch=('any')
+url="https://github.com/AreteDriver/LikX"
+license=('MIT')
+depends=(
+    'python>=3.8'
+    'python-gobject'
+    'python-cairo'
+    'python-numpy'
+    'python-opencv'
+    'python-pillow'
+    'gtk3'
+    'cairo'
+    'gobject-introspection'
+    'libnotify'
+)
+optdepends=(
+    'xdotool: window capture on X11'
+    'xclip: clipboard support on X11'
+    'ffmpeg: GIF recording'
+    'tesseract: OCR text extraction'
+    'gnome-screenshot: window capture on Wayland/GNOME'
+    'grim: screen capture on wlroots compositors'
+    'slurp: region selection on wlroots compositors'
+    'wf-recorder: GIF recording on wlroots compositors'
+)
+makedepends=('python-setuptools' 'python-build' 'python-installer' 'python-wheel')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')  # Update after creating release tag
+
+build() {
+    cd "$srcdir/LikX-$pkgver"
+    python -m build --wheel --no-isolation
+}
+
+package() {
+    cd "$srcdir/LikX-$pkgver"
+    python -m installer --destdir="$pkgdir" dist/*.whl
+
+    # Install desktop entry
+    install -Dm644 "LikX/debian/likx.desktop" \
+        "$pkgdir/usr/share/applications/likx.desktop"
+
+    # Install icon
+    install -Dm644 "LikX/assets/icon.svg" \
+        "$pkgdir/usr/share/icons/hicolor/scalable/apps/likx.svg" 2>/dev/null || \
+    install -Dm644 "LikX/resources/icons/app_icon.svg" \
+        "$pkgdir/usr/share/icons/hicolor/scalable/apps/likx.svg" 2>/dev/null || true
+
+    # Install license
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+
+    # Install locale files (compiled .mo files)
+    for lang in LikX/locale/*/LC_MESSAGES/*.mo; do
+        if [ -f "$lang" ]; then
+            langcode=$(basename "$(dirname "$(dirname "$lang")")")
+            install -Dm644 "$lang" \
+                "$pkgdir/usr/share/locale/$langcode/LC_MESSAGES/likx.mo"
+        fi
+    done
+}
