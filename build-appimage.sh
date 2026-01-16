@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 APP_NAME="LikX"
-VERSION="3.26.0"
+VERSION="3.26.1"
 ARCH="x86_64"
 APPDIR="AppDir"
 
