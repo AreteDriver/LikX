@@ -1,16 +1,16 @@
 """Screenshot history manager - browse and manage past captures."""
 
 import json
-from pathlib import Path
 from datetime import datetime
-from typing import List, Dict
+from pathlib import Path
+from typing import Dict, List
 
 try:
     import gi
 
     gi.require_version("Gtk", "3.0")
     gi.require_version("GdkPixbuf", "2.0")
-    from gi.repository import Gtk, GdkPixbuf
+    from gi.repository import GdkPixbuf, Gtk
 
     GTK_AVAILABLE = True
 except (ImportError, ValueError):
@@ -56,7 +56,7 @@ class HistoryManager:
         """Load history from file."""
         if self.history_file.exists():
             try:
-                with open(self.history_file, "r") as f:
+                with open(self.history_file) as f:
                     data = json.load(f)
                     self.entries = [HistoryEntry.from_dict(e) for e in data]
                     # Filter out deleted files
@@ -70,7 +70,7 @@ class HistoryManager:
         try:
             with open(self.history_file, "w") as f:
                 json.dump([e.to_dict() for e in self.entries], f, indent=2)
-        except IOError:
+        except OSError:
             pass
 
     def add(self, filepath: Path, mode: str = "unknown") -> None:

@@ -193,8 +193,7 @@ class TestRegionSelectorClass:
     def test_region_selector_raises_without_gtk(self):
         with patch("src.ui.GTK_AVAILABLE", False):
             # Need to reimport to get patched value
-            import importlib
-            from src import ui
+            pass
             # Can't easily test this without reloading module
 
     def test_region_selector_has_callback_attribute(self):

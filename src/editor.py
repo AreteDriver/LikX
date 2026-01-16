@@ -1,10 +1,10 @@
 """Enhanced image editor module for LikX with full annotation support."""
 
-from enum import Enum
-from typing import Optional, List, Tuple, Any, Set
-from dataclasses import dataclass, field
 import copy
 import math
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, List, Optional, Set, Tuple
 
 try:
     import gi
@@ -731,7 +731,7 @@ class EditorState:
             return False
 
         # Save for undo
-        self.undo_stack.append([e for e in self.elements])
+        self.undo_stack.append(list(self.elements))
         self.redo_stack.clear()
 
         # Remove elements in reverse index order to maintain correct indices
@@ -781,7 +781,7 @@ class EditorState:
             return False
 
         # Save for undo
-        self.undo_stack.append([e for e in self.elements])
+        self.undo_stack.append(list(self.elements))
         self.redo_stack.clear()
 
         # Move all selected elements (skip locked)
@@ -826,7 +826,7 @@ class EditorState:
             return False
 
         # Save for undo
-        self.undo_stack.append([e for e in self.elements])
+        self.undo_stack.append(list(self.elements))
         self.redo_stack.clear()
 
         # Paste copies with offset
@@ -864,7 +864,7 @@ class EditorState:
             return False
 
         # Save for undo
-        self.undo_stack.append([e for e in self.elements])
+        self.undo_stack.append(list(self.elements))
         self.redo_stack.clear()
 
         # Duplicate selected elements with offset
@@ -893,7 +893,7 @@ class EditorState:
             return False
 
         # Save for undo
-        self.undo_stack.append([e for e in self.elements])
+        self.undo_stack.append(list(self.elements))
         self.redo_stack.clear()
 
         # Extract selected elements (in order)
@@ -924,7 +924,7 @@ class EditorState:
             return False
 
         # Save for undo
-        self.undo_stack.append([e for e in self.elements])
+        self.undo_stack.append(list(self.elements))
         self.redo_stack.clear()
 
         # Extract selected elements (in order)
@@ -983,7 +983,7 @@ class EditorState:
         spacing = total_span / (len(items) - 1)
 
         # Move middle elements
-        for i, (idx, old_center, bbox) in enumerate(items[1:-1], start=1):
+        for i, (idx, old_center, _bbox) in enumerate(items[1:-1], start=1):
             new_center = first_center + spacing * i
             dx = new_center - old_center
             for p in self.elements[idx].points:
@@ -1030,7 +1030,7 @@ class EditorState:
         spacing = total_span / (len(items) - 1)
 
         # Move middle elements
-        for i, (idx, old_center, bbox) in enumerate(items[1:-1], start=1):
+        for i, (idx, old_center, _bbox) in enumerate(items[1:-1], start=1):
             new_center = first_center + spacing * i
             dy = new_center - old_center
             for p in self.elements[idx].points:

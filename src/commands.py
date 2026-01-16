@@ -1,7 +1,7 @@
 """Command registry for LikX command palette."""
 
 from dataclasses import dataclass, field
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 from .editor import ToolType
 from .i18n import _
@@ -13,7 +13,7 @@ class Command:
 
     name: str  # Display name
     keywords: List[str] = field(default_factory=list)  # Search keywords
-    callback: Callable = None  # Action to execute
+    callback: Optional[Callable] = None  # Action to execute
     icon: str = ""  # Optional icon/emoji
     shortcut: str = ""  # Display shortcut hint
 

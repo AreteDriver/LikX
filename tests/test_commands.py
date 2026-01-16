@@ -39,7 +39,8 @@ class TestCommandDataclass:
     def test_create_command_with_all_fields(self):
         from src.commands import Command
 
-        callback = lambda: None
+        def callback():
+            return None
         cmd = Command(
             name="Full Command",
             keywords=["test", "example"],

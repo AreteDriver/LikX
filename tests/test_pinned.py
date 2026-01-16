@@ -2,7 +2,7 @@
 
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -279,7 +279,7 @@ class TestPinnedWindowOpacity:
         assert default_opacity == 1.0
 
 
-import pytest
+import pytest  # noqa: E402
 
 
 def _create_test_pixbuf(width=100, height=100):

@@ -4,7 +4,6 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 import subprocess
 
-import pytest
 
 
 class TestRecorderModuleImport:
@@ -266,7 +265,6 @@ class TestConfigIntegration:
 
     def test_uses_config_fps(self):
         """Test that recorder uses config for FPS."""
-        from src.recorder import GifRecorder
         from src import config
 
         cfg = config.load_config()
@@ -554,3 +552,382 @@ class TestRecorderConfigValues:
         cfg = config.load_config()
         # 0 = infinite loop in GIF spec
         assert cfg["gif_loop"] >= 0
+
+
+class TestStartRecordingEdgeCases:
+    """Test start_recording edge cases."""
+
+    def test_start_recording_when_already_recording(self):
+        """Test start_recording when already recording."""
+        from src.recorder import GifRecorder, RecordingState
+
+        recorder = GifRecorder()
+        recorder.state = RecordingState.RECORDING
+
+        success, error = recorder.start_recording(0, 0, 200, 200)
+        assert success is False
+        assert "already recording" in error.lower()
+
+    def test_start_recording_region_too_small_width(self):
+        """Test start_recording with too small width."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        recorder.ffmpeg_available = True
+
+        success, error = recorder.start_recording(0, 0, 40, 200)
+        assert success is False
+        assert "too small" in error.lower()
+
+    def test_start_recording_region_too_small_height(self):
+        """Test start_recording with too small height."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        recorder.ffmpeg_available = True
+
+        success, error = recorder.start_recording(0, 0, 200, 40)
+        assert success is False
+        assert "too small" in error.lower()
+
+
+class TestIsAvailableWayland:
+    """Test is_available for Wayland."""
+
+    def test_is_available_with_wf_recorder_on_wayland(self):
+        """Test availability with wf-recorder on Wayland."""
+        from src.recorder import GifRecorder
+        from src.capture import DisplayServer
+
+        recorder = GifRecorder()
+        recorder.display_server = DisplayServer.WAYLAND
+        recorder.wf_recorder_available = True
+
+        available, error = recorder.is_available()
+        assert available is True
+        assert error is None
+
+    def test_is_available_with_ffmpeg_on_wayland(self):
+        """Test availability with ffmpeg on Wayland (fallback)."""
+        from src.recorder import GifRecorder
+        from src.capture import DisplayServer
+
+        recorder = GifRecorder()
+        recorder.display_server = DisplayServer.WAYLAND
+        recorder.wf_recorder_available = False
+        recorder.ffmpeg_available = True
+
+        available, error = recorder.is_available()
+        assert available is True
+        assert error is None
+
+    def test_is_available_without_tools_on_wayland(self):
+        """Test availability without tools on Wayland."""
+        from src.recorder import GifRecorder
+        from src.capture import DisplayServer
+
+        recorder = GifRecorder()
+        recorder.display_server = DisplayServer.WAYLAND
+        recorder.wf_recorder_available = False
+        recorder.ffmpeg_available = False
+
+        available, error = recorder.is_available()
+        assert available is False
+        assert "wf-recorder" in error.lower()
+
+    def test_is_available_unknown_display_server(self):
+        """Test availability with unknown display server."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        recorder.display_server = None  # Unknown
+
+        available, error = recorder.is_available()
+        assert available is False
+        assert "unknown" in error.lower()
+
+
+class TestCancelRecording:
+    """Test cancel method."""
+
+    def test_cancel_when_idle(self):
+        """Test cancel when not recording."""
+        from src.recorder import GifRecorder, RecordingState
+
+        recorder = GifRecorder()
+        recorder.cancel()
+        assert recorder.state == RecordingState.IDLE
+
+    def test_cancel_kills_process(self):
+        """Test cancel kills recording process."""
+        from src.recorder import GifRecorder, RecordingState
+
+        recorder = GifRecorder()
+        mock_process = MagicMock()
+        recorder.process = mock_process
+        recorder.state = RecordingState.RECORDING
+
+        recorder.cancel()
+
+        mock_process.kill.assert_called_once()
+
+    def test_cancel_cleans_temp_file(self):
+        """Test cancel cleans up temp file."""
+        from src.recorder import GifRecorder, RecordingState
+        from pathlib import Path
+        import tempfile
+
+        recorder = GifRecorder()
+        recorder.state = RecordingState.RECORDING
+
+        # Create actual temp file
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
+            temp_path = Path(f.name)
+
+        recorder.temp_video = temp_path
+        recorder.cancel()
+
+        assert not temp_path.exists()
+
+
+class TestGetElapsedTime:
+    """Test get_elapsed_time method."""
+
+    def test_get_elapsed_time_when_idle(self):
+        """Test get_elapsed_time when not recording."""
+        from src.recorder import GifRecorder, RecordingState
+
+        recorder = GifRecorder()
+        recorder.state = RecordingState.IDLE
+
+        elapsed = recorder.get_elapsed_time()
+        assert elapsed == 0.0
+
+    def test_get_elapsed_time_when_recording(self):
+        """Test get_elapsed_time when recording."""
+        from src.recorder import GifRecorder, RecordingState
+        import time
+
+        recorder = GifRecorder()
+        recorder.state = RecordingState.RECORDING
+        recorder.start_time = time.time() - 5.0  # Started 5 seconds ago
+
+        elapsed = recorder.get_elapsed_time()
+        assert 4.5 <= elapsed <= 6.0  # Allow some tolerance
+
+
+class TestNotifyStateChange:
+    """Test _notify_state_change method."""
+
+    def test_notify_state_change_calls_callback(self):
+        """Test _notify_state_change calls callback."""
+        from src.recorder import GifRecorder, RecordingState
+
+        recorder = GifRecorder()
+        callback = MagicMock()
+        recorder._on_state_change = callback
+        recorder.state = RecordingState.RECORDING
+
+        recorder._notify_state_change()
+
+        callback.assert_called_once_with(RecordingState.RECORDING)
+
+    def test_notify_state_change_without_callback(self):
+        """Test _notify_state_change without callback."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        recorder._on_state_change = None
+
+        # Should not raise
+        recorder._notify_state_change()
+
+    def test_notify_state_change_handles_callback_error(self):
+        """Test _notify_state_change handles callback errors."""
+        from src.recorder import GifRecorder, RecordingState
+
+        recorder = GifRecorder()
+        callback = MagicMock(side_effect=Exception("Callback error"))
+        recorder._on_state_change = callback
+        recorder.state = RecordingState.RECORDING
+
+        # Should not raise
+        recorder._notify_state_change()
+
+
+class TestStopRecordingStates:
+    """Test stop_recording with various states."""
+
+    def test_stop_recording_when_idle(self):
+        """Test stop_recording when idle."""
+        from src.recorder import GifRecorder, RecordingState
+
+        recorder = GifRecorder()
+        recorder.state = RecordingState.IDLE
+
+        result = recorder.stop_recording()
+        assert result.success is False
+        assert "not currently recording" in result.error.lower()
+
+    def test_stop_recording_when_encoding(self):
+        """Test stop_recording when already encoding."""
+        from src.recorder import GifRecorder, RecordingState
+
+        recorder = GifRecorder()
+        recorder.state = RecordingState.ENCODING
+
+        result = recorder.stop_recording()
+        assert result.success is False
+
+    def test_stop_recording_without_process(self):
+        """Test stop_recording without process."""
+        from src.recorder import GifRecorder, RecordingState
+
+        recorder = GifRecorder()
+        recorder.state = RecordingState.RECORDING
+        recorder.process = None
+
+        result = recorder.stop_recording()
+        assert result.success is False
+
+
+class TestX11RecordingCommand:
+    """Test X11 recording command generation."""
+
+    def test_x11_recording_even_dimensions(self):
+        """Test X11 recording ensures even dimensions."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        recorder.temp_video = Path("/tmp/test.mp4")
+
+        with patch("subprocess.Popen") as mock_popen:
+            mock_popen.return_value = MagicMock()
+            with patch.dict("os.environ", {"DISPLAY": ":0"}):
+                recorder._start_x11_recording(10, 20, 101, 103, 15)
+
+            # Check that dimensions were made even
+            call_args = mock_popen.call_args[0][0]
+            video_size_idx = call_args.index("-video_size") + 1
+            video_size = call_args[video_size_idx]
+            w, h = map(int, video_size.split("x"))
+            assert w % 2 == 0
+            assert h % 2 == 0
+
+
+class TestWaylandRecordingCommand:
+    """Test Wayland recording command generation."""
+
+    def test_wayland_recording_with_wf_recorder(self):
+        """Test Wayland recording uses wf-recorder when available."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        recorder.wf_recorder_available = True
+        recorder.temp_video = Path("/tmp/test.mp4")
+
+        with patch("subprocess.Popen") as mock_popen:
+            mock_popen.return_value = MagicMock()
+            recorder._start_wayland_recording(10, 20, 100, 100, 15)
+
+            call_args = mock_popen.call_args[0][0]
+            assert call_args[0] == "wf-recorder"
+
+    def test_wayland_recording_ffmpeg_fallback(self):
+        """Test Wayland recording falls back to ffmpeg."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        recorder.wf_recorder_available = False
+        recorder.temp_video = Path("/tmp/test.mp4")
+
+        with patch("subprocess.Popen") as mock_popen:
+            mock_popen.return_value = MagicMock()
+            recorder._start_wayland_recording(10, 20, 100, 100, 15)
+
+            call_args = mock_popen.call_args[0][0]
+            assert call_args[0] == "ffmpeg"
+
+
+class TestEncodeToGif:
+    """Test GIF encoding method."""
+
+    def test_encode_to_gif_method_exists(self):
+        """Test _encode_to_gif method exists."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        assert hasattr(recorder, "_encode_to_gif")
+        assert callable(recorder._encode_to_gif)
+
+    def test_encode_quality_presets(self):
+        """Test quality presets are applied."""
+        from src.recorder import GifRecorder
+
+        recorder = GifRecorder()
+        recorder.temp_video = Path("/tmp/test.mp4")
+        recorder.region = (0, 0, 200, 200)
+
+        # Testing that the method can be called without errors
+        # when temp_video doesn't exist, it will fail gracefully
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=1, stderr=b"error")
+            result = recorder._encode_to_gif(5.0)
+            assert result.success is False
+
+
+class TestOptimizeGifWithGifsicle:
+    """Test GIF optimization with gifsicle."""
+
+    def test_optimize_gif_success(self):
+        """Test successful GIF optimization."""
+        from src.recorder import GifRecorder
+        from pathlib import Path
+        import tempfile
+
+        recorder = GifRecorder()
+        recorder.gifsicle_available = True
+
+        with tempfile.NamedTemporaryFile(suffix=".gif", delete=False) as f:
+            gif_path = Path(f.name)
+            f.write(b"GIF89a")  # Minimal GIF header
+
+        try:
+            with patch("subprocess.run") as mock_run:
+                # Mock gifsicle creating the optimized file
+                def create_opt_file(*args, **kwargs):
+                    opt_path = gif_path.with_suffix(".opt.gif")
+                    opt_path.write_bytes(b"GIF89a")
+                    return MagicMock(returncode=0)
+
+                mock_run.side_effect = create_opt_file
+                result = recorder._optimize_gif(gif_path)
+                assert result is True
+        finally:
+            if gif_path.exists():
+                gif_path.unlink()
+
+    def test_optimize_gif_failure(self):
+        """Test GIF optimization failure."""
+        from src.recorder import GifRecorder
+        from pathlib import Path
+
+        recorder = GifRecorder()
+        recorder.gifsicle_available = True
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=1)
+            result = recorder._optimize_gif(Path("/tmp/nonexistent.gif"))
+            assert result is False
+
+    def test_optimize_gif_exception(self):
+        """Test GIF optimization handles exceptions."""
+        from src.recorder import GifRecorder
+        from pathlib import Path
+
+        recorder = GifRecorder()
+        recorder.gifsicle_available = True
+
+        with patch("subprocess.run", side_effect=Exception("Error")):
+            result = recorder._optimize_gif(Path("/tmp/test.gif"))
+            assert result is False

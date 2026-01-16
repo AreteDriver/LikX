@@ -53,33 +53,15 @@ class GifRecorder:
 
     def _check_ffmpeg(self) -> bool:
         """Check if ffmpeg is available."""
-        try:
-            result = subprocess.run(
-                ["ffmpeg", "-version"], capture_output=True, timeout=2
-            )
-            return result.returncode == 0
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            return False
+        return config.check_tool_available(["ffmpeg", "-version"])
 
     def _check_wf_recorder(self) -> bool:
         """Check if wf-recorder is available (for wlroots Wayland)."""
-        try:
-            result = subprocess.run(
-                ["wf-recorder", "--help"], capture_output=True, timeout=2
-            )
-            return result.returncode == 0
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            return False
+        return config.check_tool_available(["wf-recorder", "--help"])
 
     def _check_gifsicle(self) -> bool:
         """Check if gifsicle is available for GIF optimization."""
-        try:
-            result = subprocess.run(
-                ["gifsicle", "--version"], capture_output=True, timeout=2
-            )
-            return result.returncode == 0
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            return False
+        return config.check_tool_available(["gifsicle", "--version"])
 
     def is_available(self) -> Tuple[bool, Optional[str]]:
         """Check if recording is available on this system."""

@@ -1,12 +1,12 @@
 """Screenshot capture module for LikX with Wayland and X11 support."""
 
 import os
-import time
 import subprocess
-from pathlib import Path
+import time
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 from enum import Enum
+from pathlib import Path
+from typing import List, Optional, Tuple
 
 try:
     import gi
@@ -190,7 +190,7 @@ def capture_monitor(
 
     # Use region capture with monitor geometry
     return capture_region(
-        region=monitor.geometry,
+        *monitor.geometry,
         delay=0,  # Already delayed above
     )
 
@@ -496,7 +496,7 @@ def capture_window(window_id: Optional[int] = None, delay: int = 0) -> CaptureRe
                 return CaptureResult(
                     False, error="Could not get active window. Is xdotool installed?"
                 )
-            window_id = result.stdout.strip()
+            window_id = int(result.stdout.strip())
 
         # Get window geometry using xdotool
         result = subprocess.run(

@@ -1,8 +1,9 @@
 """Configuration module for LikX."""
 
 import json
+import subprocess
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 # Default configuration values
 DEFAULT_CONFIG: Dict[str, Any] = {
@@ -53,6 +54,14 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "hotkey_scroll_capture": "<Control><Alt>S",
     # Language settings
     "language": "system",  # "system" or language code like "en", "es", "fr"
+    # Queue mode settings
+    "queue_mode_enabled": False,
+    "queue_persist": False,  # Save queue across restarts
+    "queue_max_size": 50,
+    # System tray settings
+    "tray_enabled": True,
+    "close_to_tray": True,  # Close button minimizes to tray
+    "start_minimized": False,  # Start hidden in tray
 }
 
 # Configuration file path
@@ -85,10 +94,10 @@ def load_config() -> Dict[str, Any]:
 
     if CONFIG_FILE.exists():
         try:
-            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            with open(CONFIG_FILE, encoding="utf-8") as f:
                 user_config = json.load(f)
                 config.update(user_config)
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             pass
 
     return config
@@ -103,7 +112,7 @@ def save_config(config: Dict[str, Any]) -> bool:
         with open(CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=4)
         return True
-    except IOError:
+    except OSError:
         return False
 
 
@@ -152,3 +161,20 @@ def get_save_path(
         format_str = config.get("default_format", DEFAULT_CONFIG["default_format"])
 
     return save_dir / f"{filename}.{format_str}"
+
+
+def check_tool_available(command: List[str], timeout: int = 2) -> bool:
+    """Check if an external tool is available.
+
+    Args:
+        command: Command to run (e.g., ["ffmpeg", "-version"])
+        timeout: Timeout in seconds (default: 2)
+
+    Returns:
+        True if the tool is available and returns exit code 0
+    """
+    try:
+        result = subprocess.run(command, capture_output=True, timeout=timeout)
+        return result.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False

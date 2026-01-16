@@ -1,11 +1,9 @@
 """Tests for the i18n module."""
 
 import os
-import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
-import pytest
 
 
 class TestI18nModuleImport:
@@ -56,7 +54,6 @@ class TestGetSystemLanguage:
 
     def test_uses_env_variables(self):
         """Test that environment variables are checked."""
-        from src.i18n import get_system_language
 
         with patch.dict(os.environ, {"LANG": "fr_FR.UTF-8"}, clear=False):
             # Need to reimport to pick up env change
@@ -69,7 +66,6 @@ class TestGetSystemLanguage:
 
     def test_fallback_to_english(self):
         """Test fallback to English when no language detected."""
-        from src.i18n import get_system_language
 
         with patch.dict(os.environ, {"LC_ALL": "", "LC_MESSAGES": "", "LANG": "", "LANGUAGE": ""}, clear=False):
             with patch("locale.getlocale", return_value=(None, None)):

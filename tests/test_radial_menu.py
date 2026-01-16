@@ -94,7 +94,7 @@ class TestRadialMenuInit:
             from src.radial_menu import RadialMenu
 
             try:
-                menu = RadialMenu(lambda x: None)
+                RadialMenu(lambda x: None)
             except RuntimeError as e:
                 assert "GTK not available" in str(e)
 

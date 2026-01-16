@@ -17,8 +17,8 @@ def _ensure_opencv():
     global np, cv2, OPENCV_AVAILABLE
     if OPENCV_AVAILABLE is None:
         try:
-            import numpy as _np
             import cv2 as _cv2
+            import numpy as _np
             np = _np
             cv2 = _cv2
             OPENCV_AVAILABLE = True
@@ -31,16 +31,15 @@ try:
 
     gi.require_version("Gdk", "3.0")
     gi.require_version("GdkPixbuf", "2.0")
-    from gi.repository import Gdk, GdkPixbuf
-
     import cairo
+    from gi.repository import Gdk, GdkPixbuf
 
     GTK_AVAILABLE = True
 except (ImportError, ValueError):
     GTK_AVAILABLE = False
 
-from . import config
-from .capture import DisplayServer, capture_region, detect_display_server
+from . import config  # noqa: E402
+from .capture import DisplayServer, capture_region, detect_display_server  # noqa: E402
 
 
 class ScrollState(Enum):
@@ -87,29 +86,17 @@ class ScrollCaptureManager:
 
     def _check_xdotool(self) -> bool:
         """Check if xdotool is available (X11)."""
-        try:
-            result = subprocess.run(
-                ["xdotool", "--version"], capture_output=True, timeout=2
-            )
-            return result.returncode == 0
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            return False
+        return config.check_tool_available(["xdotool", "--version"])
 
     def _check_ydotool(self) -> bool:
         """Check if ydotool is available (Wayland)."""
-        try:
-            result = subprocess.run(
-                ["ydotool", "--help"], capture_output=True, timeout=2
-            )
-            return result.returncode == 0
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            return False
+        return config.check_tool_available(["ydotool", "--help"])
 
     def _check_wtype(self) -> bool:
         """Check if wtype is available (Wayland/wlroots)."""
+        # wtype --help always returns 0 if installed
         try:
             subprocess.run(["wtype", "--help"], capture_output=True, timeout=2)
-            # wtype returns 0 on --help
             return True
         except (FileNotFoundError, subprocess.TimeoutExpired):
             return False
@@ -212,7 +199,7 @@ class ScrollCaptureManager:
         x, y, width, height = self.region
 
         # Capture the region
-        result = capture_region(region=(x, y, width, height), delay=0)
+        result = capture_region(x, y, width, height, delay=0)
         if not result.success:
             return False, f"Capture failed: {result.error}"
 

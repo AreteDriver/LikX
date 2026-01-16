@@ -1,13 +1,14 @@
 """Desktop notification support for LikX."""
 
 import subprocess
+from typing import Optional
 
 from .i18n import _
 
 
 def show_notification(
     title: str,
-    message: str,
+    message: Optional[str] = None,
     icon: str = "camera-photo",
     urgency: str = "normal",
     timeout: int = 5000,
@@ -16,7 +17,7 @@ def show_notification(
 
     Args:
         title: Notification title
-        message: Notification message
+        message: Notification message (defaults to empty string if None)
         icon: Icon name or path
         urgency: Urgency level (low, normal, critical)
         timeout: Timeout in milliseconds
@@ -24,6 +25,9 @@ def show_notification(
     Returns:
         True if notification was shown successfully
     """
+    if message is None:
+        message = ""
+
     try:
         # Try using GI Notify first (native)
         import gi

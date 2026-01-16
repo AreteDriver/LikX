@@ -141,8 +141,9 @@ def add_background(pixbuf, bg_color: tuple = (1, 1, 1, 1), padding: int = 20):
 def round_corners(pixbuf, radius: int = 10):
     """Round the corners of an image."""
     try:
-        import cairo
         import math
+
+        import cairo
 
         width = pixbuf.get_width()
         height = pixbuf.get_height()

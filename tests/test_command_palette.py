@@ -34,7 +34,7 @@ class TestCommandPaletteInit:
 
             try:
                 # Need to reload to get patched value
-                palette = CommandPalette([Command(name="Test")], None)
+                CommandPalette([Command(name="Test")], None)
                 # If GTK_AVAILABLE was already True at import, it won't raise
             except RuntimeError as e:
                 assert "GTK not available" in str(e)
@@ -293,7 +293,6 @@ class TestCommandPaletteNavigation:
             return
 
         from src.command_palette import CommandPalette
-        from src.commands import Command
 
         with patch.object(CommandPalette, "_apply_css"):
             palette = CommandPalette([], None)

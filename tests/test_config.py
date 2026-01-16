@@ -12,6 +12,7 @@ from src.config import (
     get_setting,
     validate_format,
     get_save_path,
+    check_tool_available,
 )
 
 
@@ -132,3 +133,41 @@ class TestEditorSettings:
         cfg = load_config()
         assert "grid_size" in cfg
         assert "snap_to_grid" in cfg
+
+
+class TestCheckToolAvailable:
+    """Test check_tool_available utility function."""
+
+    def test_check_tool_available_with_existing_tool(self):
+        """Test check with a tool that should exist (python)."""
+        result = check_tool_available(["python3", "--version"])
+        assert result is True
+
+    def test_check_tool_available_with_nonexistent_tool(self):
+        """Test check with a tool that doesn't exist."""
+        result = check_tool_available(["nonexistent_tool_xyz", "--version"])
+        assert result is False
+
+    @patch("subprocess.run")
+    def test_check_tool_available_with_timeout(self, mock_run):
+        """Test handling of timeout."""
+        import subprocess
+        mock_run.side_effect = subprocess.TimeoutExpired("cmd", 2)
+        result = check_tool_available(["slow_tool", "--version"])
+        assert result is False
+
+    @patch("subprocess.run")
+    def test_check_tool_available_with_failure(self, mock_run):
+        """Test handling of non-zero exit code."""
+        from unittest.mock import MagicMock
+        mock_run.return_value = MagicMock(returncode=1)
+        result = check_tool_available(["failing_tool", "--version"])
+        assert result is False
+
+    @patch("subprocess.run")
+    def test_check_tool_available_with_success(self, mock_run):
+        """Test handling of successful exit."""
+        from unittest.mock import MagicMock
+        mock_run.return_value = MagicMock(returncode=0)
+        result = check_tool_available(["working_tool", "--version"])
+        assert result is True
