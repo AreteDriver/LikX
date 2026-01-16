@@ -5,6 +5,8 @@ import tempfile
 from pathlib import Path
 from typing import Optional, Tuple
 
+from . import config
+
 
 class OCREngine:
     """Handles text extraction from screenshots using Tesseract."""
@@ -14,13 +16,7 @@ class OCREngine:
 
     def _check_tesseract(self) -> bool:
         """Check if Tesseract OCR is installed."""
-        try:
-            result = subprocess.run(
-                ["tesseract", "--version"], capture_output=True, timeout=2
-            )
-            return result.returncode == 0
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            return False
+        return config.check_tool_available(["tesseract", "--version"])
 
     def extract_text(self, pixbuf) -> Tuple[bool, Optional[str], Optional[str]]:
         """Extract text from a pixbuf.

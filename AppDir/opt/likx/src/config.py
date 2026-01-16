@@ -1,8 +1,9 @@
 """Configuration module for LikX."""
 
 import json
+import subprocess
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 # Default configuration values
 DEFAULT_CONFIG: Dict[str, Any] = {
@@ -19,11 +20,48 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "delay_seconds": 0,
     "editor_enabled": True,
     "theme": "system",
-    "upload_service": "imgur",  # imgur, fileio, none
+    "upload_service": "imgur",  # imgur, fileio, s3, dropbox, gdrive, none
     "auto_upload": False,
+    # S3 settings
+    "s3_bucket": "",
+    "s3_region": "us-east-1",
+    "s3_public": True,  # Make uploaded files public
+    # Dropbox settings
+    "dropbox_token": "",  # Access token from https://www.dropbox.com/developers/apps
+    # Google Drive settings
+    "gdrive_folder_id": "",  # Optional folder ID to upload to
+    "gdrive_rclone_remote": "gdrive",  # rclone remote name if using rclone
     # Editor settings
     "grid_size": 20,  # Grid snap size in pixels (5-100)
     "snap_to_grid": False,  # Whether grid snap is enabled by default
+    # GIF recording settings
+    "gif_fps": 15,  # Frames per second (10-30)
+    "gif_quality": "medium",  # low, medium, high
+    "gif_max_duration": 60,  # Safety limit in seconds
+    "gif_colors": 256,  # Color palette size (64-256)
+    "gif_scale_factor": 1.0,  # Downscale factor (0.25-1.0)
+    "gif_dither": "bayer",  # none, bayer, floyd_steinberg, sierra2
+    "gif_loop": 0,  # Loop count: 0=infinite, 1=once, 2+=specific count
+    "gif_optimize": True,  # Use gifsicle optimization if available
+    "hotkey_record_gif": "<Control><Alt>G",
+    # Scroll capture settings
+    "scroll_delay_ms": 300,  # Delay between scroll+capture cycles
+    "scroll_max_frames": 50,  # Safety limit
+    "scroll_overlap_search": 150,  # Max pixels to search for overlap
+    "scroll_ignore_top": 0.15,  # Ignore top 15% (fixed headers)
+    "scroll_ignore_bottom": 0.15,  # Ignore bottom 15% (fixed footers)
+    "scroll_confidence": 0.7,  # Template matching confidence threshold
+    "hotkey_scroll_capture": "<Control><Alt>S",
+    # Language settings
+    "language": "system",  # "system" or language code like "en", "es", "fr"
+    # Queue mode settings
+    "queue_mode_enabled": False,
+    "queue_persist": False,  # Save queue across restarts
+    "queue_max_size": 50,
+    # System tray settings
+    "tray_enabled": True,
+    "close_to_tray": True,  # Close button minimizes to tray
+    "start_minimized": False,  # Start hidden in tray
 }
 
 # Configuration file path
@@ -56,10 +94,10 @@ def load_config() -> Dict[str, Any]:
 
     if CONFIG_FILE.exists():
         try:
-            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            with open(CONFIG_FILE, encoding="utf-8") as f:
                 user_config = json.load(f)
                 config.update(user_config)
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             pass
 
     return config
@@ -74,7 +112,7 @@ def save_config(config: Dict[str, Any]) -> bool:
         with open(CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=4)
         return True
-    except IOError:
+    except OSError:
         return False
 
 
@@ -123,3 +161,20 @@ def get_save_path(
         format_str = config.get("default_format", DEFAULT_CONFIG["default_format"])
 
     return save_dir / f"{filename}.{format_str}"
+
+
+def check_tool_available(command: List[str], timeout: int = 2) -> bool:
+    """Check if an external tool is available.
+
+    Args:
+        command: Command to run (e.g., ["ffmpeg", "-version"])
+        timeout: Timeout in seconds (default: 2)
+
+    Returns:
+        True if the tool is available and returns exit code 0
+    """
+    try:
+        result = subprocess.run(command, capture_output=True, timeout=timeout)
+        return result.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False

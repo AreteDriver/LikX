@@ -82,3 +82,8 @@ build-deb/
 build-dir/
 repo/
 *.flatpak
+
+# AppImage build artifacts
+*.AppImage
+!appimagetool*.AppImage
+squashfs-root/
